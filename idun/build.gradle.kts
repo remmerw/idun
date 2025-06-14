@@ -100,7 +100,7 @@ mavenPublishing {
 
     pom {
         name = "idun"
-        description = "Basic library for connecting to the libp2p network"
+        description = "A client-server implementation which supports pns URIs"
         inceptionYear = "2025"
         url = "https://github.com/remmerw/idun/"
         licenses {
