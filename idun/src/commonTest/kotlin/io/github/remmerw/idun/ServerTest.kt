@@ -1,9 +1,9 @@
 package io.github.remmerw.idun
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import java.net.InetAddress
 import kotlin.concurrent.atomics.AtomicInt
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.concurrent.atomics.incrementAndFetch
@@ -33,36 +33,6 @@ class ServerTest {
         assertTrue(input.contentEquals(data))
         client.shutdown()
 
-        server.shutdown()
-        storage.delete()
-    }
-
-
-    @Test
-    fun reachableTest(): Unit = runBlocking {
-        val serverPort = TestEnv.randomPort()
-        val storage = newStorage()
-        val server = newIdun()
-        server.runService(storage, serverPort)
-        val peeraddrs = TestEnv.peeraddrs(server.peerId(), serverPort)
-        assertNotNull(peeraddrs)
-        var reachable = peeraddrs.isEmpty()
-        for (peeraddr in peeraddrs) {
-            val inetAddress = InetAddress.getByAddress(peeraddr.address)
-
-            val reach = inetAddress.isReachable(50)
-            if (reach) {
-                println("Reachable " + inetAddress.hostAddress)
-                reachable = true
-            } else {
-                println("Not reachable " + inetAddress.hostAddress)
-                println("Site Local " + inetAddress.isSiteLocalAddress)
-                println("Link Local " + inetAddress.isLinkLocalAddress)
-                println("Any Local " + inetAddress.isAnyLocalAddress)
-            }
-        }
-
-        assertTrue(reachable)
         server.shutdown()
         storage.delete()
     }

@@ -2,6 +2,7 @@ package io.github.remmerw.idun
 
 import io.github.remmerw.idun.core.Raw
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals

@@ -11,7 +11,7 @@ plugins {
 }
 
 group = "io.github.remmerw"
-version = "0.2.5"
+version = "0.2.6"
 
 kotlin {
 
@@ -24,54 +24,28 @@ kotlin {
         }
     }
 
-    // todo iosX64()
-    // todo iosArm64()
-    // todo iosSimulatorArm64()
-    // todo linuxX64()
+    iosX64()
+    iosArm64()
+    iosSimulatorArm64()
+    linuxX64()
 
 
     sourceSets {
         commonMain {
             dependencies {
                 implementation(libs.kotlin.stdlib)
-                implementation(libs.kotlinx.datetime)
                 implementation(libs.kotlinx.io.core)
                 implementation(libs.uri.kmp)
-                implementation(libs.kotlinx.serialization.protobuf)
                 implementation(libs.kotlinx.coroutines.core)
-                implementation(libs.kotlinx.io.core)
-                implementation(libs.sha2)
-                implementation(libs.hmac.sha2)
-                implementation(libs.crypto.rand)
                 implementation(libs.ktor.network)
                 implementation(libs.atomicfu)
-                implementation(libs.cryptography.core)
-                implementation(libs.indispensable)
-                implementation(libs.cryptography.bigint)
-                implementation("io.github.remmerw:asen:0.2.5")
+                implementation("io.github.remmerw:asen:0.2.6")
             }
         }
 
         commonTest {
             dependencies {
                 implementation(libs.kotlin.test)
-            }
-        }
-
-        androidMain {
-            dependencies {
-                implementation(libs.cryptography.provider.jdk)
-            }
-        }
-
-        jvmMain {
-            dependencies {
-                implementation(libs.cryptography.provider.jdk)
-            }
-        }
-        
-        iosMain {
-            dependencies {
             }
         }
     }

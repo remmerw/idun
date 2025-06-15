@@ -1,9 +1,9 @@
 package io.github.remmerw.idun
 
+import io.github.remmerw.asen.core.AddressUtil
 import io.github.remmerw.asen.createPeeraddr
 import io.github.remmerw.asen.parsePeeraddr
 import io.github.remmerw.idun.core.extractCidFromRequest
-import java.net.InetAddress
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -56,9 +56,10 @@ class ServiceTest {
     @Test
     fun testAddress() {
         val peerId = TestEnv.randomPeerId()
+        val address = AddressUtil.textToNumericFormatV6("2804:d41:432f:3f00:ccbd:8e0d:a023:376b")
+        assertNotNull(address)
         val peeraddr = createPeeraddr(
-            peerId.toBase58(),
-            InetAddress.getByName("2804:d41:432f:3f00:ccbd:8e0d:a023:376b").address, 4001.toUShort()
+            peerId.toBase58(), address, 4001.toUShort()
         )
         assertNotNull(peeraddr)
 

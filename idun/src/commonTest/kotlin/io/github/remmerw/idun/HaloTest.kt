@@ -3,6 +3,7 @@ package io.github.remmerw.idun
 import io.github.remmerw.idun.core.OCTET_MIME_TYPE
 import io.github.remmerw.idun.core.Raw
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.io.buffered

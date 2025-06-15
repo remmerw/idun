@@ -1,4 +1,12 @@
-The **Idun** library is currently in development [**Version 0.2.5**]
+<div>
+    <div>
+        <img src="https://img.shields.io/maven-central/v/io.github.remmerw/asen" alt="Kotlin Maven Version" />
+        <img src="https://img.shields.io/badge/Platform-Android-brightgreen.svg?logo=android" alt="Badge Android" />
+        <img src="https://img.shields.io/badge/Platform-iOS%20%2F%20macOS-lightgrey.svg?logo=apple" alt="Badge iOS" />
+        <img src="https://img.shields.io/badge/Platform-JVM-8A2BE2.svg?logo=openjdk" alt="Badge JVM" />
+    </div>
+</div>
+
 
 ## Idun
 
@@ -8,6 +16,24 @@ server.
 
 Finding peers via its pns-URI (which is basically just a peer ID) are described in detail in
 the [Asen](https://github.com/remmerw/asen/) library.
+
+
+
+## Integration
+
+```
+    
+kotlin {
+    sourceSets {
+        commonMain.dependencies {
+            ...
+            implementation("io.github.remmerw:asen:0.2.6")
+        }
+        ...
+    }
+}
+    
+```
 
 ### Examples
 
