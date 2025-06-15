@@ -36,7 +36,6 @@ kotlin {
                 implementation(libs.kotlin.stdlib)
                 implementation(libs.kotlinx.io.core)
                 implementation(libs.uri.kmp)
-                implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.ktor.network)
                 implementation(libs.atomicfu)
                 implementation("io.github.remmerw:asen:0.2.6")
