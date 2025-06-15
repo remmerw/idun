@@ -3,7 +3,6 @@ agp = "8.10.1"
 atomicfu = "0.27.0"
 kotlin = "2.1.21"
 kotlinTest = "2.1.21"
-kotlinxCoroutinesCore = "1.10.2"
 kotlinxIoCore = "0.7.0"
 kotlinStdlib = "2.1.21"
 ktor = "3.2.0"
@@ -12,7 +11,6 @@ uriKmp = "0.0.19"
 [libraries]
 atomicfu = { module = "org.jetbrains.kotlinx:atomicfu", version.ref = "atomicfu" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlinTest" }
-kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutinesCore" }
 kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "kotlinxIoCore" }
 kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlinStdlib" }
 ktor-network = { module = "io.ktor:ktor-network", version.ref = "ktor" }
