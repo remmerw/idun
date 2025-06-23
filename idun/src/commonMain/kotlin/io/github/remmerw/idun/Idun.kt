@@ -503,7 +503,7 @@ interface Storage : Fetch {
 
     fun tempFile(): Path
 
-    suspend fun response(request: Long?): Response {
+    fun response(request: Long?): Response {
         val cid = request ?: root().cid()
 
         val node = info(cid)
@@ -516,8 +516,8 @@ interface Storage : Fetch {
         }
     }
 
-    suspend fun info(cid: Long): Node {
-        val block = fetchBlock(cid)
+    fun info(cid: Long): Node {
+        val block = getBlock(cid)
         return decodeNode(cid, block)
     }
 
