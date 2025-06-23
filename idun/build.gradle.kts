@@ -45,7 +45,7 @@ kotlin {
                 implementation(libs.uri.kmp)
                 implementation(libs.ktor.network)
                 implementation(libs.atomicfu)
-                implementation("io.github.remmerw:asen:0.2.6")
+                implementation("io.github.remmerw:asen:0.2.7")
             }
         }
 
