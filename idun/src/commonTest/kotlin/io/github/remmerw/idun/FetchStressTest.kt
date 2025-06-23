@@ -31,19 +31,24 @@ class FetchStressTest {
             "Store Data Time: " + now.inWholeMilliseconds + "[ms]"
         )
 
-        val loopback = TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+
 
         repeat(iterations) {
 
             now = measureTime {
                 val client = newIdun()
 
-                assertTrue(client.reachable(loopback))
+                assertTrue(
+                    client.reachable(
+                        TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+                    )
+                )
 
-                val request = createRequest(loopback, fid)
-
-                val data = client.channel(request).readAllBytes()
+                val channel = client.channel(server.peerId(), fid.cid())
+                assertEquals(fid.size(), channel.size())
+                val data = channel.readAllBytes()
                 assertEquals(fid.size().toInt(), data.size)
+
                 client.shutdown()
             }
 

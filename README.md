@@ -40,7 +40,7 @@ kotlin {
 ```
     @Test
     fun simpleRequestResponse(): Unit = runBlocking {
-         // create local server and client instance
+        // create local server and client instance
         val port = TestEnv.randomPort()
         val storage = newStorage()
         val raw = storage.storeText("Moin") // store some text
@@ -50,14 +50,17 @@ kotlin {
         server.runService(storage, port)
 
         val client = newIdun()
+        
+        // >>> make a direct connection possible (otherwise the asen functionality has to be used)
+        assertTrue(
+            client.reachable(
+                TestEnv.loopbackPeeraddr(server.peerId(), port)
+            )
+        )
+        // <<< end
+        
 
-        val request =
-            createRequest(
-                TestEnv.loopbackPeeraddr(server.peerId(), port),
-                raw
-            ) // request is a pns-URI
-
-        val data = client.fetchData(request) // fetch request
+        val data = client.fetchData(server.peerId(), raw.cid()) // fetch request
         assertEquals(data.decodeToString(), "Moin")
 
         client.shutdown()

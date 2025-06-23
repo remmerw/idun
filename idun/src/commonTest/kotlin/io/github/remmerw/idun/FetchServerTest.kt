@@ -6,6 +6,7 @@ import kotlinx.io.files.SystemFileSystem
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import kotlin.time.measureTime
 
 class FetchServerTest {
@@ -15,7 +16,7 @@ class FetchServerTest {
         val storage = newStorage()
         val server = newIdun()
         server.runService(storage, serverPort)
-        val loopback = TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+
 
         var fid: Node? = null
         var timestamp = measureTime {
@@ -32,9 +33,16 @@ class FetchServerTest {
 
         timestamp = measureTime {
             val client = newIdun()
-            val request = createRequest(loopback, fid)
+
+            assertTrue(
+                client.reachable(
+                    TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+                )
+            )
+
+
             val out = storage.tempFile()
-            val channel = client.channel(request)
+            val channel = client.channel(server.peerId(), fid.cid())
 
 
             SystemFileSystem.sink(out).buffered().use { sink ->

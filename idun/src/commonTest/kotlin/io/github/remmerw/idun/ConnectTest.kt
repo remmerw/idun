@@ -21,9 +21,16 @@ class ConnectTest {
         val storage = newStorage()
         val server = newIdun()
         server.runService(storage, serverPort)
-        val request = TestEnv.loopbackRequest(server.peerId(), serverPort)
+
         val client = newIdun()
-        val root = client.fetchRoot(request)
+
+        assertTrue(
+            client.reachable(
+                TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+            )
+        )
+
+        val root = client.fetchRoot(server.peerId())
         assertNotNull(root)
 
         delay(10000) // timeout is 10 sec (should be reached)
@@ -40,12 +47,19 @@ class ConnectTest {
         val storage = newStorage()
         val server = newIdun()
         server.runService(storage, serverPort)
-        val request = TestEnv.loopbackRequest(server.peerId(), serverPort)
-        val client = newIdun()
-        val rootUri = client.fetchRoot(request)
-        assertNotNull(rootUri)
 
-        val data = client.fetchData(rootUri)
+        val client = newIdun()
+
+        assertTrue(
+            client.reachable(
+                TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+            )
+        )
+
+        val root = client.fetchRoot(server.peerId())
+        assertNotNull(root)
+
+        val data = client.fetchData(server.peerId(), root)
         assertNotNull(data)
         assertTrue(data.contentEquals(byteArrayOf()))
 
@@ -69,12 +83,19 @@ class ConnectTest {
         val storage = newStorage()
         val server = newIdun()
         server.runService(storage, serverPort)
-        val request = TestEnv.loopbackRequest(server.peerId(), serverPort)
-        val client = newIdun()
-        val rootUri = client.fetchRoot(request) // Intern it sets keep alive to true
-        assertNotNull(rootUri)
 
-        val data = client.fetchData(rootUri)
+        val client = newIdun()
+
+        assertTrue(
+            client.reachable(
+                TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+            )
+        )
+
+        val root = client.fetchRoot(server.peerId()) // Intern it sets keep alive to true
+        assertNotNull(root)
+
+        val data = client.fetchData(server.peerId(), root)
         assertNotNull(data)
         assertTrue(data.contentEquals(byteArrayOf()))
 

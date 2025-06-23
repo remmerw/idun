@@ -30,10 +30,6 @@ internal object TestEnv {
         }
     }
 
-    fun randomPeerId(): PeerId {
-        return PeerId(getRandomBytes(32))
-    }
-
     fun getRandomBytes(number: Int): ByteArray {
         val bytes = ByteArray(number)
         Random.nextBytes(bytes)
@@ -72,10 +68,6 @@ internal object TestEnv {
 
     internal fun loopbackPeeraddr(peerId: PeerId, port: Int): Peeraddr {
         return peeraddrs(peerId, port).first()
-    }
-
-    fun loopbackRequest(peerId: PeerId, port: Int): String {
-        return createRequest(loopbackPeeraddr(peerId, port))
     }
 
     fun peeraddrs(peerId: PeerId, port: Int): List<Peeraddr> {

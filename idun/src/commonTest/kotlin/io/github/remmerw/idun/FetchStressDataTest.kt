@@ -13,17 +13,18 @@ class FetchStressDataTest {
         val server = newIdun()
         server.runService(storage, serverPort)
         val client = newIdun()
+
+        assertTrue(
+            client.reachable(
+                TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+            )
+        )
+
         repeat(iterations) {
             val data = TestEnv.getRandomBytes(SPLITTER_SIZE.toInt())
             val raw = storage.storeData(data)
 
-            val request =
-                createRequest(
-                    TestEnv.loopbackPeeraddr(server.peerId(), serverPort),
-                    raw.cid()
-                )
-
-            val cmp = client.fetchData(request)
+            val cmp = client.fetchData(server.peerId(), raw.cid())
             assertTrue(data.contentEquals(cmp))
         }
         client.shutdown()

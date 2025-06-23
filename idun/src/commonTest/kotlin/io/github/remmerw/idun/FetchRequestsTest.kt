@@ -13,7 +13,7 @@ class FetchRequestsTest {
         val server = newIdun()
 
         server.runService(storage, serverPort)
-        val loopback = TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+
 
         val content = "Moin Moin"
         val bytes = TestEnv.getRandomBytes(5000)
@@ -26,18 +26,22 @@ class FetchRequestsTest {
 
 
         val client = newIdun()
-        var request = createRequest(loopback, fid)
-        var data = client.channel(request).readAllBytes()
+        assertTrue(
+            client.reachable(
+                TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+            )
+        )
 
+        var data = client.channel(server.peerId(), fid.cid()).readAllBytes()
         assertNotNull(data)
         assertTrue(data.contentEquals(content.encodeToByteArray()))
 
 
-        request = createRequest(loopback, bin)
-        data = client.channel(request).readAllBytes()
-
+        data = client.channel(server.peerId(), bin.cid()).readAllBytes()
         assertNotNull(data)
         assertTrue(data.contentEquals(bytes))
+
+
         client.shutdown()
         server.shutdown()
         storage.delete()

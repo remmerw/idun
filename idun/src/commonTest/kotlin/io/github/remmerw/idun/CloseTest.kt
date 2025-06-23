@@ -6,7 +6,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class CloseTest {
     @Test
@@ -19,12 +19,15 @@ class CloseTest {
         storage.root("Homepage".encodeToByteArray())
         val raw = storage.root().cid()
 
-        val request = TestEnv.loopbackRequest(server.peerId(), serverPort)
 
         val client = newIdun()
-        val rootUri = client.fetchRoot(request)
-        assertNotNull(rootUri)
-        val cid = extractCid(rootUri)
+        assertTrue(
+            client.reachable(
+                TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+            )
+        )
+
+        val cid = client.fetchRoot(server.peerId())
         assertEquals(cid, raw)
         client.shutdown()
 

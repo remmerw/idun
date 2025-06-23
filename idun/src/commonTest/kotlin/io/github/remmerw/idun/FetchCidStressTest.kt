@@ -5,7 +5,7 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class FetchCidStressTest {
     @Test
@@ -13,16 +13,24 @@ class FetchCidStressTest {
         val serverPort = TestEnv.randomPort()
         val storage = newStorage()
         val server = newIdun()
+
+        checkNotNull(server)
+        checkNotNull(server.keys())
+
         server.runService(storage, serverPort)
         storage.root("Homepage".encodeToByteArray())
         val raw = storage.root().cid()
 
-        val request = TestEnv.loopbackRequest(server.peerId(), serverPort)
         val client = newIdun()
+
+        assertTrue(
+            client.reachable(
+                TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+            )
+        )
+
         repeat(TestEnv.ITERATIONS) {
-            val rootUri = client.fetchRoot(request)
-            assertNotNull(rootUri)
-            val value = extractCid(rootUri)
+            val value = client.fetchRoot(server.peerId())
             assertEquals(value, raw)
         }
         client.shutdown()

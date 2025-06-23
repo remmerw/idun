@@ -13,18 +13,24 @@ class ChannelStressTest {
         val storage = newStorage()
         val server = newIdun()
 
-        val loopback = TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+
         server.runService(storage, serverPort)
         val client = newIdun()// client instance default values
+
+        assertTrue(
+            client.reachable(
+                TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+            )
+        )
+
         repeat(100) {
 
             val node =
                 storage.storeData(
                     TestEnv.getRandomBytes(SPLITTER_SIZE.toInt())
                 ) // store some text
-            val request = createRequest(loopback, node)
 
-            val data = client.fetchData(request) // fetch request
+            val data = client.fetchData(server.peerId(), node.cid()) // fetch request
             assertNotNull(data)
             assertTrue(storage.fetchData(node).contentEquals(data))
         }

@@ -1,6 +1,7 @@
 package io.github.remmerw.idun.core
 
 import io.github.remmerw.asen.Asen
+import io.github.remmerw.asen.PeerId
 import io.github.remmerw.idun.Fetch
 import io.github.remmerw.idun.Storage
 import kotlinx.io.Buffer
@@ -9,7 +10,7 @@ import kotlinx.io.Buffer
 internal data class FetchRequest(
     val asen: Asen,
     val connector: Connector,
-    val request: String,
+    val peerId: PeerId,
     val storage: Storage?
 ) : Fetch {
 
@@ -19,7 +20,7 @@ internal data class FetchRequest(
                 return storage.getBlock(cid)
             }
         }
-        val pnsChannel = connector.connect(asen, request)
+        val pnsChannel = connector.connect(asen, peerId)
         return request(pnsChannel, cid)
     }
 

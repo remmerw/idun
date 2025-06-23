@@ -218,8 +218,17 @@ class AddTest {
     fun test_readerBig(): Unit = runBlocking {
         val chunkData = SPLITTER_SIZE.toInt()
         val storage = newStorage()
+
+        val root = storage.root()
+        assertNotNull(root)
+        assertEquals(root.size(), 0)
+
         val text = TestEnv.getRandomBytes((chunkData * 2) - 50)
         val fid = TestEnv.createContent(storage, "random.bin", OCTET_MIME_TYPE, text)
+        storage.root(fid)
+        val newRoot = storage.root()
+        assertNotNull(newRoot)
+        assertEquals(newRoot.size(), fid.size())
 
         assertTrue(storage.hasBlock(fid.cid()))
 

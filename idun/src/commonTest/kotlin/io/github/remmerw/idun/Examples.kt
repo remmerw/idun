@@ -3,6 +3,7 @@ package io.github.remmerw.idun
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class Examples {
     @Test
@@ -18,13 +19,16 @@ class Examples {
 
         val client = newIdun()
 
-        val request =
-            createRequest(
-                TestEnv.loopbackPeeraddr(server.peerId(), port),
-                raw
-            ) // request is a pns-URI
+        // >>> make a direct connection possible (otherwise the asen functionality has to be used)
+        assertTrue(
+            client.reachable(
+                TestEnv.loopbackPeeraddr(server.peerId(), port)
+            )
+        )
+        // <<< end
 
-        val data = client.fetchData(request) // fetch request
+
+        val data = client.fetchData(server.peerId(), raw.cid()) // fetch request
         assertEquals(data.decodeToString(), "Moin")
 
         client.shutdown()

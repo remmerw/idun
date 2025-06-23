@@ -6,7 +6,6 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class AlpnTest {
@@ -27,25 +26,21 @@ class AlpnTest {
         assertTrue(input.contentEquals(cmp))
 
 
-        val peeraddrs = TestEnv.peeraddrs(server.peerId(), serverPort)
-        val peeraddr = peeraddrs.first()
         val client = newIdun()
 
-        val requestRoot = createRequest(peeraddr)
-        val rootUri = client.fetchRoot(requestRoot)
-        assertNotNull(rootUri)
+        assertTrue(
+            client.reachable(
+                TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+            )
+        )
 
-        val root = extractCid(rootUri)
+
+        val root = client.fetchRoot(server.peerId())
         checkNotNull(root)
 
         assertEquals(root, storage.root().cid())
 
-        val serverAddress = extractPeeraddr(rootUri)
-        assertEquals(serverAddress, peeraddr)
-
-        val request = createRequest(peeraddr, cid)
-
-        val data = client.fetchData(request)
+        val data = client.fetchData(server.peerId(), cid)
         assertTrue(input.contentEquals(data))
         client.shutdown()
 

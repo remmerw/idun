@@ -16,12 +16,6 @@ import io.github.remmerw.idun.core.Raw
 import io.github.remmerw.idun.core.RawChannel
 import io.github.remmerw.idun.core.createRaw
 import io.github.remmerw.idun.core.decodeNode
-import io.github.remmerw.idun.core.encodeCid
-import io.github.remmerw.idun.core.encodePeerId
-import io.github.remmerw.idun.core.encodePeeraddr
-import io.github.remmerw.idun.core.extractCidFromRequest
-import io.github.remmerw.idun.core.extractPeerIdFromRequest
-import io.github.remmerw.idun.core.extractPeeraddrFromRequest
 import io.github.remmerw.idun.core.removeNode
 import io.ktor.network.selector.SelectorManager
 import io.ktor.network.sockets.InetSocketAddress
@@ -58,7 +52,6 @@ import kotlin.uuid.Uuid
 
 const val HTML_OK: Int = 200
 internal const val RESOLVE_TIMEOUT: Int = 60
-internal const val PNS = "pns"
 
 enum class Event {
     OUTGOING_RESERVE_EVENT, INCOMING_CONNECT_EVENT
@@ -236,20 +229,19 @@ class Idun internal constructor(
         return connector.channels().size
     }
 
-    internal suspend fun fetchRoot(request: String): String {
-        val pnsChannel = connector.connect(asen, request)
+    internal suspend fun fetchRoot(peerId: PeerId): Long {
+        val pnsChannel = connector.connect(asen, peerId)
         val payload = pnsChannel.request(HALO_ROOT)
-        val cid = payload.readLong()
-        return createRequest(pnsChannel.remotePeeraddr, cid)
+        return payload.readLong()
     }
 
 
     @Suppress("unused")
-    suspend fun response(request: String, storage: Storage? = null): Response {
+    suspend fun response(peerId: PeerId, cid: Long? = null, storage: Storage? = null): Response {
         try {
-            val node = info(request, storage) // is resolved
+            val node = info(peerId, cid, storage) // is resolved
             return if (node is Fid) {
-                val channel = channel(request, storage)
+                val channel = channel(peerId, cid, storage)
                 contentResponse(channel, node)
             } else {
                 val buffer = Buffer()
@@ -268,10 +260,10 @@ class Idun internal constructor(
     }
 
 
-    suspend fun channel(request: String, storage: Storage? = null): Channel {
-        val node = info(request, storage)
+    suspend fun channel(peerId: PeerId, cid: Long? = null, storage: Storage? = null): Channel {
+        val node = info(peerId, cid, storage)
         if (node is Fid) {
-            val fetch = FetchRequest(asen, connector, request, storage)
+            val fetch = FetchRequest(asen, connector, peerId, storage)
             return createChannel(node, fetch)
         }
         throw Exception("Stream on directory or raw not possible")
@@ -298,18 +290,17 @@ class Idun internal constructor(
     }
 
 
-    suspend fun info(request: String, storage: Storage? = null): Node {
-        val cid = extractCid(request)
+    suspend fun info(peerId: PeerId, cid: Long? = null, storage: Storage? = null): Node {
         if (cid != null) {
-            val fetch = FetchRequest(asen, connector, request, storage)
+            val fetch = FetchRequest(asen, connector, peerId, storage)
             return decodeNode(cid, fetch.fetchBlock(cid))
         } else {
-            return info(fetchRoot(request), storage)
+            return info(peerId, fetchRoot(peerId), storage)
         }
     }
 
-    suspend fun fetchData(request: String, storage: Storage? = null): ByteArray {
-        val node = info(request, storage)
+    suspend fun fetchData(peerId: PeerId, cid: Long? = null, storage: Storage? = null): ByteArray {
+        val node = info(peerId, cid, storage)
         if (node is Raw) {
             return node.data()
         }
@@ -318,7 +309,7 @@ class Idun internal constructor(
 
     suspend fun reachable(peeraddr: Peeraddr): Boolean {
         try {
-            connector.connect(asen, createRequest(peeraddr))
+            connector.connect(peeraddr)
             return true
         } catch (throwable: Throwable) {
             debug(throwable)
@@ -393,48 +384,6 @@ private fun inet6Public(peeraddrs: List<Peeraddr>): List<Peeraddr> {
     }
     return result
 }
-
-
-fun createRequest(peeraddr: Peeraddr): String {
-    return PNS + "://" + encodePeeraddr(peeraddr) + "@" + encodePeerId(peeraddr.peerId)
-}
-
-fun createRequest(peerId: PeerId): String {
-    return PNS + "://" + encodePeerId(peerId)
-}
-
-fun createRequest(peerId: PeerId, cid: Long): String {
-    return createRequest(peerId) + relativePath(cid)
-}
-
-fun createRequest(peeraddr: Peeraddr, cid: Long): String {
-    return createRequest(peeraddr) + relativePath(cid)
-}
-
-fun createRequest(peerId: PeerId, node: Node): String {
-    return createRequest(peerId, node.cid())
-}
-
-fun createRequest(peeraddr: Peeraddr, node: Node): String {
-    return createRequest(peeraddr, node.cid())
-}
-
-fun relativePath(cid: Long): String {
-    return "/" + encodeCid(cid)
-}
-
-fun extractPeerId(request: String): PeerId? {
-    return extractPeerIdFromRequest(request)
-}
-
-fun extractPeeraddr(request: String): Peeraddr? {
-    return extractPeeraddrFromRequest(request)
-}
-
-fun extractCid(request: String): Long? {
-    return extractCidFromRequest(request)
-}
-
 
 interface Channel {
     fun size(): Long

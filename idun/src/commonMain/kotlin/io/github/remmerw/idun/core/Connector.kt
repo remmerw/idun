@@ -5,8 +5,6 @@ import io.github.remmerw.asen.PeerId
 import io.github.remmerw.asen.Peeraddr
 import io.github.remmerw.idun.RESOLVE_TIMEOUT
 import io.github.remmerw.idun.debug
-import io.github.remmerw.idun.extractPeerId
-import io.github.remmerw.idun.extractPeeraddr
 import io.ktor.network.selector.SelectorManager
 import io.ktor.network.sockets.InetSocketAddress
 import io.ktor.network.sockets.aSocket
@@ -41,20 +39,6 @@ internal class Connector(private val selectorManager: SelectorManager) {
         }
 
         throw Exception("No hop connection established")
-    }
-
-
-    suspend fun connect(asen: Asen, uri: String): Channel {
-        val peeraddr = extractPeeraddr(uri)
-        if (peeraddr != null) {
-            return connect(peeraddr)
-        }
-
-        val peerId = extractPeerId(uri)
-        if (peerId != null) {
-            return connect(asen, peerId)
-        }
-        throw Exception("Invalid URI $uri")
     }
 
     suspend fun connect(peeraddr: Peeraddr): Channel {

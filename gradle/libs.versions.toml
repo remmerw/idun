@@ -1,12 +1,11 @@
 [versions]
 agp = "8.10.1"
-atomicfu = "0.27.0"
+atomicfu = "0.28.0"
 kotlin = "2.1.21"
 kotlinTest = "2.1.21"
 kotlinxIoCore = "0.7.0"
 kotlinStdlib = "2.1.21"
 ktor = "3.2.0"
-uriKmp = "0.0.19"
 
 [libraries]
 atomicfu = { module = "org.jetbrains.kotlinx:atomicfu", version.ref = "atomicfu" }
@@ -14,7 +13,6 @@ kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotl
 kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "kotlinxIoCore" }
 kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlinStdlib" }
 ktor-network = { module = "io.ktor:ktor-network", version.ref = "ktor" }
-uri-kmp = { module = "com.eygraber:uri-kmp", version.ref = "uriKmp" }
 
 [plugins]
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

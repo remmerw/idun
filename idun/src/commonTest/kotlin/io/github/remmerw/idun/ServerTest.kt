@@ -20,7 +20,7 @@ class ServerTest {
         val storage = newStorage()
         val server = newIdun()
         server.runService(storage, serverPort)
-        val loopback = TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+        TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
 
         val input = TestEnv.getRandomBytes(10000000) // 10 MB
 
@@ -28,8 +28,13 @@ class ServerTest {
         assertNotNull(fid)
 
         val client = newIdun()
-        val request = createRequest(loopback, fid)
-        val data = client.channel(request).readAllBytes()
+        assertTrue(
+            client.reachable(
+                TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+            )
+        )
+
+        val data = client.channel(server.peerId(), fid.cid()).readAllBytes()
         assertTrue(input.contentEquals(data))
         client.shutdown()
 
@@ -54,7 +59,12 @@ class ServerTest {
         val host = server.peerId()
         assertNotNull(host)
         val client = newIdun()
-        val data = client.fetchData(createRequest(loopback, raw))
+        assertTrue(
+            client.reachable(
+                TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+            )
+        )
+        val data = client.fetchData(server.peerId(), raw.cid())
         assertEquals(text, data.decodeToString())
         client.shutdown()
 
@@ -71,7 +81,7 @@ class ServerTest {
         val server = newIdun()
         server.runService(storage, serverPort)
 
-        val loopback = TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+        TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
 
         val input = TestEnv.getRandomBytes(SPLITTER_SIZE.toInt())
 
@@ -85,8 +95,12 @@ class ServerTest {
         repeat(instances) {
             try {
                 val client = newIdun()
-                val request = createRequest(loopback, raw)
-                val output = client.fetchData(request)
+                assertTrue(
+                    client.reachable(
+                        TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+                    )
+                )
+                val output = client.fetchData(server.peerId(), raw.cid())
                 assertTrue(input.contentEquals(output))
                 finished.incrementAndFetch()
                 client.shutdown()

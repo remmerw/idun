@@ -8,7 +8,6 @@ import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.concurrent.atomics.incrementAndFetch
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class DialTest {
@@ -37,12 +36,13 @@ class DialTest {
             peerStore = peerStore,
             bootstrap = TestEnv.BOOTSTRAP
         )
-        val uri = createRequest(server.peerId())
-        assertNotNull(uri)
+        assertTrue(
+            client.reachable(
+                TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+            )
+        )
 
-        val rootUri = client.fetchRoot(uri)
-        assertNotNull(rootUri)
-        val cid = extractCid(rootUri)
+        val cid = client.fetchRoot(server.peerId())
         assertEquals(cid, raw)
         client.shutdown()
 
