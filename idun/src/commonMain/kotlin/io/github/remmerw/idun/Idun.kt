@@ -195,15 +195,15 @@ class Idun internal constructor(
         return asen.peerStore()
     }
 
-    fun reservations(): List<Peeraddr> {
+    suspend fun reservations(): List<Peeraddr> {
         return asen.reservations()
     }
 
-    fun hasReservations(): Boolean {
+    suspend fun hasReservations(): Boolean {
         return asen.hasReservations()
     }
 
-    fun numReservations(): Int {
+    suspend fun numReservations(): Int {
         return asen.numReservations()
     }
 
