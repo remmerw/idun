@@ -53,14 +53,8 @@ import kotlin.uuid.Uuid
 const val HTML_OK: Int = 200
 internal const val RESOLVE_TIMEOUT: Int = 60
 
-enum class Event {
-    OUTGOING_RESERVE_EVENT, INCOMING_CONNECT_EVENT
-}
 
-class Idun internal constructor(
-    private val asen: Asen,
-    private val events: (Event) -> Unit = {}
-) {
+class Idun internal constructor(private val asen: Asen) {
 
     private val incoming: MutableSet<Socket> = mutableSetOf()
     private val mutex = Mutex()
@@ -143,21 +137,11 @@ class Idun internal constructor(
         mutex.withLock {
             incoming.add(socket)
         }
-        try {
-            events.invoke(Event.INCOMING_CONNECT_EVENT)
-        } catch (throwable: Throwable) {
-            debug(throwable) // should not occur
-        }
     }
 
     private suspend fun removeIncoming(socket: Socket) {
         mutex.withLock {
             incoming.remove(socket)
-        }
-        try {
-            events.invoke(Event.INCOMING_CONNECT_EVENT)
-        } catch (throwable: Throwable) {
-            debug(throwable) // should not occur
         }
     }
 
@@ -352,14 +336,9 @@ class Idun internal constructor(
 fun newIdun(
     keys: Keys = generateKeys(),
     bootstrap: List<Peeraddr> = emptyList(),
-    peerStore: PeerStore = MemoryPeers(),
-    events: (Event) -> Unit = {}
+    peerStore: PeerStore = MemoryPeers()
 ): Idun {
-    val asen = newAsen(keys, bootstrap, peerStore) {
-        events.invoke(Event.OUTGOING_RESERVE_EVENT)
-    }
-
-    return Idun(asen, events)
+    return Idun(newAsen(keys, bootstrap, peerStore))
 }
 
 internal fun socketClose(socket: Socket) {

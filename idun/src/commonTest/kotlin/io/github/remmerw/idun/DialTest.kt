@@ -18,7 +18,7 @@ class DialTest {
         val serverPort = TestEnv.randomPort()
 
         val storage = newStorage()
-        val server = newIdun(bootstrap = TestEnv.BOOTSTRAP)
+        val server = newIdun()
         server.runService(storage, serverPort)
 
         val peerStore = server.peerStore()
@@ -34,7 +34,6 @@ class DialTest {
 
         val client = newIdun(
             peerStore = peerStore,
-            bootstrap = TestEnv.BOOTSTRAP
         )
         assertTrue(
             client.reachable(
@@ -57,7 +56,7 @@ class DialTest {
         val serverPort = TestEnv.randomPort()
 
         val storage = newStorage()
-        val server = newIdun(bootstrap = TestEnv.BOOTSTRAP)
+        val server = newIdun()
         server.runService(storage, serverPort)
 
         val publicPeeraddrs = TestEnv.peeraddrs(server.peerId(), serverPort)
