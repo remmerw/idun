@@ -6,6 +6,7 @@ import io.github.remmerw.asen.MemoryPeers
 import io.github.remmerw.asen.PeerId
 import io.github.remmerw.asen.PeerStore
 import io.github.remmerw.asen.Peeraddr
+import io.github.remmerw.asen.bootstrap
 import io.github.remmerw.asen.generateKeys
 import io.github.remmerw.asen.newAsen
 import io.github.remmerw.idun.core.Connector
@@ -335,7 +336,7 @@ class Idun internal constructor(private val asen: Asen) {
 
 fun newIdun(
     keys: Keys = generateKeys(),
-    bootstrap: List<Peeraddr> = emptyList(),
+    bootstrap: List<Peeraddr> = bootstrap(),
     peerStore: PeerStore = MemoryPeers()
 ): Idun {
     return Idun(newAsen(keys, bootstrap, peerStore))
