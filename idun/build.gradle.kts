@@ -9,7 +9,6 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.vanniktech.mavenPublish)
-    alias(libs.plugins.kotlin.serialization)
 }
 
 group = "io.github.remmerw"
@@ -43,8 +42,7 @@ kotlin {
                 implementation(libs.kotlin.stdlib)
                 implementation(libs.kotlinx.io.core)
                 implementation(libs.ktor.network)
-                implementation(libs.atomicfu)
-                implementation("io.github.remmerw:asen:0.2.7")
+                implementation("io.github.remmerw:asen:0.2.8")
             }
         }
 

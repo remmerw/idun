@@ -53,7 +53,7 @@ internal class Channel(
         }
     }
 
-    fun close() {
+    suspend fun close() {
         try {
             socket.close()
         } catch (throwable: Throwable) {

@@ -29,12 +29,12 @@ import io.ktor.utils.io.readBuffer
 import io.ktor.utils.io.writeBuffer
 import io.ktor.utils.io.writeInt
 import io.ktor.utils.io.writeLong
-import kotlinx.atomicfu.locks.reentrantLock
-import kotlinx.atomicfu.locks.withLock
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.io.Buffer
 import kotlinx.io.RawSource
 import kotlinx.io.Sink
@@ -63,7 +63,7 @@ class Idun internal constructor(
 ) {
 
     private val incoming: MutableSet<Socket> = mutableSetOf()
-    private val lock = reentrantLock()
+    private val mutex = Mutex()
     private val selectorManager = SelectorManager(Dispatchers.IO)
     private val connector = Connector(selectorManager)
     private var serverSocket: ServerSocket? = null
@@ -139,8 +139,8 @@ class Idun internal constructor(
         }
     }
 
-    private fun registerIncoming(socket: Socket) {
-        lock.withLock {
+    private suspend fun registerIncoming(socket: Socket) {
+        mutex.withLock {
             incoming.add(socket)
         }
         try {
@@ -150,8 +150,8 @@ class Idun internal constructor(
         }
     }
 
-    private fun removeIncoming(socket: Socket) {
-        lock.withLock {
+    private suspend fun removeIncoming(socket: Socket) {
+        mutex.withLock {
             incoming.remove(socket)
         }
         try {
@@ -207,12 +207,12 @@ class Idun internal constructor(
         return asen.numReservations()
     }
 
-    fun numIncomingConnections(): Int {
+    suspend fun numIncomingConnections(): Int {
         return incomingConnections().size
     }
 
-    fun incomingConnections(): List<String> {
-        lock.withLock {
+    suspend fun incomingConnections(): List<String> {
+        mutex.withLock {
             val result = mutableListOf<String>()
             for (connection in incoming) {
                 if (!connection.isClosed) {
@@ -225,7 +225,7 @@ class Idun internal constructor(
         }
     }
 
-    fun numOutgoingConnections(): Int {
+    suspend fun numOutgoingConnections(): Int {
         return connector.channels().size
     }
 
@@ -318,18 +318,18 @@ class Idun internal constructor(
     }
 
 
-    fun shutdown() {
+    suspend fun shutdown() {
 
         asen.shutdown()
 
         connector.shutdown()
 
-        val connections = lock.withLock {
+        val connections = mutex.withLock {
             incoming.toList()
         }
         connections.forEach { socket: Socket -> socketClose(socket) }
 
-        lock.withLock {
+        mutex.withLock {
             incoming.clear()
         }
 

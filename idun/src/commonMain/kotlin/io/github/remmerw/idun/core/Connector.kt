@@ -8,14 +8,14 @@ import io.github.remmerw.idun.debug
 import io.ktor.network.selector.SelectorManager
 import io.ktor.network.sockets.InetSocketAddress
 import io.ktor.network.sockets.aSocket
-import kotlinx.atomicfu.locks.reentrantLock
-import kotlinx.atomicfu.locks.withLock
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 internal class Connector(private val selectorManager: SelectorManager) {
     private val channels: MutableSet<Channel> = mutableSetOf()
-    private val lock = reentrantLock()
+    private val mutex = Mutex()
 
-    private fun resolve(target: PeerId): Channel? {
+    private suspend fun resolve(target: PeerId): Channel? {
         val pnsChannels = channels(target)
         if (pnsChannels.isNotEmpty()) {
             return pnsChannels.iterator().next()
@@ -57,16 +57,16 @@ internal class Connector(private val selectorManager: SelectorManager) {
         return resolveAddress(asen, peerId)
     }
 
-    fun channels(peeraddr: Peeraddr): Set<Channel> {
+    suspend fun channels(peeraddr: Peeraddr): Set<Channel> {
         return channels().filter { channel -> channel.remotePeeraddr == peeraddr }.toSet()
     }
 
-    fun channels(peerId: PeerId): Set<Channel> {
+    suspend fun channels(peerId: PeerId): Set<Channel> {
         return channels().filter { channel -> channel.remotePeerId() == peerId }.toSet()
     }
 
-    fun channels(): Set<Channel> {
-        lock.withLock {
+    suspend fun channels(): Set<Channel> {
+        mutex.withLock {
             val result: MutableSet<Channel> = mutableSetOf()
             val delete: MutableSet<Channel> = mutableSetOf()
             for (channel in channels) {
@@ -81,19 +81,19 @@ internal class Connector(private val selectorManager: SelectorManager) {
         }
     }
 
-    fun registerChannel(channel: Channel) {
-        lock.withLock {
+    suspend fun registerChannel(channel: Channel) {
+        mutex.withLock {
             channels.add(channel)
         }
     }
 
-    fun removeChannel(channel: Channel) {
-        lock.withLock {
+    suspend fun removeChannel(channel: Channel) {
+        mutex.withLock {
             channels.remove(channel)
         }
     }
 
-    fun shutdown() {
+    suspend fun shutdown() {
         channels().forEach { channel: Channel -> channel.close() }
         channels.clear()
     }
