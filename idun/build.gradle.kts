@@ -54,6 +54,7 @@ kotlin {
 
         androidInstrumentedTest.dependencies {
             implementation(libs.kotlin.test)
+            implementation("androidx.test:runner:1.6.2")
         }
     }
 }
@@ -69,6 +70,9 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
+    }
+    packaging {
+        resources.excludes.add("META-INF/versions/9/OSGI-INF/MANIFEST.MF")
     }
 }
 
