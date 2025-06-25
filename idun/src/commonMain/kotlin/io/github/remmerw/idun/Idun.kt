@@ -713,9 +713,9 @@ fun createChannel(node: Node, fetch: Fetch): Channel {
 }
 
 fun debug(throwable: Throwable) {
-    if (DEBUG) {
+    if (ERROR) {
         throwable.printStackTrace()
     }
 }
 
-private const val DEBUG: Boolean = true
+private const val ERROR: Boolean = true
