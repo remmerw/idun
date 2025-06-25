@@ -268,10 +268,9 @@ class Idun internal constructor(private val asen: Asen) {
     suspend fun makeReservations(
         peeraddrs: List<Peeraddr>,
         maxReservation: Int,
-        timeout: Int,
-        running: (Boolean) -> Unit = {}
+        timeout: Int
     ) {
-        return asen.makeReservations(peeraddrs, maxReservation, timeout, running)
+        return asen.makeReservations(peeraddrs, maxReservation, timeout)
     }
 
 
