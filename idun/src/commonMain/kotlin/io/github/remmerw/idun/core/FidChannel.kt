@@ -4,6 +4,7 @@ import io.github.remmerw.idun.Channel
 import io.github.remmerw.idun.Fetch
 import io.github.remmerw.idun.splitterSize
 import kotlinx.io.Buffer
+import kotlinx.io.RawSource
 import kotlinx.io.Sink
 import kotlinx.io.buffered
 import kotlinx.io.readByteArray
@@ -21,12 +22,13 @@ internal class FidChannel(
         return size
     }
 
-    // todo
-    override suspend fun next(): Buffer? {
+
+    override suspend fun next(): RawSource? {
         val offset = this.left
         this.left = -1
 
         if (offset >= 0) {
+            // special case when offset is set
             val link = root.links()[index]
             fetch.fetchBlock(link).buffered().use { source ->
                 source.skip(offset.toLong())
@@ -43,12 +45,7 @@ internal class FidChannel(
             return null
         }
         val link = links[index]
-        // todo
-        fetch.fetchBlock(link).buffered().use { source ->
-            val data = Buffer()
-            data.write(source.readByteArray())
-            return data
-        }
+        return fetch.fetchBlock(link)
     }
 
 
@@ -92,17 +89,10 @@ internal class FidChannel(
 
 
     override suspend fun transferTo(sink: Sink, read: (Int) -> Unit) {
-        var write: Int
-        var data: Buffer?
         do {
-            data = next()
-            if (data != null) {
-                write = data.size.toInt()
-                sink.write(data, data.size)
-                if (write > 0) {
-                    read.invoke(write)
-                }
-                require(data.exhausted()) { "Still data available" }
+            val data = next()
+            data?.buffered()?.use { source ->
+                source.transferTo(sink)
             }
         } while (data != null)
     }

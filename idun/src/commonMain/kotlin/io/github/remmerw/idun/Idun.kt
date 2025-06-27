@@ -367,7 +367,7 @@ interface Channel {
     fun seek(offset: Long)
     suspend fun transferTo(sink: Sink, read: (Int) -> Unit)
     suspend fun readAllBytes(): ByteArray
-    suspend fun next(): Buffer?
+    suspend fun next(): RawSource?
 }
 
 data class Response(
