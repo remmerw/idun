@@ -3,36 +3,23 @@ package io.github.remmerw.idun.core
 import io.github.remmerw.asen.Asen
 import io.github.remmerw.asen.PeerId
 import io.github.remmerw.idun.Fetch
-import io.github.remmerw.idun.Storage
-import kotlinx.io.Buffer
+import kotlinx.io.RawSource
 
 
 internal data class FetchRequest(
     val asen: Asen,
     val connector: Connector,
-    val peerId: PeerId,
-    val storage: Storage?
+    val peerId: PeerId
 ) : Fetch {
 
-    override suspend fun fetchBlock(cid: Long): Buffer {
-        if (storage != null) {
-            if (storage.hasBlock(cid)) {
-                return storage.getBlock(cid)
-            }
-        }
-        val pnsChannel = connector.connect(asen, peerId)
-        return request(pnsChannel, cid)
+    override suspend fun fetchBlock(cid: Long): RawSource {
+        val connection = connector.connect(asen, peerId)
+        return request(connection, cid)
     }
 
 
-    private suspend fun request(channel: Channel, cid: Long): Buffer {
-        val payload = channel.request(cid)
-        if (storage != null) {
-            if (!storage.hasBlock(cid)) {
-                storage.storeBlock(cid, payload.copy())
-            }
-        }
-        return payload
+    private suspend fun request(connection: Connection, cid: Long): RawSource {
+        return connection.request(cid)
     }
 }
 

@@ -12,18 +12,18 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 internal class Connector(private val selectorManager: SelectorManager) {
-    private val channels: MutableSet<Channel> = mutableSetOf()
+    private val connections: MutableSet<Connection> = mutableSetOf()
     private val mutex = Mutex()
 
-    private suspend fun resolve(target: PeerId): Channel? {
-        val pnsChannels = channels(target)
+    private suspend fun resolve(target: PeerId): Connection? {
+        val pnsChannels = connections(target)
         if (pnsChannels.isNotEmpty()) {
             return pnsChannels.iterator().next()
         }
         return null
     }
 
-    private suspend fun resolveAddress(asen: Asen, target: PeerId): Channel {
+    private suspend fun resolveAddress(asen: Asen, target: PeerId): Connection {
         val connection = resolve(target)
         if (connection != null) {
             return connection
@@ -32,7 +32,7 @@ internal class Connector(private val selectorManager: SelectorManager) {
         val peeraddrs = asen.findPeer(target, RESOLVE_TIMEOUT.toLong())
         peeraddrs.forEach { peeraddr ->
             try {
-                return openChannel(selectorManager, this, peeraddr)
+                return openConnection(selectorManager, this, peeraddr)
             } catch (throwable: Throwable) {
                 debug(throwable)
             }
@@ -41,78 +41,78 @@ internal class Connector(private val selectorManager: SelectorManager) {
         throw Exception("No hop connection established")
     }
 
-    suspend fun connect(peeraddr: Peeraddr): Channel {
-        val pnsChannels = channels(peeraddr)
+    suspend fun connect(peeraddr: Peeraddr): Connection {
+        val pnsChannels = connections(peeraddr)
         if (pnsChannels.isNotEmpty()) {
             return pnsChannels.iterator().next()
         }
-        return openChannel(selectorManager, this, peeraddr)
+        return openConnection(selectorManager, this, peeraddr)
     }
 
-    suspend fun connect(asen: Asen, peerId: PeerId): Channel {
-        val pnsChannels = channels(peerId)
+    suspend fun connect(asen: Asen, peerId: PeerId): Connection {
+        val pnsChannels = connections(peerId)
         if (pnsChannels.isNotEmpty()) {
             return pnsChannels.iterator().next()
         }
         return resolveAddress(asen, peerId)
     }
 
-    suspend fun channels(peeraddr: Peeraddr): Set<Channel> {
-        return channels().filter { channel -> channel.remotePeeraddr == peeraddr }.toSet()
+    suspend fun connections(peeraddr: Peeraddr): Set<Connection> {
+        return connections().filter { connection -> connection.remotePeeraddr == peeraddr }.toSet()
     }
 
-    suspend fun channels(peerId: PeerId): Set<Channel> {
-        return channels().filter { channel -> channel.remotePeerId() == peerId }.toSet()
+    suspend fun connections(peerId: PeerId): Set<Connection> {
+        return connections().filter { connection -> connection.remotePeerId() == peerId }.toSet()
     }
 
-    suspend fun channels(): Set<Channel> {
+    suspend fun connections(): Set<Connection> {
         mutex.withLock {
-            val result: MutableSet<Channel> = mutableSetOf()
-            val delete: MutableSet<Channel> = mutableSetOf()
-            for (channel in channels) {
-                if (channel.isConnected) {
-                    result.add(channel)
+            val result: MutableSet<Connection> = mutableSetOf()
+            val delete: MutableSet<Connection> = mutableSetOf()
+            for (connection in connections) {
+                if (connection.isConnected) {
+                    result.add(connection)
                 } else {
-                    delete.add(channel)
+                    delete.add(connection)
                 }
             }
-            delete.forEach { channel -> removeChannel(channel) }
+            delete.forEach { connection -> removeChannel(connection) }
             return result
         }
     }
 
-    suspend fun registerChannel(channel: Channel) {
+    suspend fun registerChannel(connection: Connection) {
         mutex.withLock {
-            channels.add(channel)
+            connections.add(connection)
         }
     }
 
-    suspend fun removeChannel(channel: Channel) {
+    suspend fun removeChannel(connection: Connection) {
         mutex.withLock {
-            channels.remove(channel)
+            connections.remove(connection)
         }
     }
 
     suspend fun shutdown() {
-        channels().forEach { channel: Channel -> channel.close() }
-        channels.clear()
+        connections().forEach { connection: Connection -> connection.close() }
+        connections.clear()
     }
 
 
-    internal suspend fun openChannel(
+    internal suspend fun openConnection(
         selectorManager: SelectorManager,
         connector: Connector,
         peeraddr: Peeraddr
-    ): Channel {
+    ): Connection {
 
         val socket = aSocket(selectorManager).tcp().connect(
             InetSocketAddress(peeraddr.address(), peeraddr.port.toInt())
         )
         checkNotNull(socket)
 
-        val channel = Channel(peeraddr, connector, socket)
-        connector.registerChannel(channel)
-        return channel
+        val connection = Connection(peeraddr, connector, socket)
+        connector.registerChannel(connection)
+        return connection
     }
 
 }

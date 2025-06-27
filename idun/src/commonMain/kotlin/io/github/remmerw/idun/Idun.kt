@@ -44,7 +44,6 @@ import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.files.SystemTemporaryDirectory
-import kotlinx.io.readByteArray
 import kotlin.concurrent.Volatile
 import kotlin.random.Random
 import kotlin.uuid.ExperimentalUuidApi
@@ -115,7 +114,7 @@ class Idun internal constructor(private val asen: Asen) {
                     } else {
                         require(storage.hasBlock(cid)) { "Data not available" }
                         sendChannel.writeInt(storage.blockSize(cid))
-                        storage.rawSource(cid).use { source ->
+                        storage.getBlock(cid).use { source ->
                             sendChannel.writeBuffer(source)
                         }
                     }
@@ -211,44 +210,43 @@ class Idun internal constructor(private val asen: Asen) {
     }
 
     suspend fun numOutgoingConnections(): Int {
-        return connector.channels().size
+        return connector.connections().size
     }
 
     internal suspend fun fetchRoot(peerId: PeerId): Long {
         val pnsChannel = connector.connect(asen, peerId)
         val payload = pnsChannel.request(HALO_ROOT)
-        return payload.readLong()
+        payload.buffered().use { source ->
+            return source.readLong()
+        }
     }
 
 
     @Suppress("unused")
-    suspend fun response(peerId: PeerId, cid: Long? = null, storage: Storage? = null): Response {
+    suspend fun response(peerId: PeerId, cid: Long? = null): Response {
         try {
-            val node = info(peerId, cid, storage) // is resolved
+            val node = info(peerId, cid) // is resolved
             return if (node is Fid) {
-                val channel = channel(peerId, cid, storage)
+                val channel = channel(peerId, cid)
                 contentResponse(channel, node)
             } else {
-                val buffer = Buffer()
-                buffer.write((node as Raw).data())
-
-                contentResponse(RawChannel(buffer), "OK", HTML_OK)
+                contentResponse(RawChannel((node as Raw).data()), "OK", HTML_OK)
             }
         } catch (throwable: Throwable) {
             var message = throwable.message
             if (message.isNullOrEmpty()) {
                 message = "Service unavailable"
             }
-            return contentResponse(RawChannel(Buffer()), message, 500)
+            return contentResponse(RawChannel(byteArrayOf()), message, 500)
 
         }
     }
 
 
-    suspend fun channel(peerId: PeerId, cid: Long? = null, storage: Storage? = null): Channel {
-        val node = info(peerId, cid, storage)
+    suspend fun channel(peerId: PeerId, cid: Long? = null): Channel {
+        val node = info(peerId, cid)
         if (node is Fid) {
-            val fetch = FetchRequest(asen, connector, peerId, storage)
+            val fetch = FetchRequest(asen, connector, peerId)
             return createChannel(node, fetch)
         }
         throw Exception("Stream on directory or raw not possible")
@@ -274,17 +272,17 @@ class Idun internal constructor(private val asen: Asen) {
     }
 
 
-    suspend fun info(peerId: PeerId, cid: Long? = null, storage: Storage? = null): Node {
+    suspend fun info(peerId: PeerId, cid: Long? = null): Node {
         if (cid != null) {
-            val fetch = FetchRequest(asen, connector, peerId, storage)
+            val fetch = FetchRequest(asen, connector, peerId)
             return decodeNode(cid, fetch.fetchBlock(cid))
         } else {
-            return info(peerId, fetchRoot(peerId), storage)
+            return info(peerId, fetchRoot(peerId))
         }
     }
 
-    suspend fun fetchData(peerId: PeerId, cid: Long? = null, storage: Storage? = null): ByteArray {
-        val node = info(peerId, cid, storage)
+    suspend fun fetchData(peerId: PeerId, cid: Long? = null): ByteArray {
+        val node = info(peerId, cid)
         if (node is Raw) {
             return node.data()
         }
@@ -381,9 +379,13 @@ data class Response(
     val channel: Channel
 )
 
-const val MAX_CHARS_SIZE = 4096
-const val SPLITTER_SIZE = UShort.MAX_VALUE
+internal const val MAX_CHARS_SIZE = 4096
+private const val SPLITTER_SIZE = UShort.MAX_VALUE
 const val HALO_ROOT = 0L
+
+fun splitterSize(): Int {
+    return SPLITTER_SIZE.toInt()
+}
 
 
 interface Node {
@@ -405,23 +407,15 @@ interface Storage : Fetch {
 
     fun blockSize(cid: Long): Int
 
-    override suspend fun fetchBlock(cid: Long): Buffer
+    override suspend fun fetchBlock(cid: Long): RawSource
 
-    fun rawSource(cid: Long): RawSource
-
-    fun getBlock(cid: Long): Buffer
-
-    fun readBlockSlice(cid: Long, offset: Int, length: Int): ByteArray
-
-    fun readBlockSlice(cid: Long, offset: Int): ByteArray
+    fun getBlock(cid: Long): RawSource
 
     fun deleteBlock(cid: Long)
 
     fun nextCid(): Long
 
     fun storeBlock(cid: Long, buffer: Buffer)
-
-    fun storeBlock(cid: Long, bytes: List<ByteArray>)
 
     fun root(data: ByteArray)
 
@@ -548,55 +542,16 @@ private class StorageImpl(private val directory: Path) : Storage {
         return SystemFileSystem.metadataOrNull(file)!!.size.toInt()
     }
 
-    override fun getBlock(cid: Long): Buffer {
-        require(cid != HALO_ROOT) { "Invalid Cid" }
-        val file = path(cid)
-        require(SystemFileSystem.exists(file)) { "Block does not exists" }
-        val size = SystemFileSystem.metadataOrNull(file)!!.size
-        SystemFileSystem.source(file).use { source ->
-            val buffer = Buffer()
-            buffer.write(source, size)
-            return buffer
-        }
-    }
 
-    override fun readBlockSlice(cid: Long, offset: Int, length: Int): ByteArray {
-        require(cid != HALO_ROOT) { "Invalid Cid" }
-        val file = path(cid)
-        require(SystemFileSystem.exists(file)) { "Block does not exists" }
-        SystemFileSystem.source(file).buffered().use { source ->
-            source.skip(offset.toLong())
-            return source.readByteArray(length)
-        }
-    }
-
-    override fun readBlockSlice(cid: Long, offset: Int): ByteArray {
-        require(cid != HALO_ROOT) { "Invalid Cid" }
-        val file = path(cid)
-        require(SystemFileSystem.exists(file)) { "Block does not exists" }
-        SystemFileSystem.source(file).buffered().use { source ->
-            source.skip(offset.toLong())
-            return source.readByteArray()
-        }
-    }
-
-    override suspend fun fetchBlock(cid: Long): Buffer {
+    override suspend fun fetchBlock(cid: Long): RawSource {
         return getBlock(cid)
     }
 
-    override fun rawSource(cid: Long): RawSource {
+    override fun getBlock(cid: Long): RawSource {
         require(cid != HALO_ROOT) { "Invalid Cid" }
         val file = path(cid)
         require(SystemFileSystem.exists(file)) { "Block does not exists" }
         return SystemFileSystem.source(file)
-    }
-
-    override fun storeBlock(cid: Long, bytes: List<ByteArray>) {
-        require(cid != HALO_ROOT) { "Invalid Cid" }
-        val file = path(cid)
-        SystemFileSystem.sink(file, false).buffered().use { source ->
-            bytes.forEach { data -> source.write(data) }
-        }
     }
 
     override fun storeBlock(cid: Long, buffer: Buffer) {
@@ -698,7 +653,7 @@ fun decodeNode(cid: Long, block: Buffer): Node {
 }
 
 interface Fetch {
-    suspend fun fetchBlock(cid: Long): Buffer
+    suspend fun fetchBlock(cid: Long): RawSource
 }
 
 fun createChannel(node: Node, fetch: Fetch): Channel {
@@ -707,9 +662,7 @@ fun createChannel(node: Node, fetch: Fetch): Channel {
         return FidChannel(node, size, fetch)
     }
     val raw = node as Raw
-    val buffer = Buffer()
-    buffer.write(raw.data())
-    return RawChannel(buffer)
+    return RawChannel(raw.data())
 }
 
 fun debug(throwable: Throwable) {

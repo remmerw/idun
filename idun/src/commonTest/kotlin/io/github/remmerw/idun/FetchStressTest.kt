@@ -19,10 +19,10 @@ class FetchStressTest {
         var fid: Node? = null
         var now = measureTime {
 
-            val dataSize = SPLITTER_SIZE.toInt()
+            val split = splitterSize()
             fid = TestEnv.createContent(
                 storage, "text.bin",
-                TestEnv.getRandomBytes(dataSize)
+                TestEnv.getRandomBytes(split)
             )
         }
         assertNotNull(fid)

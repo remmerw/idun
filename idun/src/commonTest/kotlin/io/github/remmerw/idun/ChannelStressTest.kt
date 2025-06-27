@@ -27,7 +27,7 @@ class ChannelStressTest {
 
             val node =
                 storage.storeData(
-                    TestEnv.getRandomBytes(SPLITTER_SIZE.toInt())
+                    TestEnv.getRandomBytes(splitterSize())
                 ) // store some text
 
             val data = client.fetchData(server.peerId(), node.cid()) // fetch request

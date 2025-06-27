@@ -1,15 +1,15 @@
 package io.github.remmerw.idun.core
 
 
-import io.github.remmerw.idun.Channel
 import io.github.remmerw.idun.Fetch
 import io.github.remmerw.idun.MAX_CHARS_SIZE
 import io.github.remmerw.idun.Node
-import io.github.remmerw.idun.SPLITTER_SIZE
 import io.github.remmerw.idun.Storage
+import io.github.remmerw.idun.splitterSize
 import kotlinx.io.Buffer
-import kotlinx.io.Sink
+import kotlinx.io.RawSource
 import kotlinx.io.Source
+import kotlinx.io.buffered
 import kotlinx.io.readByteArray
 
 
@@ -35,7 +35,7 @@ internal fun decodeType(value: Byte): Type {
     throw IllegalStateException()
 }
 
-internal fun readUnsignedVariant(buffer: Buffer): Int {
+internal fun readUnsignedVariant(buffer: Source): Int {
     var result = 0
     var cur: Int
     var count = 0
@@ -49,7 +49,7 @@ internal fun readUnsignedVariant(buffer: Buffer): Int {
 }
 
 
-internal fun readLongUnsignedVariant(buffer: Buffer): Long {
+internal fun readLongUnsignedVariant(buffer: Source): Long {
     var result: Long = 0
     var cur: Long
     var count = 0
@@ -102,7 +102,7 @@ private fun splitter(
 ): Fid {
     val links: MutableList<Long> = mutableListOf()
 
-    val split = SPLITTER_SIZE
+    val split = splitterSize()
     val chunk = Buffer()
 
     var size = 0L
@@ -110,7 +110,7 @@ private fun splitter(
 
     while (!done) {
         var read = 0L
-        while (read < split.toInt()) {
+        while (read < split) {
             val iterRead = source.readAtMostTo(chunk, split.toLong())
             if (iterRead <= 0) {
                 done = true
@@ -250,158 +250,42 @@ internal suspend fun fetchData(node: Node, fetch: Fetch): ByteArray {
     return raw.data()
 }
 
-internal fun decodeNode(cid: Long, buffer: Buffer): Node {
-    val type: Type = decodeType(buffer.readByte())
+internal fun decodeNode(cid: Long, source: RawSource): Node {
+    source.buffered().use { buffer ->
+        val type: Type = decodeType(buffer.readByte())
 
-    if (type == Type.RAW) {
-        val dataLength = readUnsignedVariant(buffer)
-        val content = buffer.readByteArray(dataLength)
-        require(buffer.exhausted()) { "still data available" }
-        return Raw(cid, content)
-    } else {
-
-        val linksSize = readUnsignedVariant(buffer)
-        val links = mutableListOf<Long>()
-
-        repeat(linksSize) {
-            links.add(buffer.readLong())
-        }
-
-
-        val size = readLongUnsignedVariant(buffer)
-
-        var name = UNDEFINED_NAME
-        var mimeType = UNDEFINED_NAME
-
-        if (type == Type.FID) {
-            val nameLength = readUnsignedVariant(buffer)
-            name = buffer.readByteArray(nameLength).decodeToString()
-        }
-
-        if (type == Type.FID) {
-            val mimeTypeLength = readUnsignedVariant(buffer)
-            mimeType = buffer.readByteArray(mimeTypeLength).decodeToString()
-        }
-
-        return Fid(cid, size, name, mimeType, links)
-    }
-}
-
-internal class FidChannel(
-    private val root: Fid,
-    private val size: Long,
-    private val fetch: Fetch,
-) : Channel {
-    private var index = -1
-    private var left = -1
-
-    override fun size(): Long {
-        return size
-    }
-
-    override suspend fun next(): Buffer? {
-        val offset = this.left
-        this.left = -1
-
-        if (offset >= 0) {
-            val link = root.links()[index]
-            val data = fetch.fetchBlock(link)
-
-            data.skip(offset.toLong())
-            return data
-        }
-
-        index++
-
-        val links = root.links()
-        if (index >= links.size) {
-            return null
-        }
-        val link = links[index]
-        return fetch.fetchBlock(link)
-    }
-
-
-    override fun seek(offset: Long) {
-        require(offset >= 0) { "invalid offset" }
-
-        if (offset == 0L) {
-            this.left = 0
-            this.index = 0
-            return
-        }
-
-        if (root.links().isNotEmpty()) {
-            // Internal nodes have no data, so just iterate through the
-            // sizes of its children (advancing the child index of the
-            // `dagWalker`) to find where we need to go down to next in
-            // the search
-
-            val div = offset.toInt().floorDiv(SPLITTER_SIZE.toInt())
-
-            require(div < Int.MAX_VALUE) { "Invalid number of links" }
-
-            this.index = div
-
-            this.left = offset.toInt().mod(SPLITTER_SIZE.toInt())
-
+        if (type == Type.RAW) {
+            val dataLength = readUnsignedVariant(buffer)
+            val content = buffer.readByteArray(dataLength)
+            require(buffer.exhausted()) { "still data available" }
+            return Raw(cid, content)
         } else {
-            this.left = offset.toInt()
-        }
-    }
 
+            val linksSize = readUnsignedVariant(buffer)
+            val links = mutableListOf<Long>()
 
-    override suspend fun readAllBytes(): ByteArray {
-
-        val all = Buffer()
-
-        transferTo(all) { }
-
-        return all.readByteArray()
-    }
-
-
-    override suspend fun transferTo(sink: Sink, read: (Int) -> Unit) {
-        var write: Int
-        var data: Buffer?
-        do {
-            data = next()
-            if (data != null) {
-                write = data.size.toInt()
-                sink.write(data, data.size)
-                if (write > 0) {
-                    read.invoke(write)
-                }
-                require(data.exhausted()) { "Still data available" }
+            repeat(linksSize) {
+                links.add(buffer.readLong())
             }
-        } while (data != null)
-    }
-}
 
-internal class RawChannel(private val buffer: Buffer) : Channel {
 
-    override fun size(): Long {
-        return buffer.size
-    }
+            val size = readLongUnsignedVariant(buffer)
 
-    override fun seek(offset: Long) {
-        buffer.skip(offset)
-    }
+            var name = UNDEFINED_NAME
+            var mimeType = UNDEFINED_NAME
 
-    override suspend fun transferTo(sink: Sink, read: (Int) -> Unit) {
-        val size = buffer.size
-        sink.write(buffer.readByteArray())
-        read.invoke(size.toInt())
-    }
+            if (type == Type.FID) {
+                val nameLength = readUnsignedVariant(buffer)
+                name = buffer.readByteArray(nameLength).decodeToString()
+            }
 
-    override suspend fun readAllBytes(): ByteArray {
-        return buffer.readByteArray()
-    }
+            if (type == Type.FID) {
+                val mimeTypeLength = readUnsignedVariant(buffer)
+                mimeType = buffer.readByteArray(mimeTypeLength).decodeToString()
+            }
 
-    override suspend fun next(): Buffer? {
-        if (buffer.exhausted()) {
-            return null
+            return Fid(cid, size, name, mimeType, links)
         }
-        return buffer
     }
 }
+

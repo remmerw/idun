@@ -83,7 +83,7 @@ class ServerTest {
 
         TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
 
-        val input = TestEnv.getRandomBytes(SPLITTER_SIZE.toInt())
+        val input = TestEnv.getRandomBytes(splitterSize())
 
         val raw = storage.storeData(input)
         assertNotNull(raw)

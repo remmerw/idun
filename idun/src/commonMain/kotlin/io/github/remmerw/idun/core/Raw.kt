@@ -1,7 +1,7 @@
 package io.github.remmerw.idun.core
 
 import io.github.remmerw.idun.Node
-import io.github.remmerw.idun.SPLITTER_SIZE
+import io.github.remmerw.idun.splitterSize
 
 @Suppress("ArrayInDataClass")
 internal data class Raw(
@@ -30,6 +30,6 @@ internal data class Raw(
     }
 
     init {
-        require(data.size.toLong() <= SPLITTER_SIZE.toLong()) { "Invalid data size" }
+        require(data.size <= splitterSize()) { "Invalid data size" }
     }
 }

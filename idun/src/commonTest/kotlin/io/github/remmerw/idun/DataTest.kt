@@ -29,11 +29,13 @@ class DataTest {
         storage.storeBlock(cid, buffer)
 
         // (2) get block
-        val cmp = storage.fetchBlock(cid)
+        val cmp = storage.getBlock(cid)
         assertNotNull(cmp)
 
         // tests
-        val cmpBytes = cmp.readByteArray()
+        val cmpBytes = cmp.buffered().use { source ->
+            source.readByteArray()
+        }
         assertContentEquals(bytes, cmpBytes)
 
         // cleanup
@@ -72,7 +74,7 @@ class DataTest {
         val iteration = 10
         SystemFileSystem.sink(temp).buffered().use { source ->
             repeat(iteration) {
-                source.write(TestEnv.getRandomBytes(SPLITTER_SIZE.toInt()))
+                source.write(TestEnv.getRandomBytes(splitterSize()))
             }
         }
         // (1) store the file
@@ -80,7 +82,7 @@ class DataTest {
 
         // tests
         assertNotNull(node)
-        assertEquals(node.size(), (iteration * SPLITTER_SIZE.toInt()).toLong())
+        assertEquals(node.size(), (iteration * splitterSize()).toLong())
         assertEquals(node.name(), temp.name)
         assertEquals(node.mimeType(), OCTET_MIME_TYPE)
 

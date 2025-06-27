@@ -69,7 +69,7 @@ class HaloTest {
         val iteration = 10
         SystemFileSystem.sink(temp).buffered().use { source ->
             repeat(iteration) {
-                source.write(TestEnv.getRandomBytes(SPLITTER_SIZE.toInt()))
+                source.write(TestEnv.getRandomBytes(splitterSize()))
             }
         }
         // (1) store the file
@@ -317,7 +317,7 @@ class HaloTest {
     @Test
     fun testParallel() {
         val storage = newStorage()
-        val data = TestEnv.getRandomBytes(SPLITTER_SIZE.toInt())
+        val data = TestEnv.getRandomBytes(splitterSize())
         val node = storage.storeData(data)
         assertNotNull(node)
 

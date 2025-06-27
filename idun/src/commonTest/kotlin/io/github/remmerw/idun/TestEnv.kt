@@ -35,7 +35,7 @@ internal object TestEnv {
         val temp = storage.tempFile()
         SystemFileSystem.sink(temp).buffered().use { source ->
             repeat(iteration) {
-                source.write(getRandomBytes(SPLITTER_SIZE.toInt()))
+                source.write(getRandomBytes(splitterSize()))
             }
         }
 

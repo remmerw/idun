@@ -2,7 +2,6 @@ package io.github.remmerw.idun
 
 import io.github.remmerw.idun.core.OCTET_MIME_TYPE
 import kotlinx.coroutines.runBlocking
-import kotlinx.io.Buffer
 import kotlinx.io.readByteArray
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -13,26 +12,6 @@ import kotlin.test.assertTrue
 
 class AddTest {
 
-    @Test
-    fun addAndCmp() {
-        val storage = newStorage()
-        val content = "Hello cat".encodeToByteArray()
-
-        storage.storeBlock(1L, listOf(content))
-        val buffer = Buffer()
-        buffer.write(content)
-        storage.storeBlock(2L, buffer)
-
-        val a = storage.getBlock(1L)
-        val b = storage.getBlock(2L)
-        assertTrue(a.readByteArray().contentEquals(b.readByteArray()))
-
-        val c = storage.readBlockSlice(1L, 3, content.size - 3)
-        val d = storage.readBlockSlice(2L, 3)
-        assertTrue(c.contentEquals(d))
-
-        storage.reset()
-    }
 
 
     @Test
@@ -177,7 +156,7 @@ class AddTest {
     @Test
     fun test_inputStreamBig(): Unit = runBlocking {
         val storage = newStorage()
-        val text = TestEnv.getRandomBytes((SPLITTER_SIZE.toInt() * 2) - 50)
+        val text = TestEnv.getRandomBytes((splitterSize() * 2) - 50)
         val fid = TestEnv.createContent(storage, "random.bin", OCTET_MIME_TYPE, text)
         val channel = storage.channel(fid)
         assertTrue(text.contentEquals(channel.readAllBytes()))
@@ -216,14 +195,14 @@ class AddTest {
 
     @Test
     fun test_readerBig(): Unit = runBlocking {
-        val chunkData = SPLITTER_SIZE.toInt()
+        val split = splitterSize()
         val storage = newStorage()
 
         val root = storage.root()
         assertNotNull(root)
         assertEquals(root.size(), 0)
 
-        val text = TestEnv.getRandomBytes((chunkData * 2) - 50)
+        val text = TestEnv.getRandomBytes((split * 2) - 50)
         val fid = TestEnv.createContent(storage, "random.bin", OCTET_MIME_TYPE, text)
         storage.root(fid)
         val newRoot = storage.root()
@@ -238,22 +217,22 @@ class AddTest {
         channel.seek(0)
         var buffer = channel.next()
         assertNotNull(buffer)
-        assertEquals(chunkData, buffer.size.toInt())
+        assertEquals(split, buffer.size.toInt())
         buffer = channel.next()
         assertNotNull(buffer)
-        assertEquals(chunkData - 50, buffer.size.toInt())
+        assertEquals(split - 50, buffer.size.toInt())
 
-        var pos = chunkData + 50
+        var pos = split + 50
         channel.seek(pos.toLong())
         buffer = channel.next()
         assertNotNull(buffer)
-        assertEquals(chunkData - 100, buffer.size.toInt())
+        assertEquals(split - 100, buffer.size.toInt())
 
         var data = buffer.readByteArray()
-        assertEquals(chunkData - 100, data.size)
+        assertEquals(split - 100, data.size)
         assertEquals(0, buffer.size.toInt())
 
-        pos = chunkData - 50
+        pos = split - 50
         channel.seek(pos.toLong())
         buffer = channel.next()
         assertNotNull(buffer)
