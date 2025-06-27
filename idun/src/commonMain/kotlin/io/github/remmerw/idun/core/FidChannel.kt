@@ -30,12 +30,9 @@ internal class FidChannel(
         if (offset >= 0) {
             // special case when offset is set
             val link = root.links()[index]
-            fetch.fetchBlock(link).buffered().use { source ->
-                source.skip(offset.toLong())
-                val data = Buffer()
-                data.write(source.readByteArray())
-                return data
-            }
+            val source = fetch.fetchBlock(link).buffered()
+            source.skip(offset.toLong())
+            return source
         }
 
         index++
