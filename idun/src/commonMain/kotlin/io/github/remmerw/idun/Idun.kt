@@ -39,7 +39,6 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.io.Buffer
 import kotlinx.io.RawSink
 import kotlinx.io.RawSource
-import kotlinx.io.Source
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
@@ -464,14 +463,14 @@ interface Storage : Fetch {
         checkNotNull(metadata) { "Path has no metadata" }
         require(metadata.isRegularFile) { "Path is not a regular file" }
         require(mimeType.isNotBlank()) { "MimeType is blank" }
-        SystemFileSystem.source(path).buffered().use { source ->
+        SystemFileSystem.source(path).use { source ->
             return storeSource(source, path.name, mimeType)
         }
 
     }
 
     suspend fun transferTo(node: Node, path: Path) {
-        SystemFileSystem.sink(path, false).buffered().use { sink ->
+        SystemFileSystem.sink(path, false).use { sink ->
             channel(node).transferTo(sink) {}
         }
     }
@@ -480,8 +479,8 @@ interface Storage : Fetch {
         return createChannel(node, this)
     }
 
-    fun storeSource(source: Source, name: String, mimeType: String): Node {
-        return io.github.remmerw.idun.core.storeSource(source, this, name, mimeType) {
+    fun storeSource(source: RawSource, name: String, mimeType: String): Node {
+        return io.github.remmerw.idun.core.storeSource(this, source, name, mimeType) {
             nextCid()
         }
     }

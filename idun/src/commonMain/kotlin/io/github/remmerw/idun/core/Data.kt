@@ -87,16 +87,16 @@ internal fun writeUnsignedVariant(buffer: Buffer, value: Long) {
 
 
 internal fun storeSource(
-    source: Source, storage: Storage,
+    storage: Storage, source: RawSource,
     name: String, mimeType: String,
     nextCid: (Any) -> Long
 ): Fid {
-    return splitter(source, storage, name, mimeType, nextCid)
+    return splitter(storage, source, name, mimeType, nextCid)
 }
 
 
 private fun splitter(
-    source: Source, storage: Storage,
+    storage: Storage, source: RawSource,
     name: String, mimeType: String,
     nextCid: (Any) -> Long
 ): Fid {
