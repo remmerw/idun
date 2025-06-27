@@ -4,8 +4,8 @@ import io.github.remmerw.idun.Channel
 import io.github.remmerw.idun.Fetch
 import io.github.remmerw.idun.splitterSize
 import kotlinx.io.Buffer
+import kotlinx.io.RawSink
 import kotlinx.io.RawSource
-import kotlinx.io.Sink
 import kotlinx.io.buffered
 import kotlinx.io.readByteArray
 
@@ -85,11 +85,11 @@ internal class FidChannel(
     }
 
 
-    override suspend fun transferTo(sink: Sink, read: (Int) -> Unit) {
+    override suspend fun transferTo(rawSink: RawSink, read: (Int) -> Unit) {
         do {
             val data = next()
             data?.buffered()?.use { source ->
-                source.transferTo(sink)
+                source.transferTo(rawSink)
             }
         } while (data != null)
     }

@@ -37,8 +37,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.io.Buffer
+import kotlinx.io.RawSink
 import kotlinx.io.RawSource
-import kotlinx.io.Sink
 import kotlinx.io.Source
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
@@ -365,7 +365,7 @@ private fun inet6Public(peeraddrs: List<Peeraddr>): List<Peeraddr> {
 interface Channel {
     fun size(): Long
     fun seek(offset: Long)
-    suspend fun transferTo(sink: Sink, read: (Int) -> Unit)
+    suspend fun transferTo(rawSink: RawSink, read: (Int) -> Unit)
     suspend fun readAllBytes(): ByteArray
     suspend fun next(): RawSource?
 }

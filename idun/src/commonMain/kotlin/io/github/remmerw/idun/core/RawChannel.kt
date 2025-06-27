@@ -2,7 +2,7 @@ package io.github.remmerw.idun.core
 
 import io.github.remmerw.idun.Channel
 import kotlinx.io.Buffer
-import kotlinx.io.Sink
+import kotlinx.io.RawSink
 
 
 internal class RawChannel(private val data: ByteArray) : Channel {
@@ -15,9 +15,11 @@ internal class RawChannel(private val data: ByteArray) : Channel {
         throw Exception("Seek is not supported")
     }
 
-    override suspend fun transferTo(sink: Sink, read: (Int) -> Unit) {
+    override suspend fun transferTo(rawSink: RawSink, read: (Int) -> Unit) {
         val size = data.size
-        sink.write(data)
+        val buffer = Buffer()
+        buffer.write(data)
+        rawSink.write(buffer, size.toLong())
         read.invoke(size)
     }
 
