@@ -1,9 +1,10 @@
 package io.github.remmerw.idun
 
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 class Examples {
     @Test
@@ -14,19 +15,18 @@ class Examples {
         val raw = storage.storeText("Moin") // store some text
 
         val server = newIdun()
-        // run the service with the given port and with the data stored in storage
-        server.runService(storage, port)
+
+        // todo get public peeraddrs
+        val publicPeeraddrs = TestEnv.peeraddrs(server.peerId(), port)
+
+        // startup the service
+        launch {
+            server.startup(storage, port, publicPeeraddrs, 25, 120)
+        }
+
+        delay(30000) // 30 sec delay, so server can make reservations
 
         val client = newIdun()
-
-        // >>> make a direct connection possible (otherwise the asen functionality has to be used)
-        assertTrue(
-            client.reachable(
-                TestEnv.loopbackPeeraddr(server.peerId(), port)
-            )
-        )
-        // <<< end
-
 
         val data = client.fetchData(server.peerId(), raw.cid()) // fetch request
         assertEquals(data.decodeToString(), "Moin")

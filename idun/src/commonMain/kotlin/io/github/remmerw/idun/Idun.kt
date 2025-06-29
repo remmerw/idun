@@ -32,6 +32,7 @@ import io.ktor.utils.io.writeInt
 import io.ktor.utils.io.writeLong
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -52,7 +53,6 @@ import kotlin.uuid.Uuid
 const val HTML_OK: Int = 200
 internal const val RESOLVE_TIMEOUT: Int = 60
 
-
 class Idun internal constructor(private val asen: Asen) {
 
     private val incoming: MutableSet<Socket> = mutableSetOf()
@@ -61,6 +61,27 @@ class Idun internal constructor(private val asen: Asen) {
     private val connector = Connector(selectorManager)
     private var serverSocket: ServerSocket? = null
 
+    /**
+     * starts the server and make reservations via asen to the libp2p network
+     * @param storage Data which will be provided by the starting server
+     * @param port Port of the server
+     * @param peeraddrs Own addresses for reservations
+     * @param maxReservation number of max reservations
+     * @param timeout in seconds between reservations attempts
+     */
+    suspend fun startup(storage: Storage,
+                        port: Int,
+                        peeraddrs: List<Peeraddr>,
+                        maxReservation: Int,
+                        timeout: Int) {
+        runService(storage, port)
+
+        delay(1000) // safety 1 sec delay before making reservations
+        while (selectorManager.isActive) {
+            makeReservations(peeraddrs, maxReservation, timeout)
+            delay((15 * 60 * 1000).toLong()) // 15 min
+        }
+    }
 
     suspend fun runService(storage: Storage, port: Int) {
 
@@ -259,8 +280,9 @@ class Idun internal constructor(private val asen: Asen) {
      * Makes a reservation o relay nodes with the purpose that other peers can fin you via
      * the nodes peerId
      *
+     * @param peeraddrs Own addresses for reservations
      * @param maxReservation number of max reservations
-     * @param timeout in seconds
+     * @param timeout in seconds between reservations attempts
      */
     suspend fun makeReservations(
         peeraddrs: List<Peeraddr>,

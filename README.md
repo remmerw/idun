@@ -46,19 +46,16 @@ kotlin {
         val raw = storage.storeText("Moin") // store some text
 
         val server = newIdun()
-        // run the service with the given port and with the data stored in storage
-        server.runService(storage, port)
+
+        // get public peeraddrs of server (host)
+        val publicPeeraddrs = TestEnv.peeraddrs(server.peerId(), serverPort)
+
+        // starts the server and make reservation via asen (libp2p)
+        server.startup(storage, serverPort, publicPeeraddrs, 25, 120)
+
+        delay(30000) // 30 sec delay, so server can make reservations
 
         val client = newIdun()
-        
-        // >>> make a direct connection possible (otherwise the asen functionality has to be used)
-        assertTrue(
-            client.reachable(
-                TestEnv.loopbackPeeraddr(server.peerId(), port)
-            )
-        )
-        // <<< end
-        
 
         val data = client.fetchData(server.peerId(), raw.cid()) // fetch request
         assertEquals(data.decodeToString(), "Moin")
