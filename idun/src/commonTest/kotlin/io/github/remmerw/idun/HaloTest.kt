@@ -333,7 +333,7 @@ class HaloTest {
                         assertTrue(data.contentEquals(output))
                         finished.incrementAndFetch()
                     } catch (throwable: Throwable) {
-                        TestEnv.error(throwable)
+                        throwable.printStackTrace()
                         fail()
                     }
                 }

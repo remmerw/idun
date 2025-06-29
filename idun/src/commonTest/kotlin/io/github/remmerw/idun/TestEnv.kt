@@ -77,8 +77,4 @@ internal object TestEnv {
 
     }
 
-    fun error(throwable: Throwable) {
-        throwable.printStackTrace()
-    }
-
 }
