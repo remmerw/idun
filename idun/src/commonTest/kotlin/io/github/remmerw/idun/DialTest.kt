@@ -26,7 +26,7 @@ class DialTest {
         storage.root("Homepage".encodeToByteArray())
         val raw = storage.root().cid()
 
-        val publicPeeraddrs = TestEnv.peeraddrs(server.peerId(), serverPort)
+        val publicPeeraddrs = TestEnv.loopbackPeeraddrs(server.peerId(), serverPort)
 
         server.makeReservations(publicPeeraddrs, 25, 120)
 
@@ -59,7 +59,7 @@ class DialTest {
         val server = newIdun()
         server.runService(storage, serverPort)
 
-        val publicPeeraddrs = TestEnv.peeraddrs(server.peerId(), serverPort)
+        val publicPeeraddrs = TestEnv.loopbackPeeraddrs(server.peerId(), serverPort)
 
         server.makeReservations(publicPeeraddrs, 25, 120)
 

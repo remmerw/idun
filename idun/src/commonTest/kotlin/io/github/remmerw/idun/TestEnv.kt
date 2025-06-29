@@ -51,10 +51,10 @@ internal object TestEnv {
     }
 
     internal fun loopbackPeeraddr(peerId: PeerId, port: Int): Peeraddr {
-        return peeraddrs(peerId, port).first()
+        return loopbackPeeraddrs(peerId, port).first()
     }
 
-    fun peeraddrs(peerId: PeerId, port: Int): List<Peeraddr> {
+    fun loopbackPeeraddrs(peerId: PeerId, port: Int): List<Peeraddr> {
         return listOf(
             Peeraddr(peerId, byteArrayOf(127, 0, 0, 1), port.toUShort())
         )

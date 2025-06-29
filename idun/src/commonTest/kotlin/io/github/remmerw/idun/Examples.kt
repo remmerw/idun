@@ -17,7 +17,7 @@ class Examples {
         val server = newIdun()
 
         // todo get public peeraddrs
-        val publicPeeraddrs = TestEnv.peeraddrs(server.peerId(), port)
+        val publicPeeraddrs = TestEnv.loopbackPeeraddrs(server.peerId(), port)
 
         // startup the service
         launch {
