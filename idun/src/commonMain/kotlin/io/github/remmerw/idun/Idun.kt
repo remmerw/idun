@@ -72,17 +72,18 @@ class Idun internal constructor(private val asen: Asen) {
     suspend fun startup(storage: Storage, port: Int, maxReservation: Int, timeout: Int) {
         runService(storage, port)
 
-        delay(1000) // safety 1 sec delay before making reservations
-        while (selectorManager.isActive) {
-            val address: ByteArray? = asen.publicAddress()
-            if (address != null) {
-                val peeraddr = createPeeraddr(
-                    asen.peerId(),
-                    address, port.toUShort()
-                )
-                makeReservations(listOf(peeraddr), maxReservation, timeout)
+        selectorManager.launch {
+            while (isActive) {
+                val address: ByteArray? = asen.publicAddress()
+                if (address != null) {
+                    val peeraddr = createPeeraddr(
+                        asen.peerId(),
+                        address, port.toUShort()
+                    )
+                    makeReservations(listOf(peeraddr), maxReservation, timeout)
+                }
+                delay((20 * 60 * 1000).toLong()) // 20 min
             }
-            delay((20 * 60 * 1000).toLong()) // 20 min
         }
     }
 

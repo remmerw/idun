@@ -1,7 +1,6 @@
 package io.github.remmerw.idun
 
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -9,7 +8,7 @@ import kotlin.test.assertEquals
 class Examples {
     @Test
     fun simpleRequestResponse(): Unit = runBlocking {
-        // create local server and client instance
+
         val port = TestEnv.randomPort()
         val storage = newStorage()
         val raw = storage.storeText("Moin") // store some text
@@ -17,11 +16,9 @@ class Examples {
         val server = newIdun()
 
         // startup the service
-        launch {
-            server.startup(storage, port, 25, 120)
-        }
+        server.startup(storage, port, 25, 60)
 
-        delay(30000) // 30 sec delay, so server can make reservations
+        delay(30000) // wait for 30 sec for server to settle
 
         val client = newIdun()
 

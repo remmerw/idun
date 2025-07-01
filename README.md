@@ -38,7 +38,7 @@ kotlin {
 ### Examples
 
 ```
-    @Test
+     @Test
     fun simpleRequestResponse(): Unit = runBlocking {
 
         val port = TestEnv.randomPort()
@@ -46,13 +46,11 @@ kotlin {
         val raw = storage.storeText("Moin") // store some text
 
         val server = newIdun()
-        
-        // startup the service
-        launch {
-            server.startup(storage, port, 25, 120)
-        }
 
-        delay(30000) // 30 sec delay, so server can make reservations
+        // startup the service
+        server.startup(storage, port, 25, 60)
+
+        delay(30000) // wait for 30 sec for server to settle
 
         val client = newIdun()
 
