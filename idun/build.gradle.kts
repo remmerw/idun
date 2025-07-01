@@ -42,7 +42,7 @@ kotlin {
                 implementation(libs.kotlin.stdlib)
                 implementation(libs.kotlinx.io.core)
                 implementation(libs.ktor.network)
-                implementation("io.github.remmerw:asen:0.2.8") // todo
+                implementation("io.github.remmerw:asen:0.3.0")
             }
         }
 

@@ -7,6 +7,7 @@ import io.github.remmerw.asen.PeerId
 import io.github.remmerw.asen.PeerStore
 import io.github.remmerw.asen.Peeraddr
 import io.github.remmerw.asen.bootstrap
+import io.github.remmerw.asen.createPeeraddr
 import io.github.remmerw.asen.generateKeys
 import io.github.remmerw.asen.newAsen
 import io.github.remmerw.idun.core.Connector
@@ -65,21 +66,23 @@ class Idun internal constructor(private val asen: Asen) {
      * starts the server and make reservations via asen to the libp2p network
      * @param storage Data which will be provided by the starting server
      * @param port Port of the server
-     * @param peeraddrs Own addresses for reservations
      * @param maxReservation number of max reservations
      * @param timeout in seconds between reservations attempts
      */
-    suspend fun startup(storage: Storage,
-                        port: Int,
-                        peeraddrs: List<Peeraddr>,
-                        maxReservation: Int,
-                        timeout: Int) {
+    suspend fun startup(storage: Storage, port: Int, maxReservation: Int, timeout: Int) {
         runService(storage, port)
 
         delay(1000) // safety 1 sec delay before making reservations
         while (selectorManager.isActive) {
-            makeReservations(peeraddrs, maxReservation, timeout)
-            delay((15 * 60 * 1000).toLong()) // 15 min
+            val address: ByteArray? = asen.publicAddress()
+            if (address != null) {
+                val peeraddr = createPeeraddr(
+                    asen.peerId(),
+                    address, port.toUShort()
+                )
+                makeReservations(listOf(peeraddr), maxReservation, timeout)
+            }
+            delay((20 * 60 * 1000).toLong()) // 20 min
         }
     }
 
@@ -132,7 +135,6 @@ class Idun internal constructor(private val asen: Asen) {
                         sendChannel.writeLong(root.cid())
 
                     } else {
-                        require(storage.hasBlock(cid)) { "Data not available" }
                         sendChannel.writeInt(storage.blockSize(cid))
                         storage.getBlock(cid).use { source ->
                             sendChannel.writeBuffer(source)

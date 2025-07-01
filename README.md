@@ -40,18 +40,17 @@ kotlin {
 ```
     @Test
     fun simpleRequestResponse(): Unit = runBlocking {
-        // create local server and client instance
+
         val port = TestEnv.randomPort()
         val storage = newStorage()
         val raw = storage.storeText("Moin") // store some text
 
         val server = newIdun()
-
-        // get public peeraddrs of server (host)
-        val publicPeeraddrs = TestEnv.peeraddrs(server.peerId(), serverPort)
-
-        // starts the server and make reservation via asen (libp2p)
-        server.startup(storage, serverPort, publicPeeraddrs, 25, 120)
+        
+        // startup the service
+        launch {
+            server.startup(storage, port, 25, 120)
+        }
 
         delay(30000) // 30 sec delay, so server can make reservations
 

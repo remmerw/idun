@@ -16,12 +16,9 @@ class Examples {
 
         val server = newIdun()
 
-        // todo get public peeraddrs
-        val publicPeeraddrs = TestEnv.loopbackPeeraddrs(server.peerId(), port)
-
         // startup the service
         launch {
-            server.startup(storage, port, publicPeeraddrs, 25, 120)
+            server.startup(storage, port, 25, 120)
         }
 
         delay(30000) // 30 sec delay, so server can make reservations
