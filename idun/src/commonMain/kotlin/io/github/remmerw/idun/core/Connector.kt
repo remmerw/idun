@@ -27,13 +27,13 @@ internal class Connector(private val selectorManager: SelectorManager) {
         return null
     }
 
-    private suspend fun resolveAddress(asen: Asen, target: PeerId): Connection {
+    private suspend fun resolveConnection(asen: Asen, target: PeerId): Connection {
         val connection = resolve(target)
         if (connection != null) {
             return connection
         }
 
-        val peeraddrs = asen.findPeer(target, RESOLVE_TIMEOUT.toLong())
+        val peeraddrs = asen.resolveAddresses(target, RESOLVE_TIMEOUT.toLong())
         peeraddrs.forEach { peeraddr ->
             try {
                 return openConnection(selectorManager, this, peeraddr)
@@ -62,7 +62,7 @@ internal class Connector(private val selectorManager: SelectorManager) {
         return if (peeraddr != null) {
             connect(peeraddr)
         } else {
-            resolveAddress(asen, peerId)
+            resolveConnection(asen, peerId)
         }
     }
 

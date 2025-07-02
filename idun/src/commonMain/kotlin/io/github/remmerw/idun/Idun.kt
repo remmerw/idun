@@ -156,42 +156,27 @@ class Idun internal constructor(private val asen: Asen) {
         incoming.remove(socket)
     }
 
-    /**
-     * Find the peer addresses of given target peer ID via the relay.
-     *
-     * @param relay address of the relay which should be used to the relay connection
-     * @param target the target peer ID which addresses should be retrieved
-
-     * @return list of the peer addresses (usually one IPv6 address)
-     */
-    suspend fun getPeer(relay: Peeraddr, target: PeerId): List<Peeraddr> {
-        return asen.findPeer(relay, target)
+    suspend fun resolveAddresses(relay: Peeraddr, target: PeerId): List<Peeraddr> {
+        return asen.resolveAddresses(relay, target)
     }
 
-    /**
-     * Find the peer addresses of given target peer ID via the **libp2p** relay mechanism.
-     *
-     * @param target the target peer ID which addresses should be retrieved
-     * @param timeout in seconds
-     * @return list of the peer addresses (usually one IPv6 address)
-     */
-    suspend fun findPeer(target: PeerId, timeout: Long): List<Peeraddr> {
-        return asen.findPeer(target, timeout)
+    suspend fun resolveAddresses(target: PeerId, timeout: Long): List<Peeraddr> {
+        return asen.resolveAddresses(target, timeout)
     }
 
     fun keys(): Keys {
         return asen.keys()
     }
 
-    suspend fun reservations(): List<Peeraddr> {
+    fun reservations(): List<Peeraddr> {
         return asen.reservations()
     }
 
-    suspend fun hasReservations(): Boolean {
+    fun hasReservations(): Boolean {
         return asen.hasReservations()
     }
 
-    suspend fun numReservations(): Int {
+    fun numReservations(): Int {
         return asen.numReservations()
     }
 

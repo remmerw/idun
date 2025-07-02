@@ -30,7 +30,7 @@ class DialTest {
 
         val client = newIdun()
 
-        val addresses = client.findPeer(server.peerId(), 60)
+        val addresses = client.resolveAddresses(server.peerId(), 60)
         assertTrue(addresses.isNotEmpty())
         client.shutdown()
 
@@ -59,7 +59,7 @@ class DialTest {
         for (relay in reservations) {
             val client = newIdun()
             try {
-                val addresses = client.getPeer(relay, server.peerId())
+                val addresses = client.resolveAddresses(relay, server.peerId())
                 assertEquals(addresses.size, 1)
                 success.incrementAndFetch()
             } catch (throwable: Throwable) {
