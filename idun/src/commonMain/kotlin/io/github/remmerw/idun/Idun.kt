@@ -141,8 +141,7 @@ class Idun internal constructor(private val asen: Asen) {
                 }
                 sendChannel.flush()
             }
-        } catch (throwable: Throwable) {
-            debug(throwable)
+        } catch (_: Throwable) { // ignore happens when connection is closed
         } finally {
             removeIncoming(socket)
             socketClose(socket)
