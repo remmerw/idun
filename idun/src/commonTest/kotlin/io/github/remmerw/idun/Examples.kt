@@ -1,5 +1,6 @@
 package io.github.remmerw.idun
 
+import io.github.remmerw.asen.createPeeraddr
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.delay
@@ -18,8 +19,25 @@ class Examples {
 
         val server = newIdun()
 
+
+        val address = server.observedAddress()
+        checkNotNull(address)
+        println("public address ${address.size}")
+
+        val peeraddr = if (address.size == 16) { // ipv6 might be ok to dial
+            createPeeraddr(
+                server.peerId(),
+                address, port.toUShort()
+            )
+        } else { // ip4 is probably not a dialable IP (so for testing just 127.0.0.1)
+            createPeeraddr(
+                server.peerId(),
+                byteArrayOf(127, 0, 0, 1), port.toUShort()
+            )
+        }
+
         // startup the service
-        server.startup(storage, port, 25, 60)
+        server.startup(storage, listOf(peeraddr), port, 25, 60)
 
         delay(60000) // wait for 60 sec for server to settle
 

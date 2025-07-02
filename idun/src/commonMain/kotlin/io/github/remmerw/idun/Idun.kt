@@ -7,7 +7,6 @@ import io.github.remmerw.asen.PeerId
 import io.github.remmerw.asen.PeerStore
 import io.github.remmerw.asen.Peeraddr
 import io.github.remmerw.asen.bootstrap
-import io.github.remmerw.asen.createPeeraddr
 import io.github.remmerw.asen.generateKeys
 import io.github.remmerw.asen.newAsen
 import io.github.remmerw.idun.core.Connector
@@ -64,28 +63,27 @@ class Idun internal constructor(private val asen: Asen) {
     /**
      * starts the server and make reservations via asen to the libp2p network
      * @param storage Data which will be provided by the starting server
+     * @param peeraddrs Own addresses for reservations
      * @param port Port of the server
      * @param maxReservation number of max reservations
      * @param timeout in seconds between reservations attempts
      */
-    fun startup(storage: Storage, port: Int, maxReservation: Int, timeout: Int) {
+    fun startup(storage: Storage, peeraddrs: List<Peeraddr>,
+                port: Int, maxReservation: Int, timeout: Int) {
 
         scope.launch {
 
             runService(storage, port)
 
             while (isActive) {
-                val address: ByteArray? = asen.publicAddress()
-                if (address != null) {
-                    val peeraddr = createPeeraddr(
-                        asen.peerId(),
-                        address, port.toUShort()
-                    )
-                    makeReservations(listOf(peeraddr), maxReservation, timeout)
-                }
+                makeReservations(peeraddrs, maxReservation, timeout)
                 delay((20 * 60 * 1000).toLong()) // 20 min
             }
         }
+    }
+
+    suspend fun observedAddress(): ByteArray? {
+        return asen.publicAddress()
     }
 
     suspend fun runService(storage: Storage, port: Int) {
