@@ -66,10 +66,12 @@ kotlin {
         }
 
         // startup the service
-        server.startup(storage, listOf(peeraddr), port, 25, 60)
-
-        delay(60000) // wait for 60 sec for server to settle
-
+        server.startup(storage, port)
+        
+        // make reservations
+        server.makeReservations(listOf(peeraddr), 25, 60)
+        
+        
         println("Num reservations " + server.numReservations())
         assertTrue(server.hasReservations())
 

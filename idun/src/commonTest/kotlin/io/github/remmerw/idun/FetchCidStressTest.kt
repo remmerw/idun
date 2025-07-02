@@ -16,7 +16,7 @@ class FetchCidStressTest {
         checkNotNull(server)
         checkNotNull(server.keys())
 
-        server.runService(storage, serverPort)
+        server.startup(storage, serverPort)
         storage.root("Homepage".encodeToByteArray())
         val raw = storage.root().cid()
 

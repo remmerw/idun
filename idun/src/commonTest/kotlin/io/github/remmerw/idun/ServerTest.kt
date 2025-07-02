@@ -19,7 +19,7 @@ class ServerTest {
         val serverPort = TestEnv.randomPort()
         val storage = newStorage()
         val server = newIdun()
-        server.runService(storage, serverPort)
+        server.startup(storage, serverPort)
         TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
 
         val input = TestEnv.getRandomBytes(10000000) // 10 MB
@@ -48,7 +48,7 @@ class ServerTest {
         val serverPort = TestEnv.randomPort()
         val storage = newStorage()
         val server = newIdun()
-        server.runService(storage, serverPort)
+        server.startup(storage, serverPort)
         val loopback = TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
         assertNotNull(loopback)
 
@@ -79,7 +79,7 @@ class ServerTest {
         val serverPort = TestEnv.randomPort()
         val storage = newStorage()
         val server = newIdun()
-        server.runService(storage, serverPort)
+        server.startup(storage, serverPort)
 
         TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
 
@@ -122,7 +122,7 @@ class ServerTest {
         val serverPort = TestEnv.randomPort()
         val storage = newStorage()
         val server = newIdun()
-        server.runService(storage, serverPort)
+        server.startup(storage, serverPort)
         val peeraddr = TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
 
         val finished = AtomicInt(0)

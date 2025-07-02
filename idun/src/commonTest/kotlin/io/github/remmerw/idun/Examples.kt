@@ -3,7 +3,6 @@ package io.github.remmerw.idun
 import io.github.remmerw.asen.createPeeraddr
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -37,9 +36,11 @@ class Examples {
         }
 
         // startup the service
-        server.startup(storage, listOf(peeraddr), port, 25, 60)
+        server.startup(storage, port)
 
-        delay(60000) // wait for 60 sec for server to settle
+        // make reservations
+        server.makeReservations(listOf(peeraddr), 25, 60)
+
 
         println("Num reservations " + server.numReservations())
         assertTrue(server.hasReservations())

@@ -14,7 +14,7 @@ class ChannelStressTest {
         val server = newIdun()
 
 
-        server.runService(storage, serverPort)
+        server.startup(storage, serverPort)
         val client = newIdun()// client instance default values
 
 

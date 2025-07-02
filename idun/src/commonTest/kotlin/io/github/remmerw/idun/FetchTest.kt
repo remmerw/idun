@@ -15,7 +15,7 @@ class FetchTest {
 
         val storage = newStorage()
         val server = newIdun()
-        server.runService(storage, serverPort)
+        server.startup(storage, serverPort)
 
         val fid = TestEnv.createContent(storage, 100)
         assertNotNull(fid)

@@ -14,7 +14,7 @@ class FetchStressTest {
 
         val storage = newStorage()
         val server = newIdun()
-        server.runService(storage, serverPort)
+        server.startup(storage, serverPort)
         var fid: Node? = null
         var now = measureTime {
 

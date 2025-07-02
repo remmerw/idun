@@ -33,7 +33,6 @@ import io.ktor.utils.io.writeInt
 import io.ktor.utils.io.writeLong
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.io.Buffer
@@ -60,33 +59,15 @@ class Idun internal constructor(private val asen: Asen) {
     private val connector = Connector(selectorManager)
     private var serverSocket: ServerSocket? = null
 
-    /**
-     * starts the server and make reservations via asen to the libp2p network
-     * @param storage Data which will be provided by the starting server
-     * @param peeraddrs Own addresses for reservations
-     * @param port Port of the server
-     * @param maxReservation number of max reservations
-     * @param timeout in seconds between reservations attempts
-     */
-    fun startup(storage: Storage, peeraddrs: List<Peeraddr>,
-                port: Int, maxReservation: Int, timeout: Int) {
-
-        scope.launch {
-
-            runService(storage, port)
-
-            while (isActive) {
-                makeReservations(peeraddrs, maxReservation, timeout)
-                delay((20 * 60 * 1000).toLong()) // 20 min
-            }
-        }
-    }
 
     suspend fun observedAddress(): ByteArray? {
         return asen.publicAddress()
     }
 
-    suspend fun runService(storage: Storage, port: Int) {
+    /**
+     * starts the server with the given port
+     */
+    suspend fun startup(storage: Storage, port: Int) {
 
         serverSocket = aSocket(selectorManager).tcp().bind(
             InetSocketAddress("::", port)

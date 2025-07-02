@@ -12,7 +12,7 @@ class FetchRequestsTest {
         val storage = newStorage()
         val server = newIdun()
 
-        server.runService(storage, serverPort)
+        server.startup(storage, serverPort)
 
 
         val content = "Moin Moin"
