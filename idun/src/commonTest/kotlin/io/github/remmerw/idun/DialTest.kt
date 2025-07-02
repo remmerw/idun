@@ -21,8 +21,6 @@ class DialTest {
         val server = newIdun()
         server.runService(storage, serverPort)
 
-        val peerStore = server.peerStore()
-
         storage.root("Homepage".encodeToByteArray())
         val raw = storage.root().cid()
 
@@ -32,14 +30,7 @@ class DialTest {
 
         assertTrue(server.hasReservations())
 
-        val client = newIdun(
-            peerStore = peerStore,
-        )
-        assertTrue(
-            client.reachable(
-                TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
-            )
-        )
+        val client = newIdun()
 
         val cid = client.fetchRoot(server.peerId())
         assertEquals(cid, raw)
@@ -70,7 +61,8 @@ class DialTest {
         for (relay in reservations) {
             val client = newIdun()
             try {
-                client.findPeer(relay, server.peerId())
+                val addresses = client.findPeer(relay, server.peerId())
+                assertEquals(addresses.size, 1)
                 success.incrementAndFetch()
             } catch (throwable: Throwable) {
                 throwable.printStackTrace()

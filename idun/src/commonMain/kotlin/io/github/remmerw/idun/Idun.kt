@@ -177,8 +177,7 @@ class Idun internal constructor(private val asen: Asen) {
      * @return list of the peer addresses (usually one IPv6 address)
      */
     suspend fun findPeer(relay: Peeraddr, target: PeerId): List<Peeraddr> {
-        val peeraddrs = asen.findPeer(relay, target)
-        return inet6Public(peeraddrs)
+        return asen.findPeer(relay, target)
     }
 
     /**
@@ -190,16 +189,11 @@ class Idun internal constructor(private val asen: Asen) {
      */
     @Suppress("unused")
     suspend fun findPeer(target: PeerId, timeout: Long): List<Peeraddr> {
-        val peeraddrs = asen.findPeer(target, timeout)
-        return inet6Public(peeraddrs)
+        return asen.findPeer(target, timeout)
     }
 
     fun keys(): Keys {
         return asen.keys()
-    }
-
-    fun peerStore(): PeerStore {
-        return asen.peerStore()
     }
 
     suspend fun reservations(): List<Peeraddr> {
@@ -374,17 +368,6 @@ internal fun socketClose(socket: Socket) {
     }
 }
 
-private fun inet6Public(peeraddrs: List<Peeraddr>): List<Peeraddr> {
-    val result = mutableListOf<Peeraddr>()
-    for (peer in peeraddrs) {
-        if (peer.inet6()) {
-            if (!peer.isLanAddress()) {
-                result.add(peer)
-            }
-        }
-    }
-    return result
-}
 
 interface Channel {
     fun size(): Long
