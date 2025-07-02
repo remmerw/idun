@@ -26,11 +26,11 @@ class FetchRequestsTest {
 
 
         val client = newIdun()
-        assertTrue(
-            client.reachable(
-                TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
-            )
+
+        client.reachable(
+            TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
         )
+
 
         var data = client.channel(server.peerId(), fid.cid()).readAllBytes()
         assertNotNull(data)

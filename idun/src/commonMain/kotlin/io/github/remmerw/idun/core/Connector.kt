@@ -8,14 +8,18 @@ import io.github.remmerw.idun.debug
 import io.ktor.network.selector.SelectorManager
 import io.ktor.network.sockets.InetSocketAddress
 import io.ktor.network.sockets.aSocket
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import io.ktor.util.collections.ConcurrentMap
+import io.ktor.util.collections.ConcurrentSet
 
 internal class Connector(private val selectorManager: SelectorManager) {
-    private val connections: MutableSet<Connection> = mutableSetOf()
-    private val mutex = Mutex()
+    private val connections: MutableSet<Connection> = ConcurrentSet()
+    private val reachable: ConcurrentMap<PeerId, Peeraddr> = ConcurrentMap()
 
-    private suspend fun resolve(target: PeerId): Connection? {
+    fun reachable(peeraddr: Peeraddr) {
+        reachable.put(peeraddr.peerId, peeraddr)
+    }
+
+    private fun resolve(target: PeerId): Connection? {
         val pnsChannels = connections(target)
         if (pnsChannels.isNotEmpty()) {
             return pnsChannels.iterator().next()
@@ -41,7 +45,7 @@ internal class Connector(private val selectorManager: SelectorManager) {
         throw Exception("No hop connection established")
     }
 
-    suspend fun connect(peeraddr: Peeraddr): Connection {
+    private suspend fun connect(peeraddr: Peeraddr): Connection {
         val pnsChannels = connections(peeraddr)
         if (pnsChannels.isNotEmpty()) {
             return pnsChannels.iterator().next()
@@ -54,46 +58,47 @@ internal class Connector(private val selectorManager: SelectorManager) {
         if (pnsChannels.isNotEmpty()) {
             return pnsChannels.iterator().next()
         }
-        return resolveAddress(asen, peerId)
+        val peeraddr = reachable[peerId]
+        return if (peeraddr != null) {
+            connect(peeraddr)
+        } else {
+            resolveAddress(asen, peerId)
+        }
     }
 
-    suspend fun connections(peeraddr: Peeraddr): Set<Connection> {
+    fun connections(peeraddr: Peeraddr): Set<Connection> {
         return connections().filter { connection -> connection.remotePeeraddr == peeraddr }.toSet()
     }
 
-    suspend fun connections(peerId: PeerId): Set<Connection> {
+    fun connections(peerId: PeerId): Set<Connection> {
         return connections().filter { connection -> connection.remotePeerId() == peerId }.toSet()
     }
 
-    suspend fun connections(): Set<Connection> {
-        mutex.withLock {
-            val result: MutableSet<Connection> = mutableSetOf()
-            val delete: MutableSet<Connection> = mutableSetOf()
-            for (connection in connections) {
-                if (connection.isConnected) {
-                    result.add(connection)
-                } else {
-                    delete.add(connection)
-                }
+    fun connections(): Set<Connection> {
+
+        val result: MutableSet<Connection> = mutableSetOf()
+        val delete: MutableSet<Connection> = mutableSetOf()
+        for (connection in connections) {
+            if (connection.isConnected) {
+                result.add(connection)
+            } else {
+                delete.add(connection)
             }
-            delete.forEach { connection -> removeChannel(connection) }
-            return result
         }
+        delete.forEach { connection -> removeChannel(connection) }
+        return result
+
     }
 
-    suspend fun registerChannel(connection: Connection) {
-        mutex.withLock {
-            connections.add(connection)
-        }
+    fun registerChannel(connection: Connection) {
+        connections.add(connection)
     }
 
-    suspend fun removeChannel(connection: Connection) {
-        mutex.withLock {
-            connections.remove(connection)
-        }
+    fun removeChannel(connection: Connection) {
+        connections.remove(connection)
     }
 
-    suspend fun shutdown() {
+    fun shutdown() {
         connections().forEach { connection: Connection -> connection.close() }
         connections.clear()
     }

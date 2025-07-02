@@ -6,7 +6,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 class CloseTest {
     @Test
@@ -21,11 +20,11 @@ class CloseTest {
 
 
         val client = newIdun()
-        assertTrue(
-            client.reachable(
-                TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
-            )
+
+        client.reachable(
+            TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
         )
+
 
         val cid = client.fetchRoot(server.peerId())
         assertEquals(cid, raw)

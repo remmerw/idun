@@ -7,7 +7,6 @@ import kotlinx.io.files.SystemFileSystem
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
 
 class FetchTest {
     @Test
@@ -25,10 +24,9 @@ class FetchTest {
         val temp = storage.tempFile()
 
         val client = newIdun()
-        assertTrue(
-            client.reachable(
-                TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
-            )
+
+        client.reachable(
+            TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
         )
 
 

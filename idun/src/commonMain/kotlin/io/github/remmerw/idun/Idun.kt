@@ -27,6 +27,7 @@ import io.ktor.network.sockets.aSocket
 import io.ktor.network.sockets.isClosed
 import io.ktor.network.sockets.openReadChannel
 import io.ktor.network.sockets.openWriteChannel
+import io.ktor.util.collections.ConcurrentSet
 import io.ktor.utils.io.readBuffer
 import io.ktor.utils.io.writeBuffer
 import io.ktor.utils.io.writeInt
@@ -36,8 +37,6 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.io.Buffer
 import kotlinx.io.RawSink
 import kotlinx.io.RawSource
@@ -56,8 +55,7 @@ internal const val RESOLVE_TIMEOUT: Int = 60
 
 class Idun internal constructor(private val asen: Asen) {
 
-    private val incoming: MutableSet<Socket> = mutableSetOf()
-    private val mutex = Mutex()
+    private val incoming: MutableSet<Socket> = ConcurrentSet()
     private val selectorManager = SelectorManager(Dispatchers.IO)
     private val scope = SelectorManager(Dispatchers.IO)
     private val connector = Connector(selectorManager)
@@ -125,30 +123,23 @@ class Idun internal constructor(private val asen: Asen) {
                 val buffer = receiveChannel.readBuffer(Long.SIZE_BYTES)
 
                 val read = buffer.size
-                if (read.toInt() != Long.SIZE_BYTES) {
-                    break
-                }
+                require(read.toInt() == Long.SIZE_BYTES) { "not enough data" }
 
-                try {
-                    val cid = buffer.readLong()
-                    val root = storage.root()
-                    if (cid == HALO_ROOT) { // root request
-                        // root cid
-                        sendChannel.writeInt(Long.SIZE_BYTES)
-                        sendChannel.writeLong(root.cid())
 
-                    } else {
-                        sendChannel.writeInt(storage.blockSize(cid))
-                        storage.getBlock(cid).use { source ->
-                            sendChannel.writeBuffer(source)
-                        }
+                val cid = buffer.readLong()
+                val root = storage.root()
+                if (cid == HALO_ROOT) { // root request
+                    // root cid
+                    sendChannel.writeInt(Long.SIZE_BYTES)
+                    sendChannel.writeLong(root.cid())
+
+                } else {
+                    sendChannel.writeInt(storage.blockSize(cid))
+                    storage.getBlock(cid).use { source ->
+                        sendChannel.writeBuffer(source)
                     }
-                    sendChannel.flush()
-                } catch (throwable: Throwable) {
-                    debug(throwable)
-                    removeIncoming(socket)
-                    socketClose(socket)
                 }
+                sendChannel.flush()
             }
         } catch (throwable: Throwable) {
             debug(throwable)
@@ -158,16 +149,12 @@ class Idun internal constructor(private val asen: Asen) {
         }
     }
 
-    private suspend fun registerIncoming(socket: Socket) {
-        mutex.withLock {
-            incoming.add(socket)
-        }
+    private fun registerIncoming(socket: Socket) {
+        incoming.add(socket)
     }
 
-    private suspend fun removeIncoming(socket: Socket) {
-        mutex.withLock {
-            incoming.remove(socket)
-        }
+    private fun removeIncoming(socket: Socket) {
+        incoming.remove(socket)
     }
 
     /**
@@ -209,25 +196,25 @@ class Idun internal constructor(private val asen: Asen) {
         return asen.numReservations()
     }
 
-    suspend fun numIncomingConnections(): Int {
+    fun numIncomingConnections(): Int {
         return incomingConnections().size
     }
 
-    suspend fun incomingConnections(): List<String> {
-        mutex.withLock {
-            val result = mutableListOf<String>()
-            for (connection in incoming) {
-                if (!connection.isClosed) {
-                    result.add(connection.remoteAddress.toString())
-                } else {
-                    incoming.remove(connection)
-                }
+    fun incomingConnections(): List<String> {
+
+        val result = mutableListOf<String>()
+        for (connection in incoming) {
+            if (!connection.isClosed) {
+                result.add(connection.remoteAddress.toString())
+            } else {
+                incoming.remove(connection)
             }
-            return result
         }
+        return result
+
     }
 
-    suspend fun numOutgoingConnections(): Int {
+    fun numOutgoingConnections(): Int {
         return connector.connections().size
     }
 
@@ -308,14 +295,9 @@ class Idun internal constructor(private val asen: Asen) {
         throw Exception("Uri does not reference raw node")
     }
 
-    suspend fun reachable(peeraddr: Peeraddr): Boolean {
-        try {
-            connector.connect(peeraddr)
-            return true
-        } catch (throwable: Throwable) {
-            debug(throwable)
-        }
-        return false
+    // this is just for testing purpose
+    fun reachable(peeraddr: Peeraddr) {
+        connector.reachable(peeraddr)
     }
 
 
@@ -325,14 +307,9 @@ class Idun internal constructor(private val asen: Asen) {
 
         connector.shutdown()
 
-        val connections = mutex.withLock {
-            incoming.toList()
-        }
-        connections.forEach { socket: Socket -> socketClose(socket) }
 
-        mutex.withLock {
-            incoming.clear()
-        }
+        incoming.forEach { socket: Socket -> socketClose(socket) }
+        incoming.clear()
 
         try {
             serverSocket?.close()

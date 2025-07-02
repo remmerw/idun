@@ -24,11 +24,11 @@ class ConnectTest {
 
         val client = newIdun()
 
-        assertTrue(
-            client.reachable(
-                TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
-            )
+
+        client.reachable(
+            TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
         )
+
 
         val root = client.fetchRoot(server.peerId())
         assertNotNull(root)
@@ -50,11 +50,11 @@ class ConnectTest {
 
         val client = newIdun()
 
-        assertTrue(
-            client.reachable(
-                TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
-            )
+
+        client.reachable(
+            TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
         )
+
 
         val root = client.fetchRoot(server.peerId())
         assertNotNull(root)
@@ -86,11 +86,11 @@ class ConnectTest {
 
         val client = newIdun()
 
-        assertTrue(
-            client.reachable(
-                TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
-            )
+
+        client.reachable(
+            TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
         )
+
 
         val root = client.fetchRoot(server.peerId()) // Intern it sets keep alive to true
         assertNotNull(root)

@@ -4,7 +4,6 @@ import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
 import kotlin.time.measureTime
 
 class FetchStressTest {
@@ -38,11 +37,11 @@ class FetchStressTest {
             now = measureTime {
                 val client = newIdun()
 
-                assertTrue(
-                    client.reachable(
-                        TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
-                    )
+
+                client.reachable(
+                    TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
                 )
+
 
                 val channel = client.channel(server.peerId(), fid.cid())
                 assertEquals(fid.size(), channel.size())

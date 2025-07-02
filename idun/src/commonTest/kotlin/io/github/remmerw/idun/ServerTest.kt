@@ -28,11 +28,11 @@ class ServerTest {
         assertNotNull(fid)
 
         val client = newIdun()
-        assertTrue(
-            client.reachable(
-                TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
-            )
+
+        client.reachable(
+            TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
         )
+
 
         val data = client.channel(server.peerId(), fid.cid()).readAllBytes()
         assertTrue(input.contentEquals(data))
@@ -59,11 +59,11 @@ class ServerTest {
         val host = server.peerId()
         assertNotNull(host)
         val client = newIdun()
-        assertTrue(
-            client.reachable(
-                TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
-            )
+
+        client.reachable(
+            TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
         )
+
         val data = client.fetchData(server.peerId(), raw.cid())
         assertEquals(text, data.decodeToString())
         client.shutdown()
@@ -95,11 +95,11 @@ class ServerTest {
         repeat(instances) {
             try {
                 val client = newIdun()
-                assertTrue(
-                    client.reachable(
-                        TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
-                    )
+
+                client.reachable(
+                    TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
                 )
+
                 val output = client.fetchData(server.peerId(), raw.cid())
                 assertTrue(input.contentEquals(output))
                 finished.incrementAndFetch()
@@ -123,7 +123,7 @@ class ServerTest {
         val storage = newStorage()
         val server = newIdun()
         server.runService(storage, serverPort)
-        val request = TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+        val peeraddr = TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
 
         val finished = AtomicInt(0)
         val instances = 10
@@ -134,7 +134,7 @@ class ServerTest {
                 launch {
                     val client = newIdun()
                     try {
-                        assertTrue(client.reachable(request))
+                        client.reachable(peeraddr)
                         finished.incrementAndFetch()
                     } catch (throwable: Throwable) {
                         throwable.printStackTrace()

@@ -5,7 +5,6 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 class FetchCidStressTest {
     @Test
@@ -23,11 +22,11 @@ class FetchCidStressTest {
 
         val client = newIdun()
 
-        assertTrue(
-            client.reachable(
-                TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
-            )
+
+        client.reachable(
+            TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
         )
+
 
         repeat(TestEnv.ITERATIONS) {
             val value = client.fetchRoot(server.peerId())

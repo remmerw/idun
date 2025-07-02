@@ -17,11 +17,11 @@ class ChannelStressTest {
         server.runService(storage, serverPort)
         val client = newIdun()// client instance default values
 
-        assertTrue(
-            client.reachable(
-                TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
-            )
+
+        client.reachable(
+            TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
         )
+
 
         repeat(100) {
 

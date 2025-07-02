@@ -54,7 +54,7 @@ internal class Connection(
         }
     }
 
-    suspend fun close() {
+    fun close() {
         try {
             socket.close()
         } catch (throwable: Throwable) {

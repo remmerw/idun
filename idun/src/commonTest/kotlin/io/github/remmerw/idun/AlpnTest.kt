@@ -28,10 +28,8 @@ class AlpnTest {
 
         val client = newIdun()
 
-        assertTrue(
-            client.reachable(
-                TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
-            )
+        client.reachable(
+            TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
         )
 
 
