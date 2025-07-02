@@ -7,6 +7,7 @@ import kotlinx.io.RawSink
 
 internal class RawChannel(private val data: ByteArray) : Channel {
 
+    private var hasRead = false
     override fun size(): Long {
         return data.size.toLong()
     }
@@ -16,11 +17,10 @@ internal class RawChannel(private val data: ByteArray) : Channel {
     }
 
     override suspend fun transferTo(rawSink: RawSink, read: (Int) -> Unit) {
-        val size = data.size
         val buffer = Buffer()
         buffer.write(data)
-        rawSink.write(buffer, size.toLong())
-        read.invoke(size)
+        rawSink.write(buffer, size())
+        read.invoke(size().toInt())
     }
 
     override suspend fun readAllBytes(): ByteArray {
@@ -28,6 +28,13 @@ internal class RawChannel(private val data: ByteArray) : Channel {
     }
 
     override suspend fun next(): Buffer? {
-        return null
+        if (!hasRead) {
+            val buffer = Buffer()
+            buffer.write(data)
+            hasRead = true
+            return buffer
+        } else {
+            return null
+        }
     }
 }

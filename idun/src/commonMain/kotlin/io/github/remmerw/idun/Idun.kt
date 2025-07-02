@@ -59,6 +59,7 @@ class Idun internal constructor(private val asen: Asen) {
     private val incoming: MutableSet<Socket> = mutableSetOf()
     private val mutex = Mutex()
     private val selectorManager = SelectorManager(Dispatchers.IO)
+    private val scope = SelectorManager(Dispatchers.IO)
     private val connector = Connector(selectorManager)
     private var serverSocket: ServerSocket? = null
 
@@ -69,10 +70,12 @@ class Idun internal constructor(private val asen: Asen) {
      * @param maxReservation number of max reservations
      * @param timeout in seconds between reservations attempts
      */
-    suspend fun startup(storage: Storage, port: Int, maxReservation: Int, timeout: Int) {
-        runService(storage, port)
+    fun startup(storage: Storage, port: Int, maxReservation: Int, timeout: Int) {
 
-        selectorManager.launch {
+        scope.launch {
+
+            runService(storage, port)
+
             while (isActive) {
                 val address: ByteArray? = asen.publicAddress()
                 if (address != null) {
@@ -92,8 +95,7 @@ class Idun internal constructor(private val asen: Asen) {
         serverSocket = aSocket(selectorManager).tcp().bind(
             InetSocketAddress("::", port)
         )
-
-        selectorManager.launch {
+        scope.launch {
             try {
                 while (isActive) {
 
@@ -102,7 +104,7 @@ class Idun internal constructor(private val asen: Asen) {
 
 
                     registerIncoming(socket)
-                    selectorManager.launch {
+                    launch {
                         handleConnection(storage, socket)
                     }
                 }
@@ -118,7 +120,7 @@ class Idun internal constructor(private val asen: Asen) {
             val receiveChannel = socket.openReadChannel()
             val sendChannel = socket.openWriteChannel(autoFlush = false)
 
-            while (selectorManager.isActive) {
+            while (true) {
 
                 val buffer = receiveChannel.readBuffer(Long.SIZE_BYTES)
 
@@ -176,7 +178,7 @@ class Idun internal constructor(private val asen: Asen) {
 
      * @return list of the peer addresses (usually one IPv6 address)
      */
-    suspend fun findPeer(relay: Peeraddr, target: PeerId): List<Peeraddr> {
+    suspend fun getPeer(relay: Peeraddr, target: PeerId): List<Peeraddr> {
         return asen.findPeer(relay, target)
     }
 
@@ -187,7 +189,6 @@ class Idun internal constructor(private val asen: Asen) {
      * @param timeout in seconds
      * @return list of the peer addresses (usually one IPv6 address)
      */
-    @Suppress("unused")
     suspend fun findPeer(target: PeerId, timeout: Long): List<Peeraddr> {
         return asen.findPeer(target, timeout)
     }
@@ -345,6 +346,11 @@ class Idun internal constructor(private val asen: Asen) {
             debug(throwable)
         }
 
+        try {
+            scope.close()
+        } catch (throwable: Throwable) {
+            debug(throwable)
+        }
     }
 }
 
@@ -358,13 +364,10 @@ fun newIdun(
 }
 
 internal fun socketClose(socket: Socket) {
-
-    if (!socket.isClosed) {
-        try {
-            socket.close()
-        } catch (throwable: Throwable) {
-            debug(throwable)
-        }
+    try {
+        socket.close()
+    } catch (throwable: Throwable) {
+        debug(throwable)
     }
 }
 
