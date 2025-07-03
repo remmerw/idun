@@ -47,8 +47,6 @@ import kotlin.random.Random
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-
-const val HTML_OK: Int = 200
 internal const val RESOLVE_TIMEOUT: Int = 60
 
 class Idun internal constructor(private val asen: Asen) {
@@ -198,7 +196,7 @@ class Idun internal constructor(private val asen: Asen) {
                 val channel = channel(peerId, cid)
                 contentResponse(channel, node)
             } else {
-                contentResponse(RawChannel((node as Raw).data()), "OK", HTML_OK)
+                contentResponse(RawChannel((node as Raw).data()), "OK", 200)
             }
         } catch (throwable: Throwable) {
             var message = throwable.message
