@@ -27,7 +27,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             ...
-            implementation("io.github.remmerw:idun:0.3.2")
+            implementation("io.github.remmerw:idun:0.3.3")
         }
         ...
     }
@@ -48,30 +48,18 @@ kotlin {
 
         val server = newIdun()
 
+        val peeraddrs = server.observedPeeraddrs(port)
+        checkNotNull(peeraddrs)
+        println("Observed addresses ${peeraddrs.size}")
 
-        val address = server.observedAddress()
-        checkNotNull(address)
-        println("public address ${address.size}")
-
-        val peeraddr = if (address.size == 16) { // ipv6 might be ok to dial
-            createPeeraddr(
-                server.peerId(),
-                address, port.toUShort()
-            )
-        } else { // ip4 is probably not a dialable IP (so for testing just 127.0.0.1)
-            createPeeraddr(
-                server.peerId(),
-                byteArrayOf(127, 0, 0, 1), port.toUShort()
-            )
-        }
 
         // startup the service
         server.startup(storage, port)
-        
+
         // make reservations
-        server.makeReservations(listOf(peeraddr), 25, 60)
-        
-        
+        server.makeReservations(peeraddrs, 25, 60)
+
+
         println("Num reservations " + server.numReservations())
         assertTrue(server.hasReservations())
 

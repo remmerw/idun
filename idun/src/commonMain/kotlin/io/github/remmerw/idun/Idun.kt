@@ -58,8 +58,9 @@ class Idun internal constructor(private val asen: Asen) {
     private var serverSocket: ServerSocket? = null
 
 
-    suspend fun observedAddress(): ByteArray? {
-        return asen.publicAddress()
+    suspend fun observedPeeraddrs(port: Int): List<Peeraddr> {
+        return asen.observedAddresses().map { address ->
+            Peeraddr(peerId(), address, port.toUShort()) }
     }
 
     /**

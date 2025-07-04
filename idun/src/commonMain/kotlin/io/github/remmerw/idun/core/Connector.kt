@@ -3,10 +3,10 @@ package io.github.remmerw.idun.core
 import io.github.remmerw.asen.Asen
 import io.github.remmerw.asen.PeerId
 import io.github.remmerw.asen.Peeraddr
+import io.github.remmerw.asen.createInetSocketAddress
 import io.github.remmerw.idun.RESOLVE_TIMEOUT
 import io.github.remmerw.idun.debug
 import io.ktor.network.selector.SelectorManager
-import io.ktor.network.sockets.InetSocketAddress
 import io.ktor.network.sockets.aSocket
 import io.ktor.util.collections.ConcurrentMap
 import io.ktor.util.collections.ConcurrentSet
@@ -110,9 +110,9 @@ internal class Connector(private val selectorManager: SelectorManager) {
         peeraddr: Peeraddr
     ): Connection {
 
-        val socket = aSocket(selectorManager).tcp().connect(
-            InetSocketAddress(peeraddr.address(), peeraddr.port.toInt())
-        )
+        val socketAddress = createInetSocketAddress(peeraddr.address.bytes,
+            peeraddr.port.toInt())
+        val socket = aSocket(selectorManager).tcp().connect(socketAddress)
         checkNotNull(socket)
 
         val connection = Connection(peeraddr, connector, socket)
