@@ -265,13 +265,24 @@ class Idun internal constructor(private val asen: Asen) {
 
     suspend fun shutdown() {
 
-        asen.shutdown()
+        try {
+            asen.shutdown()
+        } catch (throwable: Throwable) {
+            debug(throwable)
+        }
 
-        connector.shutdown()
+        try {
+            connector.shutdown()
+        } catch (throwable: Throwable) {
+            debug(throwable)
+        }
 
-
-        incoming.forEach { socket: Socket -> socketClose(socket) }
-        incoming.clear()
+        try {
+            incoming.forEach { socket: Socket -> socketClose(socket) }
+            incoming.clear()
+        } catch (throwable: Throwable) {
+            debug(throwable)
+        }
 
         try {
             serverSocket?.close()
@@ -280,13 +291,13 @@ class Idun internal constructor(private val asen: Asen) {
         }
 
         try {
-            selectorManager.close()
+            scope.close()
         } catch (throwable: Throwable) {
             debug(throwable)
         }
 
         try {
-            scope.close()
+            selectorManager.close()
         } catch (throwable: Throwable) {
             debug(throwable)
         }

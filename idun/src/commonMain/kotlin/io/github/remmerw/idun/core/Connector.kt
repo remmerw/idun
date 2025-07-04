@@ -110,8 +110,10 @@ internal class Connector(private val selectorManager: SelectorManager) {
         peeraddr: Peeraddr
     ): Connection {
 
-        val socketAddress = createInetSocketAddress(peeraddr.address.bytes,
-            peeraddr.port.toInt())
+        val socketAddress = createInetSocketAddress(
+            peeraddr.address.bytes,
+            peeraddr.port.toInt()
+        )
         val socket = aSocket(selectorManager).tcp().connect(socketAddress)
         checkNotNull(socket)
 
