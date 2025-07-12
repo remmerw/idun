@@ -1,9 +1,11 @@
 package io.github.remmerw.idun
 
+import com.eygraber.uri.Uri
+import io.github.remmerw.asen.PeerId
+import io.github.remmerw.idun.TestEnv.randomBytes
 import io.github.remmerw.idun.core.OCTET_MIME_TYPE
 import io.github.remmerw.idun.core.Raw
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.io.buffered
@@ -34,6 +36,15 @@ class HaloTest {
 
     }
 
+    @Test
+    fun testPns() {
+        val peerId = PeerId(randomBytes(32))
+        val uri = pnsUri(peerId, 10)
+        assertNotNull(uri)
+        val data = Uri.parse(uri)
+        assertEquals(data.extractPeerId(), peerId)
+        assertEquals(data.extractCid(), 10)
+    }
 
     @Test
     fun fetchDataTest(): Unit = runBlocking {
@@ -69,7 +80,7 @@ class HaloTest {
         val iteration = 10
         SystemFileSystem.sink(temp).buffered().use { source ->
             repeat(iteration) {
-                source.write(TestEnv.getRandomBytes(splitterSize()))
+                source.write(randomBytes(splitterSize()))
             }
         }
         // (1) store the file
@@ -157,7 +168,7 @@ class HaloTest {
         val inputFile = storage.tempFile()
         SystemFileSystem.sink(inputFile).buffered().use { source ->
             repeat(maxData) {
-                source.write(TestEnv.getRandomBytes(packetSize))
+                source.write(randomBytes(packetSize))
             }
         }
 
@@ -201,7 +212,7 @@ class HaloTest {
         val data = 1000000
         val fid = TestEnv.createContent(
             storage, "test.bin", OCTET_MIME_TYPE,
-            TestEnv.getRandomBytes(data)
+            randomBytes(data)
         )
 
         val size = fid.size()
@@ -220,7 +231,7 @@ class HaloTest {
         val data = 100000
         val fid = TestEnv.createContent(
             storage, "test.bin", OCTET_MIME_TYPE,
-            TestEnv.getRandomBytes(data)
+            randomBytes(data)
         )
 
         val size = fid.size()
@@ -261,7 +272,7 @@ class HaloTest {
         val raw = storage.storeText(textTest)
         assertNotNull(raw)
 
-        val dataTest = TestEnv.getRandomBytes(1000)
+        val dataTest = randomBytes(1000)
 
         val data = storage.storeData(dataTest)
         assertNotNull(data)
@@ -317,7 +328,7 @@ class HaloTest {
     @Test
     fun testParallel() {
         val storage = newStorage()
-        val data = TestEnv.getRandomBytes(splitterSize())
+        val data = randomBytes(splitterSize())
         val node = storage.storeData(data)
         assertNotNull(node)
 

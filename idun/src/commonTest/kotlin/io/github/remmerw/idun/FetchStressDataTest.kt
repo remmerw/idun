@@ -21,7 +21,7 @@ class FetchStressDataTest {
 
 
         repeat(iterations) {
-            val data = TestEnv.getRandomBytes(splitterSize())
+            val data = TestEnv.randomBytes(splitterSize())
             val raw = storage.storeData(data)
 
             val cmp = client.fetchData(server.peerId(), raw.cid())

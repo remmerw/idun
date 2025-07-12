@@ -21,7 +21,7 @@ class FetchStressTest {
             val split = splitterSize()
             fid = TestEnv.createContent(
                 storage, "text.bin",
-                TestEnv.getRandomBytes(split)
+                TestEnv.randomBytes(split)
             )
         }
         assertNotNull(fid)

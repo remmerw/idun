@@ -16,7 +16,7 @@ class FetchRequestsTest {
 
 
         val content = "Moin Moin"
-        val bytes = TestEnv.getRandomBytes(5000)
+        val bytes = TestEnv.randomBytes(5000)
 
         val fid = TestEnv.createContent(storage, "index.txt", content.encodeToByteArray())
         assertNotNull(fid)

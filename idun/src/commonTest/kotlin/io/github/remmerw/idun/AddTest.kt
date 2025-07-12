@@ -68,7 +68,7 @@ class AddTest {
         val maxData = 1000
         val fid = TestEnv.createContent(
             storage, "test.bin", OCTET_MIME_TYPE,
-            TestEnv.getRandomBytes(maxData * packetSize)
+            TestEnv.randomBytes(maxData * packetSize)
         )
 
         assertNotNull(fid)
@@ -89,7 +89,7 @@ class AddTest {
         val storage = newStorage()
         val fid = TestEnv.createContent(
             storage, "test.bin", OCTET_MIME_TYPE,
-            TestEnv.getRandomBytes(maxData * packetSize)
+            TestEnv.randomBytes(maxData * packetSize)
         )
 
 
@@ -111,7 +111,7 @@ class AddTest {
         val storage = newStorage()
         val fid = TestEnv.createContent(
             storage, "test.bin", OCTET_MIME_TYPE,
-            TestEnv.getRandomBytes(maxData * packetSize)
+            TestEnv.randomBytes(maxData * packetSize)
         )
 
 
@@ -129,7 +129,7 @@ class AddTest {
         val storage = newStorage()
         val fid = TestEnv.createContent(
             storage, "test.bin", OCTET_MIME_TYPE,
-            TestEnv.getRandomBytes(maxData * packetSize)
+            TestEnv.randomBytes(maxData * packetSize)
         )
 
 
@@ -157,7 +157,7 @@ class AddTest {
     @Test
     fun test_inputStreamBig(): Unit = runBlocking {
         val storage = newStorage()
-        val text = TestEnv.getRandomBytes((splitterSize() * 2) - 50)
+        val text = TestEnv.randomBytes((splitterSize() * 2) - 50)
         val fid = TestEnv.createContent(storage, "random.bin", OCTET_MIME_TYPE, text)
         val channel = storage.channel(fid)
         assertTrue(text.contentEquals(channel.readAllBytes()))
@@ -204,7 +204,7 @@ class AddTest {
         assertNotNull(root)
         assertEquals(root.size(), 0)
 
-        val text = TestEnv.getRandomBytes((split * 2) - 50)
+        val text = TestEnv.randomBytes((split * 2) - 50)
         val fid = TestEnv.createContent(storage, "random.bin", OCTET_MIME_TYPE, text)
         storage.root(fid)
         val newRoot = storage.root()

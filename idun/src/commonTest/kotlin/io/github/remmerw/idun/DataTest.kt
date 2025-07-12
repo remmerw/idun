@@ -74,7 +74,7 @@ class DataTest {
         val iteration = 10
         SystemFileSystem.sink(temp).buffered().use { source ->
             repeat(iteration) {
-                source.write(TestEnv.getRandomBytes(splitterSize()))
+                source.write(TestEnv.randomBytes(splitterSize()))
             }
         }
         // (1) store the file

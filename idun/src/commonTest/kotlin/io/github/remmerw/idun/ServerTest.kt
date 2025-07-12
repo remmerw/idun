@@ -1,7 +1,6 @@
 package io.github.remmerw.idun
 
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlin.concurrent.atomics.AtomicInt
@@ -22,7 +21,7 @@ class ServerTest {
         server.startup(storage, serverPort)
         TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
 
-        val input = TestEnv.getRandomBytes(10000000) // 10 MB
+        val input = TestEnv.randomBytes(10000000) // 10 MB
 
         val fid = TestEnv.createContent(storage, "random.bin", input)
         assertNotNull(fid)
@@ -83,7 +82,7 @@ class ServerTest {
 
         TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
 
-        val input = TestEnv.getRandomBytes(splitterSize())
+        val input = TestEnv.randomBytes(splitterSize())
 
         val raw = storage.storeData(input)
         assertNotNull(raw)

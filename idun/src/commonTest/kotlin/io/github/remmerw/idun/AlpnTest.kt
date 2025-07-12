@@ -2,7 +2,6 @@ package io.github.remmerw.idun
 
 import io.github.remmerw.idun.core.Raw
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -17,7 +16,7 @@ class AlpnTest {
         val server = newIdun()
         server.startup(storage, serverPort)
 
-        val input = TestEnv.getRandomBytes(100) //
+        val input = TestEnv.randomBytes(100) //
 
         storage.root(input)
         val cid = storage.root().cid()

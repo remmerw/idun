@@ -15,7 +15,7 @@ internal object TestEnv {
     private const val DEBUG = true
 
 
-    fun getRandomBytes(number: Int): ByteArray {
+    fun randomBytes(number: Int): ByteArray {
         val bytes = ByteArray(number)
         Random.nextBytes(bytes)
         return bytes
@@ -36,7 +36,7 @@ internal object TestEnv {
         val temp = storage.tempFile()
         SystemFileSystem.sink(temp).buffered().use { source ->
             repeat(iteration) {
-                source.write(getRandomBytes(splitterSize()))
+                source.write(randomBytes(splitterSize()))
             }
         }
 

@@ -9,6 +9,7 @@ import io.github.remmerw.asen.PeerStore
 import io.github.remmerw.asen.Peeraddr
 import io.github.remmerw.asen.bootstrap
 import io.github.remmerw.asen.decode58
+import io.github.remmerw.asen.encode58
 import io.github.remmerw.asen.generateKeys
 import io.github.remmerw.asen.newAsen
 import io.github.remmerw.idun.core.Connector
@@ -188,6 +189,14 @@ class Idun internal constructor(private val asen: Asen) {
         payload.buffered().use { source ->
             return source.readLong()
         }
+    }
+
+    @Suppress("unused")
+    suspend fun info(request: String): Node {
+        val uri = Uri.parse(request)
+        val cid = uri.extractCid()
+        val peerId = uri.extractPeerId()
+        return info(peerId, cid)
     }
 
     @Suppress("unused")
@@ -635,6 +644,16 @@ fun createChannel(node: Node, fetch: Fetch): Channel {
     val raw = node as Raw
     return RawChannel(raw.data())
 }
+
+fun pnsUri(peerId:PeerId): String {
+    return "pns://" + encode58(peerId.hash)
+}
+
+fun pnsUri(peerId:PeerId, cid:Long): String {
+    return pnsUri(peerId) + "/" + cid.toString(radix = 16)
+}
+
+
 
 fun debug(throwable: Throwable) {
     if (ERROR) {
