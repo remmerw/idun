@@ -1,5 +1,6 @@
 package io.github.remmerw.idun
 
+import com.eygraber.uri.Uri
 import io.github.remmerw.asen.Asen
 import io.github.remmerw.asen.Keys
 import io.github.remmerw.asen.MemoryPeers
@@ -7,6 +8,7 @@ import io.github.remmerw.asen.PeerId
 import io.github.remmerw.asen.PeerStore
 import io.github.remmerw.asen.Peeraddr
 import io.github.remmerw.asen.bootstrap
+import io.github.remmerw.asen.decode58
 import io.github.remmerw.asen.generateKeys
 import io.github.remmerw.asen.newAsen
 import io.github.remmerw.idun.core.Connector
@@ -32,7 +34,6 @@ import io.ktor.utils.io.writeBuffer
 import io.ktor.utils.io.writeInt
 import io.ktor.utils.io.writeLong
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.io.Buffer
@@ -60,7 +61,8 @@ class Idun internal constructor(private val asen: Asen) {
 
     suspend fun observedPeeraddrs(port: Int): List<Peeraddr> {
         return asen.observedAddresses().map { address ->
-            Peeraddr(peerId(), address, port.toUShort()) }
+            Peeraddr(peerId(), address, port.toUShort())
+        }
     }
 
     /**
@@ -188,8 +190,14 @@ class Idun internal constructor(private val asen: Asen) {
         }
     }
 
-
     @Suppress("unused")
+    suspend fun response(request: String): Response {
+        val uri = Uri.parse(request)
+        val cid = uri.extractCid()
+        val peerId = uri.extractPeerId()
+        return response(peerId, cid)
+    }
+
     suspend fun response(peerId: PeerId, cid: Long? = null): Response {
         try {
             val node = info(peerId, cid) // is resolved
@@ -355,35 +363,107 @@ interface Node {
     fun mimeType(): String
 }
 
-interface Storage : Fetch {
+data class Storage(private val directory: Path) : Fetch {
+    @Volatile
+    private var root: Node = createRaw(this, byteArrayOf()) {
+        nextCid()
+    }
 
-    fun reset()
+    fun directory(): Path {
+        return directory
+    }
 
-    fun delete()
+    fun root(data: ByteArray) {
+        root(createRaw(this, data) {
+            nextCid()
+        })
+    }
 
-    fun directory(): Path
+    fun root(node: Node) {
+        root = node
+    }
 
-    fun hasBlock(cid: Long): Boolean
+    fun root(): Node {
+        return root
+    }
 
-    fun blockSize(cid: Long): Int
+    fun reset() {
+        root(byteArrayOf())
+        cleanupDirectory(directory)
+    }
 
-    override suspend fun fetchBlock(cid: Long): RawSource
+    fun delete() {
+        cleanupDirectory(directory)
+        SystemFileSystem.delete(directory, false)
+    }
 
-    fun getBlock(cid: Long): RawSource
+    fun hasBlock(cid: Long): Boolean {
+        require(cid != HALO_ROOT) { "Invalid Cid" }
+        return SystemFileSystem.exists(path(cid))
+    }
 
-    fun deleteBlock(cid: Long)
+    fun blockSize(cid: Long): Int {
+        require(cid != HALO_ROOT) { "Invalid Cid" }
+        val file = path(cid)
+        require(SystemFileSystem.exists(file)) { "Block does not exists" }
+        return SystemFileSystem.metadataOrNull(file)!!.size.toInt()
+    }
 
-    fun nextCid(): Long
 
-    fun storeBlock(cid: Long, buffer: Buffer)
+    override suspend fun fetchBlock(cid: Long): RawSource {
+        return getBlock(cid)
+    }
 
-    fun root(data: ByteArray)
+    fun getBlock(cid: Long): RawSource {
+        require(cid != HALO_ROOT) { "Invalid Cid" }
+        val file = path(cid)
+        require(SystemFileSystem.exists(file)) { "Block does not exists" }
+        return SystemFileSystem.source(file)
+    }
 
-    fun root(node: Node)
+    fun storeBlock(cid: Long, buffer: Buffer) {
+        require(cid != HALO_ROOT) { "Invalid Cid" }
+        val file = path(cid)
+        SystemFileSystem.sink(file, false).use { sink ->
+            sink.write(buffer, buffer.size)
+        }
+    }
 
-    fun root(): Node
+    @OptIn(ExperimentalUuidApi::class)
+    fun tempFile(): Path {
+        return Path(directory, Uuid.random().toHexString())
+    }
 
-    fun tempFile(): Path
+    @OptIn(ExperimentalStdlibApi::class)
+    private fun path(cid: Long): Path {
+        require(cid != HALO_ROOT) { "Invalid Cid" }
+        return Path(directory, cid.toHexString())
+    }
+
+    fun deleteBlock(cid: Long) {
+        require(cid != HALO_ROOT) { "Invalid Cid" }
+        val file = path(cid)
+        SystemFileSystem.delete(file, false)
+    }
+
+    fun nextCid(): Long {
+        val cid = Random.nextLong()
+        if (cid != HALO_ROOT) {
+            val exists = hasBlock(cid)
+            if (!exists) {
+                return cid
+            }
+        }
+        return nextCid()
+    }
+
+
+    @Suppress("unused")
+    fun response(request: String): Response {
+        val uri = Uri.parse(request)
+        val cid = uri.extractCid()
+        return response(cid)
+    }
 
     fun response(request: Long?): Response {
         val cid = request ?: root().cid()
@@ -456,101 +536,6 @@ interface Storage : Fetch {
 
 }
 
-private class StorageImpl(private val directory: Path) : Storage {
-    @Volatile
-    private var root: Node = createRaw(this, byteArrayOf()) {
-        nextCid()
-    }
-
-    override fun directory(): Path {
-        return directory
-    }
-
-    override fun root(data: ByteArray) {
-        root(createRaw(this, data) {
-            nextCid()
-        })
-    }
-
-    override fun root(node: Node) {
-        root = node
-    }
-
-    override fun root(): Node {
-        return root
-    }
-
-    override fun reset() {
-        root(byteArrayOf())
-        cleanupDirectory(directory)
-    }
-
-    override fun delete() {
-        cleanupDirectory(directory)
-        SystemFileSystem.delete(directory, false)
-    }
-
-    override fun hasBlock(cid: Long): Boolean {
-        require(cid != HALO_ROOT) { "Invalid Cid" }
-        return SystemFileSystem.exists(path(cid))
-    }
-
-    override fun blockSize(cid: Long): Int {
-        require(cid != HALO_ROOT) { "Invalid Cid" }
-        val file = path(cid)
-        require(SystemFileSystem.exists(file)) { "Block does not exists" }
-        return SystemFileSystem.metadataOrNull(file)!!.size.toInt()
-    }
-
-
-    override suspend fun fetchBlock(cid: Long): RawSource {
-        return getBlock(cid)
-    }
-
-    override fun getBlock(cid: Long): RawSource {
-        require(cid != HALO_ROOT) { "Invalid Cid" }
-        val file = path(cid)
-        require(SystemFileSystem.exists(file)) { "Block does not exists" }
-        return SystemFileSystem.source(file)
-    }
-
-    override fun storeBlock(cid: Long, buffer: Buffer) {
-        require(cid != HALO_ROOT) { "Invalid Cid" }
-        val file = path(cid)
-        SystemFileSystem.sink(file, false).use { sink ->
-            sink.write(buffer, buffer.size)
-        }
-    }
-
-    @OptIn(ExperimentalUuidApi::class)
-    override fun tempFile(): Path {
-        return Path(directory, Uuid.random().toHexString())
-    }
-
-    @OptIn(ExperimentalStdlibApi::class)
-    private fun path(cid: Long): Path {
-        require(cid != HALO_ROOT) { "Invalid Cid" }
-        return Path(directory, cid.toHexString())
-    }
-
-    override fun deleteBlock(cid: Long) {
-        require(cid != HALO_ROOT) { "Invalid Cid" }
-        val file = path(cid)
-        SystemFileSystem.delete(file, false)
-    }
-
-    override fun nextCid(): Long {
-        val cid = Random.nextLong()
-        if (cid != HALO_ROOT) {
-            val exists = hasBlock(cid)
-            if (!exists) {
-                return cid
-            }
-        }
-        return nextCid()
-    }
-}
-
 
 fun contentResponse(
     channel: Channel, msg: String, status: Int
@@ -605,7 +590,7 @@ fun newStorage(directory: Path): Storage {
     ) {
         "Path is not a directory."
     }
-    return StorageImpl(directory)
+    return Storage(directory)
 }
 
 fun decodeNode(cid: Long, block: Buffer): Node {
@@ -614,6 +599,32 @@ fun decodeNode(cid: Long, block: Buffer): Node {
 
 interface Fetch {
     suspend fun fetchBlock(cid: Long): RawSource
+}
+
+fun Uri.extractPeerId(): PeerId {
+    val host = validate(this)
+    return PeerId(decode58(host))
+}
+
+private fun validate(pns: Uri): String {
+    checkNotNull(pns.scheme) { "Scheme not defined" }
+    require(pns.scheme == "pns") { "Scheme not pns" }
+    val host = pns.host
+    checkNotNull(host) { "Host not defined" }
+    require(host.isNotBlank()) { "Host is empty" }
+    return host
+}
+
+fun Uri.extractCid(): Long? {
+    var path = this.path
+    if (path != null) {
+        path = path.trim().removePrefix("/")
+        if (path.isNotBlank()) {
+            val cid = path.toLong(radix = 16)
+            return cid
+        }
+    }
+    return null
 }
 
 fun createChannel(node: Node, fetch: Fetch): Channel {

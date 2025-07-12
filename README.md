@@ -2,7 +2,7 @@
     <div>
         <img src="https://img.shields.io/maven-central/v/io.github.remmerw/idun" alt="Kotlin Maven Version" />
         <img src="https://img.shields.io/badge/Platform-Android-brightgreen.svg?logo=android" alt="Badge Android" />
-        <img src="https://img.shields.io/badge/Platform-iOS%20%2F%20macOS-lightgrey.svg?logo=apple" alt="Badge iOS" />
+        <!--img src="https://img.shields.io/badge/Platform-iOS%20%2F%20macOS-lightgrey.svg?logo=apple" alt="Badge iOS" /-->
         <img src="https://img.shields.io/badge/Platform-JVM-8A2BE2.svg?logo=openjdk" alt="Badge JVM" />
     </div>
 </div>
@@ -27,7 +27,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             ...
-            implementation("io.github.remmerw:idun:0.3.3")
+            implementation("io.github.remmerw:idun:0.3.4")
         }
         ...
     }

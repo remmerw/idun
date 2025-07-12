@@ -12,7 +12,7 @@ plugins {
 }
 
 group = "io.github.remmerw"
-version = "0.3.3"
+version = "0.3.4"
 
 kotlin {
 
@@ -25,9 +25,9 @@ kotlin {
     }
 
     jvm()
-    iosX64()
-    iosArm64()
-    iosSimulatorArm64()
+    // iosX64()
+    // iosArm64()
+    // iosSimulatorArm64()
     // linuxArm64()
     // linuxX64()
     // linuxArm64()
@@ -42,7 +42,9 @@ kotlin {
                 implementation(libs.kotlin.stdlib)
                 implementation(libs.kotlinx.io.core)
                 implementation(libs.ktor.network)
-                implementation("io.github.remmerw:asen:0.3.3")
+
+                implementation("com.eygraber:uri-kmp:0.0.20")
+                implementation("io.github.remmerw:asen:0.3.4")
             }
         }
 
