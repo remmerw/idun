@@ -191,6 +191,32 @@ class Idun internal constructor(private val asen: Asen) {
         }
     }
 
+
+    @Suppress("unused")
+    suspend fun transferTo(rawSink: RawSink, request: String, progress: (Float) -> Unit){
+
+        val uri = Uri.parse(request)
+        val cid = uri.extractCid()
+        val peerId = uri.extractPeerId()
+
+        val channel = channel(peerId, cid)
+        val size = channel.size()
+        var remember = 0
+        var read = 0L
+
+        channel.transferTo(rawSink) { n ->
+            read += n.toLong()
+            if (size > 0) {
+                val percent = ((read * 100.0f) / size).toInt()
+                if (percent > remember) {
+                    remember = percent
+
+                    progress.invoke(percent / 100.0f)
+                }
+            }
+        }
+    }
+
     @Suppress("unused")
     suspend fun info(request: String): Node {
         val uri = Uri.parse(request)
