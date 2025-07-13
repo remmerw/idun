@@ -3,7 +3,7 @@ package io.github.remmerw.idun
 import io.github.remmerw.idun.core.OCTET_MIME_TYPE
 import io.ktor.utils.io.core.remaining
 import kotlinx.coroutines.runBlocking
-import kotlinx.io.buffered
+import kotlinx.io.Buffer
 import kotlinx.io.readByteArray
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -33,7 +33,8 @@ class AddTest {
             assertFalse(storage.hasBlock(text))
 
             try {
-                storage.fetchBlock(node.cid()) // closed exception expected
+                val buffer = Buffer()
+                storage.fetchBlock(buffer, node.cid()) // closed exception expected
             } finally {
                 storage.delete()
             }
@@ -75,7 +76,7 @@ class AddTest {
         assertTrue(fid.name().isNotEmpty())
 
         val channel = storage.channel(fid)
-        val bytes = channel.readAllBytes()
+        val bytes = channel.readBytes()
         assertEquals(bytes.size.toLong(), fid.size())
         storage.delete()
     }
@@ -97,7 +98,7 @@ class AddTest {
         assertEquals(fid.mimeType(), OCTET_MIME_TYPE)
 
         val channel = storage.channel(fid)
-        assertEquals(fid.size(), channel.readAllBytes().size.toLong())
+        assertEquals(fid.size(), channel.readBytes().size.toLong())
 
         storage.delete()
     }
@@ -116,7 +117,7 @@ class AddTest {
 
 
         val channel = storage.channel(fid)
-        assertEquals(fid.size(), channel.readAllBytes().size.toLong())
+        assertEquals(fid.size(), channel.readBytes().size.toLong())
 
         storage.delete()
     }
@@ -134,7 +135,7 @@ class AddTest {
 
 
         val channel = storage.channel(fid)
-        assertEquals(channel.readAllBytes().size.toLong(), fid.size())
+        assertEquals(channel.readBytes().size.toLong(), fid.size())
         storage.delete()
     }
 
@@ -160,7 +161,7 @@ class AddTest {
         val text = TestEnv.randomBytes((splitterSize() * 2) - 50)
         val fid = TestEnv.createContent(storage, "random.bin", OCTET_MIME_TYPE, text)
         val channel = storage.channel(fid)
-        assertTrue(text.contentEquals(channel.readAllBytes()))
+        assertTrue(text.contentEquals(channel.readBytes()))
         storage.delete()
     }
 
@@ -174,24 +175,25 @@ class AddTest {
         assertTrue(storage.hasBlock(fid.cid()))
 
         val channel = createChannel(fid, storage)
-
+        val buffer = Buffer()
         channel.seek(0)
-        channel.next()?.buffered().use { buffer ->
-            assertNotNull(buffer)
-            assertEquals(text, buffer.readByteArray().decodeToString())
-        }
+        channel.next(buffer)
+        assertNotNull(buffer)
+        assertEquals(text, buffer.readByteArray().decodeToString())
 
+
+        buffer.clear()
         var pos = 11
         channel.seek(pos.toLong())
-        channel.next()!!.buffered().use { buffer ->
-            assertEquals(text.substring(pos), buffer.readByteArray().decodeToString())
-        }
+        channel.next(buffer)
+        assertEquals(text.substring(pos), buffer.readByteArray().decodeToString())
 
+        buffer.clear()
         pos = 5
         channel.seek(pos.toLong())
-        channel.next()!!.buffered().use { buffer ->
-            assertEquals(text.substring(pos), buffer.readByteArray().decodeToString())
-        }
+        channel.next(buffer)
+        assertEquals(text.substring(pos), buffer.readByteArray().decodeToString())
+
         storage.delete()
     }
 
@@ -215,33 +217,39 @@ class AddTest {
 
         val channel = storage.channel(fid)
 
+        val buffer = Buffer()
         channel.seek(0)
-        channel.next()!!.buffered().use { buffer ->
-            val data = buffer.readByteArray()
-            assertEquals(split, data.size)
-        }
-        channel.next()!!.buffered().use { buffer ->
-            val data = buffer.readByteArray()
-            assertEquals(split - 50, data.size)
-        }
+        assertTrue(channel.next(buffer) > 0)
+        var data = buffer.readByteArray()
+        assertEquals(split, data.size)
 
+
+        // test
+        buffer.clear()
+        assertTrue(channel.next(buffer) > 0)
+        data = buffer.readByteArray()
+        assertEquals(split - 50, data.size)
+
+
+        // test
+        buffer.clear()
         var pos = split + 50
         channel.seek(pos.toLong())
-        channel.next()!!.buffered().use { buffer ->
-            val data = buffer.readByteArray()
-            assertEquals(split - 100, data.size)
-            assertEquals(0, buffer.remaining.toInt())
-        }
+        assertTrue(channel.next(buffer) > 0)
+        data = buffer.readByteArray()
+        assertEquals(split - 100, data.size)
+        assertEquals(0, buffer.remaining.toInt())
 
 
-
+        // test
+        buffer.clear()
         pos = split - 50
         channel.seek(pos.toLong())
-        channel.next()!!.buffered().use { buffer ->
-            val data = buffer.readByteArray()
-            assertEquals(50, data.size)
-            assertEquals(0, buffer.remaining.toInt())
-        }
+        assertTrue(channel.next(buffer) > 0)
+        data = buffer.readByteArray()
+        assertEquals(50, data.size)
+        assertEquals(0, buffer.remaining.toInt())
+
         storage.delete()
     }
 

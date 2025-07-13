@@ -45,7 +45,7 @@ class FetchStressTest {
 
                 val channel = client.channel(server.peerId(), fid.cid())
                 assertEquals(fid.size(), channel.size())
-                val data = channel.readAllBytes()
+                val data = channel.readBytes()
                 assertEquals(fid.size().toInt(), data.size)
 
                 client.shutdown()

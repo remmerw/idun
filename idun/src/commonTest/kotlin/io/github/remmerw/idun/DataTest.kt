@@ -29,14 +29,10 @@ class DataTest {
         storage.storeBlock(cid, buffer)
 
         // (2) get block
-        val cmp = storage.getBlock(cid)
-        assertNotNull(cmp)
-
-        // tests
-        val cmpBytes = cmp.buffered().use { source ->
-            source.readByteArray()
+        storage.getBlock(cid).buffered().use { source ->
+            assertContentEquals(bytes, source.readByteArray())
         }
-        assertContentEquals(bytes, cmpBytes)
+
 
         // cleanup
         storage.deleteBlock(cid)

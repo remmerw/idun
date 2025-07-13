@@ -32,12 +32,12 @@ class FetchRequestsTest {
         )
 
 
-        var data = client.channel(server.peerId(), fid.cid()).readAllBytes()
+        var data = client.channel(server.peerId(), fid.cid()).readBytes()
         assertNotNull(data)
         assertTrue(data.contentEquals(content.encodeToByteArray()))
 
 
-        data = client.channel(server.peerId(), bin.cid()).readAllBytes()
+        data = client.channel(server.peerId(), bin.cid()).readBytes()
         assertNotNull(data)
         assertTrue(data.contentEquals(bytes))
 

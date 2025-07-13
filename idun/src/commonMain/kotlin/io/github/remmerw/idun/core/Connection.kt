@@ -16,7 +16,7 @@ import io.ktor.utils.io.writeLong
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.io.Buffer
-import kotlinx.io.RawSource
+import kotlinx.io.Source
 
 internal class Connection(
     internal val remotePeeraddr: Peeraddr,
@@ -28,7 +28,7 @@ internal class Connection(
     private val sendChannel = socket.openWriteChannel(autoFlush = true)
 
     @OptIn(InternalAPI::class)
-    suspend fun request(cid: Long): RawSource {
+    suspend fun request(cid: Long): Source {
         val cidRequest = (cid == HALO_ROOT)
 
         mutex.withLock {

@@ -2,6 +2,7 @@ package io.github.remmerw.idun
 
 import io.github.remmerw.idun.core.encodeRaw
 import kotlinx.coroutines.runBlocking
+import kotlinx.io.Buffer
 import kotlin.math.abs
 import kotlin.random.Random
 import kotlin.test.Test
@@ -15,8 +16,8 @@ class CatTest {
         val cid = abs(Random.nextLong())
         val storage = newStorage()
         try {
-
-            storage.fetchBlock(cid)
+            val buffer = Buffer()
+            storage.fetchBlock(buffer, cid)
             fail()
 
         } catch (_: Exception) {

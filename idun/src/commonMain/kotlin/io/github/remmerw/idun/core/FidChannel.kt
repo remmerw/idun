@@ -4,9 +4,6 @@ import io.github.remmerw.idun.Channel
 import io.github.remmerw.idun.Fetch
 import io.github.remmerw.idun.splitterSize
 import kotlinx.io.Buffer
-import kotlinx.io.RawSink
-import kotlinx.io.RawSource
-import kotlinx.io.buffered
 import kotlinx.io.readByteArray
 
 
@@ -23,26 +20,34 @@ internal class FidChannel(
     }
 
 
-    override suspend fun next(): RawSource? {
+    override suspend fun next(buffer: Buffer): Int {
         val offset = this.left
         this.left = -1
 
         if (offset >= 0) {
             // special case when offset is set
             val link = root.links()[index]
-            val source = fetch.fetchBlock(link).buffered()
-            source.skip(offset.toLong())
-            return source
+            return fetch.fetchBlock(buffer, link, offset)
         }
 
         index++
 
         val links = root.links()
         if (index >= links.size) {
-            return null
+            return -1
         }
         val link = links[index]
-        return fetch.fetchBlock(link)
+
+        return fetch.fetchBlock(buffer, link)
+    }
+
+    override suspend fun readBytes(): ByteArray {
+        val buffer = Buffer()
+        do {
+            val read = next(buffer)
+        } while (read > 0)
+
+        return buffer.readByteArray()
     }
 
 
@@ -72,25 +77,5 @@ internal class FidChannel(
         } else {
             this.left = offset.toInt()
         }
-    }
-
-
-    override suspend fun readAllBytes(): ByteArray {
-
-        val all = Buffer()
-
-        transferTo(all) { }
-
-        return all.readByteArray()
-    }
-
-
-    override suspend fun transferTo(rawSink: RawSink, read: (Int) -> Unit) {
-        do {
-            val data = next()
-            data?.buffered()?.use { source ->
-                source.transferTo(rawSink)
-            }
-        } while (data != null)
     }
 }

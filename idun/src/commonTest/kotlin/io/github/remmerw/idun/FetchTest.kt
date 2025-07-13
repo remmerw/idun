@@ -2,7 +2,6 @@ package io.github.remmerw.idun
 
 
 import kotlinx.coroutines.runBlocking
-import kotlinx.io.buffered
 import kotlinx.io.files.SystemFileSystem
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -29,12 +28,17 @@ class FetchTest {
             TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
         )
 
+        val request = pnsUri(server.peerId(), fid.cid())
 
-        val channel = client.channel(server.peerId(), fid.cid())
 
-        SystemFileSystem.sink(temp).buffered().use { sink ->
-            channel.transferTo(sink) {}
+        SystemFileSystem.sink(temp).use { sink ->
+            client.transferTo(sink, request) { progress ->
+                {
+                    println("Progress $progress")
+                }
+            }
         }
+
         client.shutdown()
 
         val length = SystemFileSystem.metadataOrNull(temp)?.size ?: 0

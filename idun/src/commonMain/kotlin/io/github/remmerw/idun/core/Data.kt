@@ -244,7 +244,9 @@ private fun lengthFid(
 internal suspend fun fetchData(node: Node, fetch: Fetch): ByteArray {
     val size = node.size()
     if (node is Fid) {
-        return FidChannel(node, size, fetch).readAllBytes()
+
+        return FidChannel(node, size, fetch).readBytes()
+
     }
     val raw = node as Raw
     return raw.data()

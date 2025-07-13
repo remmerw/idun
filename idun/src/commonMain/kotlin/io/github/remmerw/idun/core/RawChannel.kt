@@ -2,8 +2,6 @@ package io.github.remmerw.idun.core
 
 import io.github.remmerw.idun.Channel
 import kotlinx.io.Buffer
-import kotlinx.io.RawSink
-
 
 internal class RawChannel(private val data: ByteArray) : Channel {
 
@@ -16,25 +14,17 @@ internal class RawChannel(private val data: ByteArray) : Channel {
         throw Exception("Seek is not supported")
     }
 
-    override suspend fun transferTo(rawSink: RawSink, read: (Int) -> Unit) {
-        val buffer = Buffer()
-        buffer.write(data)
-        rawSink.write(buffer, size())
-        read.invoke(size().toInt())
-    }
-
-    override suspend fun readAllBytes(): ByteArray {
-        return data
-    }
-
-    override suspend fun next(): Buffer? {
+    override suspend fun next(buffer: Buffer): Int {
         if (!hasRead) {
-            val buffer = Buffer()
             buffer.write(data)
             hasRead = true
-            return buffer
+            return data.size
         } else {
-            return null
+            return -1
         }
+    }
+
+    override suspend fun readBytes(): ByteArray {
+        return data
     }
 }

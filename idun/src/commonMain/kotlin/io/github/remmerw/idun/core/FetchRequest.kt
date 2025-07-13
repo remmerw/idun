@@ -3,7 +3,7 @@ package io.github.remmerw.idun.core
 import io.github.remmerw.asen.Asen
 import io.github.remmerw.asen.PeerId
 import io.github.remmerw.idun.Fetch
-import kotlinx.io.RawSource
+import kotlinx.io.RawSink
 
 
 internal data class FetchRequest(
@@ -12,14 +12,12 @@ internal data class FetchRequest(
     val peerId: PeerId
 ) : Fetch {
 
-    override suspend fun fetchBlock(cid: Long): RawSource {
+    override suspend fun fetchBlock(rawSink: RawSink, cid: Long, offset: Int): Int {
         val connection = connector.connect(asen, peerId)
-        return request(connection, cid)
-    }
-
-
-    private suspend fun request(connection: Connection, cid: Long): RawSource {
-        return connection.request(cid)
+        connection.request(cid).use { source ->
+            source.skip(offset.toLong())
+            return source.transferTo(rawSink).toInt()
+        }
     }
 }
 

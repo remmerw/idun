@@ -12,7 +12,7 @@ plugins {
 }
 
 group = "io.github.remmerw"
-version = "0.3.6"
+version = "0.3.7"
 
 kotlin {
 
@@ -44,7 +44,7 @@ kotlin {
                 implementation(libs.ktor.network)
 
                 implementation("com.eygraber:uri-kmp:0.0.20")
-                implementation("io.github.remmerw:asen:0.3.4")
+                implementation("io.github.remmerw:asen:0.3.5")
             }
         }
 

@@ -33,7 +33,7 @@ class ServerTest {
         )
 
 
-        val data = client.channel(server.peerId(), fid.cid()).readAllBytes()
+        val data = client.channel(server.peerId(), fid.cid()).readBytes()
         assertTrue(input.contentEquals(data))
         client.shutdown()
 

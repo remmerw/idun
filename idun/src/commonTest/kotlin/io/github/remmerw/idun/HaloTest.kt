@@ -8,6 +8,7 @@ import io.github.remmerw.idun.core.Raw
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.io.Buffer
 import kotlinx.io.buffered
 import kotlinx.io.files.SystemFileSystem
 import kotlin.concurrent.atomics.AtomicInt
@@ -57,7 +58,8 @@ class HaloTest {
         assertEquals(test, bytes.decodeToString())
         try {
             val fault = TestEnv.randomLong()
-            storage.fetchBlock(fault)
+            val buffer = Buffer()
+            storage.fetchBlock(buffer, fault)
             fail()
         } catch (_: Exception) {
             // ok

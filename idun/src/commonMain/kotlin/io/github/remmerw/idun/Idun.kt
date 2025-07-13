@@ -18,6 +18,7 @@ import io.github.remmerw.idun.core.Fid
 import io.github.remmerw.idun.core.FidChannel
 import io.github.remmerw.idun.core.Raw
 import io.github.remmerw.idun.core.RawChannel
+import io.github.remmerw.idun.core.Stream
 import io.github.remmerw.idun.core.createRaw
 import io.github.remmerw.idun.core.decodeNode
 import io.github.remmerw.idun.core.removeNode
@@ -44,6 +45,7 @@ import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.files.SystemTemporaryDirectory
+import java.io.InputStream
 import kotlin.concurrent.Volatile
 import kotlin.random.Random
 import kotlin.uuid.ExperimentalUuidApi
@@ -192,8 +194,7 @@ class Idun internal constructor(private val asen: Asen) {
     }
 
 
-    @Suppress("unused")
-    suspend fun transferTo(rawSink: RawSink, request: String, progress: (Float) -> Unit){
+    suspend fun transferTo(rawSink: RawSink, request: String, progress: (Float) -> Unit = {}) {
 
         val uri = Uri.parse(request)
         val cid = uri.extractCid()
@@ -202,19 +203,23 @@ class Idun internal constructor(private val asen: Asen) {
         val channel = channel(peerId, cid)
         val size = channel.size()
         var remember = 0
-        var read = 0L
+        var totalRead = 0L
+        val buffer = Buffer()
+        do {
+            val read = channel.next(buffer)
+            if (read > 0) {
+                totalRead += read
+                buffer.transferTo(rawSink)
 
-        channel.transferTo(rawSink) { n ->
-            read += n.toLong()
-            if (size > 0) {
-                val percent = ((read * 100.0f) / size).toInt()
-                if (percent > remember) {
-                    remember = percent
-
-                    progress.invoke(percent / 100.0f)
+                if (totalRead > 0) {
+                    val percent = ((totalRead * 100.0f) / size).toInt()
+                    if (percent > remember) {
+                        remember = percent
+                        progress.invoke(percent / 100.0f)
+                    }
                 }
             }
-        }
+        } while (read > 0)
     }
 
     @Suppress("unused")
@@ -286,7 +291,9 @@ class Idun internal constructor(private val asen: Asen) {
     suspend fun info(peerId: PeerId, cid: Long? = null): Node {
         if (cid != null) {
             val fetch = FetchRequest(asen, connector, peerId)
-            return decodeNode(cid, fetch.fetchBlock(cid))
+            val buffer = Buffer()
+            fetch.fetchBlock(buffer, cid)
+            return decodeNode(cid, buffer)
         } else {
             return info(peerId, fetchRoot(peerId))
         }
@@ -368,9 +375,12 @@ internal fun socketClose(socket: Socket) {
 interface Channel {
     fun size(): Long
     fun seek(offset: Long)
-    suspend fun transferTo(rawSink: RawSink, read: (Int) -> Unit)
-    suspend fun readAllBytes(): ByteArray
-    suspend fun next(): RawSource?
+    suspend fun next(buffer: Buffer): Int
+
+    /**
+     * Read all the bytes from the current offset to the end
+     */
+    suspend fun readBytes(): ByteArray
 }
 
 data class Response(
@@ -390,6 +400,10 @@ fun splitterSize(): Int {
     return SPLITTER_SIZE.toInt()
 }
 
+// this is only temporary (will be replaced when kotlinx io has seekable stream)
+fun Channel.asInputStream(): InputStream {
+    return Stream(this)
+}
 
 interface Node {
     fun cid(): Long
@@ -445,8 +459,14 @@ data class Storage(private val directory: Path) : Fetch {
     }
 
 
-    override suspend fun fetchBlock(cid: Long): RawSource {
-        return getBlock(cid)
+    override suspend fun fetchBlock(rawSink: RawSink, cid: Long, offset: Int): Int {
+        getBlock(cid).buffered().use { source ->
+            if (offset > 0) {
+                source.skip(offset.toLong())
+            }
+            return source.transferTo(rawSink).toInt()
+
+        }
     }
 
     fun getBlock(cid: Long): RawSource {
@@ -514,8 +534,9 @@ data class Storage(private val directory: Path) : Fetch {
     }
 
     fun info(cid: Long): Node {
-        val block = getBlock(cid)
-        return decodeNode(cid, block)
+        getBlock(cid).use { block ->
+            return decodeNode(cid, block)
+        }
     }
 
     // Note: remove the cid block (add all links blocks recursively)
@@ -547,7 +568,14 @@ data class Storage(private val directory: Path) : Fetch {
 
     suspend fun transferTo(node: Node, path: Path) {
         SystemFileSystem.sink(path, false).use { sink ->
-            channel(node).transferTo(sink) {}
+            val buffer = Buffer()
+            val channel = channel(node)
+            do {
+                val data = channel.next(buffer)
+                if (data > 0) {
+                    buffer.transferTo(sink)
+                }
+            } while (data > 0)
         }
     }
 
@@ -633,7 +661,7 @@ fun decodeNode(cid: Long, block: Buffer): Node {
 }
 
 interface Fetch {
-    suspend fun fetchBlock(cid: Long): RawSource
+    suspend fun fetchBlock(rawSink: RawSink, cid: Long, offset: Int = 0): Int
 }
 
 fun Uri.extractPeerId(): PeerId {
@@ -671,14 +699,13 @@ fun createChannel(node: Node, fetch: Fetch): Channel {
     return RawChannel(raw.data())
 }
 
-fun pnsUri(peerId:PeerId): String {
+fun pnsUri(peerId: PeerId): String {
     return "pns://" + encode58(peerId.hash)
 }
 
-fun pnsUri(peerId:PeerId, cid:Long): String {
+fun pnsUri(peerId: PeerId, cid: Long): String {
     return pnsUri(peerId) + "/" + cid.toString(radix = 16)
 }
-
 
 
 fun debug(throwable: Throwable) {

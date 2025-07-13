@@ -40,11 +40,14 @@ class FetchServerTest {
 
 
             val out = storage.tempFile()
-            val channel = client.channel(server.peerId(), fid.cid())
-
+            val request = pnsUri(server.peerId(), fid.cid())
 
             SystemFileSystem.sink(out).buffered().use { sink ->
-                channel.transferTo(sink) {}
+                client.transferTo(sink, request) { progress ->
+                    {
+                        println("Progress $progress")
+                    }
+                }
             }
             assertEquals(SystemFileSystem.metadataOrNull(out)?.size, fid.size())
             SystemFileSystem.delete(out)
