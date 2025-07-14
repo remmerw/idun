@@ -22,7 +22,7 @@ import kotlin.test.fail
 import kotlin.time.measureTime
 
 
-class HaloTest {
+class StorageTest {
 
     @Test
     fun resetTest() {
@@ -134,31 +134,6 @@ class HaloTest {
         storage.delete()
     }
 
-    @Test
-    fun response(): Unit = runBlocking {
-        val storage = newStorage()
-        val fid = TestEnv.createContent(storage, 100)
-        assertNotNull(fid)
-        val temp = storage.tempFile()
-        storage.transferTo(fid, temp)
-
-        assertEquals(SystemFileSystem.metadataOrNull(temp)?.size, fid.size())
-
-
-        val response = storage.response(fid.cid())
-        assertNotNull(response)
-        assertEquals(response.mimeType, fid.mimeType())
-        assertEquals(response.reason, "OK")
-        assertEquals(response.status, 200)
-        assertEquals(response.headers.size, 3)
-        assertEquals(response.encoding, "UTF-8")
-        assertNotNull(response.channel)
-
-
-        SystemFileSystem.delete(temp)
-        storage.delete(fid)
-        storage.delete()
-    }
 
     @Test
     fun performanceContentReadWrite(): Unit = runBlocking {

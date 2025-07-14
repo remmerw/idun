@@ -10,7 +10,11 @@ class RequestTest {
 
     @Test
     fun storeAndRequestData(): Unit = runBlocking {
+        val serverPort = TestEnv.randomPort()
         val storage = newStorage()
+        val server = newIdun()
+
+        server.startup(storage, serverPort)
         val packetSize = 3
         val maxData = UShort.MAX_VALUE.toInt()
 
@@ -21,7 +25,14 @@ class RequestTest {
         )
 
 
-        val response = storage.response(fid.cid())
+        val client = newIdun()
+
+        client.reachable(
+            TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+        )
+        val request = pnsUri(server.peerId(), fid.cid())
+
+        val response = client.request(request)
 
         assertNotNull(response)
 
@@ -37,6 +48,8 @@ class RequestTest {
 
 
         // cleanup
+        client.shutdown()
+        server.shutdown()
         storage.delete()
     }
 }

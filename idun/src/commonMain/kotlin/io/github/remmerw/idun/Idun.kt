@@ -231,14 +231,14 @@ class Idun internal constructor(private val asen: Asen) {
     }
 
     @Suppress("unused")
-    suspend fun response(request: String): Response {
+    suspend fun request(request: String): Response {
         val uri = Uri.parse(request)
         val cid = uri.extractCid()
         val peerId = uri.extractPeerId()
-        return response(peerId, cid)
+        return request(peerId, cid)
     }
 
-    suspend fun response(peerId: PeerId, cid: Long? = null): Response {
+    suspend fun request(peerId: PeerId, cid: Long? = null): Response {
         try {
             val node = info(peerId, cid) // is resolved
             return if (node is Fid) {
@@ -512,26 +512,6 @@ data class Storage(private val directory: Path) : Fetch {
         return nextCid()
     }
 
-
-    @Suppress("unused")
-    fun response(request: String): Response {
-        val uri = Uri.parse(request)
-        val cid = uri.extractCid()
-        return response(cid)
-    }
-
-    fun response(request: Long?): Response {
-        val cid = request ?: root().cid()
-
-        val node = info(cid)
-        return if (node is Fid) {
-            val channel = channel(node)
-            contentResponse(channel, node)
-        } else {
-            val channel = channel(node)
-            contentResponse(channel, "OK", 200)
-        }
-    }
 
     fun info(cid: Long): Node {
         getBlock(cid).use { block ->
