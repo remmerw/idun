@@ -3,6 +3,7 @@ package io.github.remmerw.idun.core
 import io.github.remmerw.asen.Asen
 import io.github.remmerw.asen.PeerId
 import io.github.remmerw.asen.Peeraddr
+import io.github.remmerw.asen.SocketAddress
 import io.github.remmerw.asen.createInetSocketAddress
 import io.github.remmerw.idun.RESOLVE_TIMEOUT
 import io.github.remmerw.idun.debug
@@ -33,10 +34,10 @@ internal class Connector(private val selectorManager: SelectorManager) {
             return connection
         }
 
-        val peeraddrs = asen.resolveAddresses(target, RESOLVE_TIMEOUT.toLong())
-        peeraddrs.forEach { peeraddr ->
+        val addresses = asen.resolveAddresses(target, RESOLVE_TIMEOUT.toLong())
+        addresses.forEach { address ->
             try {
-                return openConnection(selectorManager, this, peeraddr)
+                return openConnection(selectorManager, this, target, address)
             } catch (throwable: Throwable) {
                 debug(throwable)
             }
@@ -46,11 +47,14 @@ internal class Connector(private val selectorManager: SelectorManager) {
     }
 
     private suspend fun connect(peeraddr: Peeraddr): Connection {
-        val pnsChannels = connections(peeraddr)
+        val pnsChannels = connections(peeraddr.peerId)
         if (pnsChannels.isNotEmpty()) {
             return pnsChannels.iterator().next()
         }
-        return openConnection(selectorManager, this, peeraddr)
+        return openConnection(
+            selectorManager, this,
+            peeraddr.peerId, peeraddr.toSocketAddress()
+        )
     }
 
     suspend fun connect(asen: Asen, peerId: PeerId): Connection {
@@ -66,9 +70,6 @@ internal class Connector(private val selectorManager: SelectorManager) {
         }
     }
 
-    fun connections(peeraddr: Peeraddr): Set<Connection> {
-        return connections().filter { connection -> connection.remotePeeraddr == peeraddr }.toSet()
-    }
 
     fun connections(peerId: PeerId): Set<Connection> {
         return connections().filter { connection -> connection.remotePeerId() == peerId }.toSet()
@@ -107,17 +108,18 @@ internal class Connector(private val selectorManager: SelectorManager) {
     internal suspend fun openConnection(
         selectorManager: SelectorManager,
         connector: Connector,
-        peeraddr: Peeraddr
+        peerId: PeerId,
+        address: SocketAddress
     ): Connection {
 
         val socketAddress = createInetSocketAddress(
-            peeraddr.address.bytes,
-            peeraddr.port.toInt()
+            address.address,
+            address.port.toInt()
         )
         val socket = aSocket(selectorManager).tcp().connect(socketAddress)
         checkNotNull(socket)
 
-        val connection = Connection(peeraddr, connector, socket)
+        val connection = Connection(peerId, connector, socket)
         connector.registerChannel(connection)
         return connection
     }

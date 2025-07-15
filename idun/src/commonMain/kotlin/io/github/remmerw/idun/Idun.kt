@@ -7,6 +7,7 @@ import io.github.remmerw.asen.MemoryPeers
 import io.github.remmerw.asen.PeerId
 import io.github.remmerw.asen.PeerStore
 import io.github.remmerw.asen.Peeraddr
+import io.github.remmerw.asen.SocketAddress
 import io.github.remmerw.asen.bootstrap
 import io.github.remmerw.asen.decode58
 import io.github.remmerw.asen.encode58
@@ -62,9 +63,9 @@ class Idun internal constructor(private val asen: Asen) {
     private var serverSocket: ServerSocket? = null
 
 
-    suspend fun observedPeeraddrs(port: Int): List<Peeraddr> {
+    suspend fun observedAddresses(port: Int): List<SocketAddress> {
         return asen.observedAddresses().map { address ->
-            Peeraddr(peerId(), address, port.toUShort())
+            SocketAddress(address.bytes, port.toUShort())
         }
     }
 
@@ -139,11 +140,7 @@ class Idun internal constructor(private val asen: Asen) {
         incoming.remove(socket)
     }
 
-    suspend fun resolveAddresses(relay: Peeraddr, target: PeerId): List<Peeraddr> {
-        return asen.resolveAddresses(relay, target)
-    }
-
-    suspend fun resolveAddresses(target: PeerId, timeout: Long): List<Peeraddr> {
+    suspend fun resolveAddresses(target: PeerId, timeout: Long): List<SocketAddress> {
         return asen.resolveAddresses(target, timeout)
     }
 
@@ -151,7 +148,7 @@ class Idun internal constructor(private val asen: Asen) {
         return asen.keys()
     }
 
-    fun reservations(): List<Peeraddr> {
+    fun reservations(): List<InetSocketAddress> {
         return asen.reservations()
     }
 
@@ -168,7 +165,7 @@ class Idun internal constructor(private val asen: Asen) {
     }
 
     fun incomingConnections(): Set<InetSocketAddress> {
-        val result : MutableSet<InetSocketAddress> = mutableSetOf()
+        val result: MutableSet<InetSocketAddress> = mutableSetOf()
         for (connection in incoming) {
             if (!connection.isClosed) {
                 result.add(connection.remoteAddress as InetSocketAddress)
@@ -229,7 +226,7 @@ class Idun internal constructor(private val asen: Asen) {
         return info(peerId, cid)
     }
 
-    @Suppress("unused")
+
     suspend fun request(request: String): Response {
         val uri = Uri.parse(request)
         val cid = uri.extractCid()
@@ -270,20 +267,13 @@ class Idun internal constructor(private val asen: Asen) {
         return asen.peerId()
     }
 
-    /**
-     * Publish addresses with the purpose that other peers can find you via
-     * the nodes peerId
-     *
-     * @param peeraddrs Own addresses for publification
-     * @param maxPublifications number of max  publifications
-     * @param timeout in seconds for the operation
-     */
+
     suspend fun publishAddresses(
-        peeraddrs: List<Peeraddr>,
+        addresses: List<SocketAddress>,
         maxPublifications: Int,
         timeout: Int
     ) {
-        return asen.makeReservations(peeraddrs, maxPublifications, timeout)
+        return asen.makeReservations(addresses, maxPublifications, timeout)
     }
 
 

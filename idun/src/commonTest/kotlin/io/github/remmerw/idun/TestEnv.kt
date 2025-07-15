@@ -2,7 +2,7 @@ package io.github.remmerw.idun
 
 import io.github.remmerw.asen.PeerId
 import io.github.remmerw.asen.Peeraddr
-import io.github.remmerw.asen.createPeeraddr
+import io.github.remmerw.asen.SocketAddress
 import io.github.remmerw.idun.core.OCTET_MIME_TYPE
 import kotlinx.io.Buffer
 import kotlinx.io.buffered
@@ -52,12 +52,12 @@ internal object TestEnv {
     }
 
     internal fun loopbackPeeraddr(peerId: PeerId, port: Int): Peeraddr {
-        return loopbackPeeraddrs(peerId, port).first()
+        return Peeraddr(peerId, byteArrayOf(127, 0, 0, 1), port.toUShort())
     }
 
-    fun loopbackPeeraddrs(peerId: PeerId, port: Int): List<Peeraddr> {
+    fun loopbackAddress(port: Int): List<SocketAddress> {
         return listOf(
-            createPeeraddr(peerId, byteArrayOf(127, 0, 0, 1), port.toUShort())
+            SocketAddress(byteArrayOf(127, 0, 0, 1), port.toUShort())
         )
     }
 

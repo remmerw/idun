@@ -16,7 +16,7 @@ class Examples {
 
         val server = newIdun()
 
-        val peeraddrs = server.observedPeeraddrs(port)
+        val peeraddrs = server.observedAddresses(port)
         checkNotNull(peeraddrs)
         println("Observed addresses ${peeraddrs.size}")
 
@@ -30,6 +30,8 @@ class Examples {
 
         println("Num reservations " + server.numReservations())
         assertTrue(server.hasReservations())
+
+        server.reservations().forEach { address -> println("Relay " + address.hostname) }
 
         val client = newIdun()
 

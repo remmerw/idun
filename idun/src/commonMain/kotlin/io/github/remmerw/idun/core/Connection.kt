@@ -1,7 +1,6 @@
 package io.github.remmerw.idun.core
 
 import io.github.remmerw.asen.PeerId
-import io.github.remmerw.asen.Peeraddr
 import io.github.remmerw.idun.HALO_ROOT
 import io.github.remmerw.idun.debug
 import io.ktor.network.sockets.Socket
@@ -19,7 +18,7 @@ import kotlinx.io.Buffer
 import kotlinx.io.Source
 
 internal class Connection(
-    internal val remotePeeraddr: Peeraddr,
+    private val peerId: PeerId,
     private val connector: Connector,
     private val socket: Socket
 ) {
@@ -69,6 +68,6 @@ internal class Connection(
         get() = !socket.isClosed
 
     fun remotePeerId(): PeerId {
-        return remotePeeraddr.peerId
+        return peerId
     }
 }
