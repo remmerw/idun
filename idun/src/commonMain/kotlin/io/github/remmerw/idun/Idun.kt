@@ -167,12 +167,11 @@ class Idun internal constructor(private val asen: Asen) {
         return incomingConnections().size
     }
 
-    fun incomingConnections(): List<String> {
-
-        val result = mutableListOf<String>()
+    fun incomingConnections(): Set<InetSocketAddress> {
+        val result : MutableSet<InetSocketAddress> = mutableSetOf()
         for (connection in incoming) {
             if (!connection.isClosed) {
-                result.add(connection.remoteAddress.toString())
+                result.add(connection.remoteAddress as InetSocketAddress)
             } else {
                 incoming.remove(connection)
             }
