@@ -23,7 +23,7 @@ class DialTest {
 
         val publicPeeraddrs = TestEnv.loopbackPeeraddrs(server.peerId(), serverPort)
 
-        server.makeReservations(publicPeeraddrs, 25, 120)
+        server.publishAddresses(publicPeeraddrs, 25, 120)
 
         assertTrue(server.hasReservations())
 
@@ -49,7 +49,7 @@ class DialTest {
 
         val publicPeeraddrs = TestEnv.loopbackPeeraddrs(server.peerId(), serverPort)
 
-        server.makeReservations(publicPeeraddrs, 25, 120)
+        server.publishAddresses(publicPeeraddrs, 25, 120)
 
         val reservations = server.reservations()
 

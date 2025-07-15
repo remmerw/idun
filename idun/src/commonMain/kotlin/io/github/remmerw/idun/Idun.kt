@@ -272,19 +272,19 @@ class Idun internal constructor(private val asen: Asen) {
     }
 
     /**
-     * Makes a reservation o relay nodes with the purpose that other peers can fin you via
+     * Publish addresses with the purpose that other peers can find you via
      * the nodes peerId
      *
-     * @param peeraddrs Own addresses for reservations
-     * @param maxReservation number of max reservations
-     * @param timeout in seconds between reservations attempts
+     * @param peeraddrs Own addresses for publification
+     * @param maxPublifications number of max  publifications
+     * @param timeout in seconds for the operation
      */
-    suspend fun makeReservations(
+    suspend fun publishAddresses(
         peeraddrs: List<Peeraddr>,
-        maxReservation: Int,
+        maxPublifications: Int,
         timeout: Int
     ) {
-        return asen.makeReservations(peeraddrs, maxReservation, timeout)
+        return asen.makeReservations(peeraddrs, maxPublifications, timeout)
     }
 
 

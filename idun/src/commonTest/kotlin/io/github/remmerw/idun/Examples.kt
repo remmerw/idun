@@ -24,8 +24,8 @@ class Examples {
         // startup the service
         server.startup(storage, port)
 
-        // make reservations
-        server.makeReservations(peeraddrs, 25, 60)
+        // publish your addresses
+        server.publishAddresses(peeraddrs, 25, 60)
 
 
         println("Num reservations " + server.numReservations())

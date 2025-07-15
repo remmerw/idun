@@ -27,7 +27,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             ...
-            implementation("io.github.remmerw:idun:0.3.7")
+            implementation("io.github.remmerw:idun:0.3.8")
         }
         ...
     }
@@ -42,7 +42,7 @@ kotlin {
     @Test
     fun simpleRequestResponse(): Unit = runBlocking(Dispatchers.IO) {
 
-        val port = TestEnv.randomPort()
+         val port = TestEnv.randomPort()
         val storage = newStorage()
         val raw = storage.storeText("Moin") // store some text
 
@@ -56,8 +56,8 @@ kotlin {
         // startup the service
         server.startup(storage, port)
 
-        // make reservations
-        server.makeReservations(peeraddrs, 25, 60)
+        // publish your addresses
+        server.publishAddresses(peeraddrs, 25, 60)
 
 
         println("Num reservations " + server.numReservations())
