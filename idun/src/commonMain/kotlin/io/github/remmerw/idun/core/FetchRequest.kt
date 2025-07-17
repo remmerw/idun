@@ -1,7 +1,7 @@
 package io.github.remmerw.idun.core
 
 import io.github.remmerw.asen.Asen
-import io.github.remmerw.asen.PeerId
+import io.github.remmerw.borr.PeerId
 import io.github.remmerw.idun.Fetch
 import kotlinx.io.RawSink
 

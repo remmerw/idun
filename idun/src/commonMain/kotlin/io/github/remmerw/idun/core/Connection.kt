@@ -1,6 +1,6 @@
 package io.github.remmerw.idun.core
 
-import io.github.remmerw.asen.PeerId
+import io.github.remmerw.borr.PeerId
 import io.github.remmerw.idun.HALO_ROOT
 import io.github.remmerw.idun.debug
 import io.ktor.network.sockets.Socket

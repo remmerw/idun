@@ -1,10 +1,10 @@
 package io.github.remmerw.idun.core
 
 import io.github.remmerw.asen.Asen
-import io.github.remmerw.asen.PeerId
 import io.github.remmerw.asen.Peeraddr
 import io.github.remmerw.asen.SocketAddress
 import io.github.remmerw.asen.createInetSocketAddress
+import io.github.remmerw.borr.PeerId
 import io.github.remmerw.idun.RESOLVE_TIMEOUT
 import io.github.remmerw.idun.debug
 import io.ktor.network.selector.SelectorManager

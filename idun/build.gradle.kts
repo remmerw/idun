@@ -44,7 +44,8 @@ kotlin {
                 implementation(libs.ktor.network)
 
                 implementation("com.eygraber:uri-kmp:0.0.20")
-                implementation("io.github.remmerw:asen:0.3.7")
+                implementation("io.github.remmerw:asen:0.3.9")
+                implementation("io.github.remmerw:borr:0.0.3")
             }
         }
 

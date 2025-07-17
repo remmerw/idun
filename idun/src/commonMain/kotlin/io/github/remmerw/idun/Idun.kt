@@ -1,18 +1,18 @@
 package io.github.remmerw.idun
 
 import com.eygraber.uri.Uri
-import io.github.remmerw.asen.Asen
-import io.github.remmerw.asen.Keys
+import io.github.remmerw.asen.HolePunch
 import io.github.remmerw.asen.MemoryPeers
-import io.github.remmerw.asen.PeerId
 import io.github.remmerw.asen.PeerStore
 import io.github.remmerw.asen.Peeraddr
 import io.github.remmerw.asen.SocketAddress
 import io.github.remmerw.asen.bootstrap
 import io.github.remmerw.asen.decode58
 import io.github.remmerw.asen.encode58
-import io.github.remmerw.asen.generateKeys
 import io.github.remmerw.asen.newAsen
+import io.github.remmerw.borr.Keys
+import io.github.remmerw.borr.PeerId
+import io.github.remmerw.borr.generateKeys
 import io.github.remmerw.idun.core.Connector
 import io.github.remmerw.idun.core.FetchRequest
 import io.github.remmerw.idun.core.Fid
@@ -54,8 +54,20 @@ import kotlin.uuid.Uuid
 
 internal const val RESOLVE_TIMEOUT: Int = 60
 
-class Idun internal constructor(private val asen: Asen) {
+class Idun internal constructor(keys: Keys, bootstrap: List<Peeraddr>, peerStore: PeerStore) {
 
+    private val asen = newAsen(keys, bootstrap, peerStore, object : HolePunch {
+        override fun invoke(
+            peerId: PeerId,
+            addresses: List<SocketAddress>
+        ) {
+            scope.launch {
+                // todo
+                println("PeerId $peerId")
+            }
+        }
+
+    })
     private val incoming: MutableSet<Socket> = ConcurrentSet()
     private val selectorManager = SelectorManager(Dispatchers.IO)
     private val scope = SelectorManager(Dispatchers.IO)
@@ -256,11 +268,8 @@ class Idun internal constructor(private val asen: Asen) {
 
     suspend fun channel(peerId: PeerId, cid: Long? = null): Channel {
         val node = info(peerId, cid)
-        if (node is Fid) {
-            val fetch = FetchRequest(asen, connector, peerId)
-            return createChannel(node, fetch)
-        }
-        throw Exception("Stream on directory or raw not possible")
+        val fetch = FetchRequest(asen, connector, peerId)
+        return createChannel(node, fetch)
     }
 
     fun peerId(): PeerId {
@@ -341,6 +350,8 @@ class Idun internal constructor(private val asen: Asen) {
             debug(throwable)
         }
     }
+
+
 }
 
 
@@ -349,7 +360,7 @@ fun newIdun(
     bootstrap: List<Peeraddr> = bootstrap(),
     peerStore: PeerStore = MemoryPeers()
 ): Idun {
-    return Idun(newAsen(keys, bootstrap, peerStore))
+    return Idun(keys, bootstrap, peerStore)
 }
 
 internal fun socketClose(socket: Socket) {

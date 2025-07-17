@@ -1,7 +1,7 @@
 package io.github.remmerw.idun
 
 import com.eygraber.uri.Uri
-import io.github.remmerw.asen.PeerId
+import io.github.remmerw.borr.PeerId
 import io.github.remmerw.idun.TestEnv.randomBytes
 import io.github.remmerw.idun.core.OCTET_MIME_TYPE
 import io.github.remmerw.idun.core.Raw
