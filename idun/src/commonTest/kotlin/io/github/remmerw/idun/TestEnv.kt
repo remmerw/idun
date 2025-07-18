@@ -1,8 +1,8 @@
 package io.github.remmerw.idun
 
-import io.github.remmerw.borr.PeerId
 import io.github.remmerw.asen.Peeraddr
 import io.github.remmerw.asen.SocketAddress
+import io.github.remmerw.borr.PeerId
 import io.github.remmerw.idun.core.OCTET_MIME_TYPE
 import kotlinx.io.Buffer
 import kotlinx.io.buffered
