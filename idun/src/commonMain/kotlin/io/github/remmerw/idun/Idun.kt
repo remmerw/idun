@@ -32,7 +32,7 @@ import io.ktor.network.sockets.isClosed
 import io.ktor.network.sockets.openReadChannel
 import io.ktor.network.sockets.openWriteChannel
 import io.ktor.util.collections.ConcurrentSet
-import io.ktor.utils.io.readBuffer
+import io.ktor.utils.io.readLong
 import io.ktor.utils.io.writeBuffer
 import io.ktor.utils.io.writeInt
 import io.ktor.utils.io.writeLong
@@ -62,6 +62,8 @@ class Idun internal constructor(keys: Keys, bootstrap: List<Peeraddr>, peerStore
             addresses: List<SocketAddress>
         ) {
             scope.launch {
+
+                serverSocket
                 // todo
                 println("PeerId $peerId")
             }
@@ -115,14 +117,7 @@ class Idun internal constructor(keys: Keys, bootstrap: List<Peeraddr>, peerStore
             val sendChannel = socket.openWriteChannel(autoFlush = false)
 
             while (true) {
-
-                val buffer = receiveChannel.readBuffer(Long.SIZE_BYTES)
-
-                val read = buffer.size
-                require(read.toInt() == Long.SIZE_BYTES) { "not enough data" }
-
-
-                val cid = buffer.readLong()
+                val cid = receiveChannel.readLong()
                 val root = storage.root()
                 if (cid == HALO_ROOT) { // root request
                     // root cid
