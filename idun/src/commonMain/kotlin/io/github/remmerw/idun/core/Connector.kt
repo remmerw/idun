@@ -10,10 +10,9 @@ import io.github.remmerw.idun.debug
 import io.ktor.network.selector.SelectorManager
 import io.ktor.network.sockets.aSocket
 import io.ktor.util.collections.ConcurrentMap
-import io.ktor.util.collections.ConcurrentSet
 
 internal class Connector(private val selectorManager: SelectorManager) {
-    private val connections: MutableSet<Connection> = ConcurrentSet()
+    private val connections: ConcurrentMap<PeerId, Connection> = ConcurrentMap()
     private val reachable: ConcurrentMap<PeerId, Peeraddr> = ConcurrentMap()
 
     fun reachable(peeraddr: Peeraddr) {
@@ -21,11 +20,7 @@ internal class Connector(private val selectorManager: SelectorManager) {
     }
 
     private fun resolve(target: PeerId): Connection? {
-        val pnsChannels = connections(target)
-        if (pnsChannels.isNotEmpty()) {
-            return pnsChannels.iterator().next()
-        }
-        return null
+        return connection(target)
     }
 
     private suspend fun resolveConnection(asen: Asen, target: PeerId): Connection {
@@ -47,9 +42,9 @@ internal class Connector(private val selectorManager: SelectorManager) {
     }
 
     private suspend fun connect(peeraddr: Peeraddr): Connection {
-        val pnsChannels = connections(peeraddr.peerId)
-        if (pnsChannels.isNotEmpty()) {
-            return pnsChannels.iterator().next()
+        val connection = connection(peeraddr.peerId)
+        if (connection != null) {
+            return connection
         }
         return openConnection(
             selectorManager, this,
@@ -58,9 +53,9 @@ internal class Connector(private val selectorManager: SelectorManager) {
     }
 
     suspend fun connect(asen: Asen, peerId: PeerId): Connection {
-        val pnsChannels = connections(peerId)
-        if (pnsChannels.isNotEmpty()) {
-            return pnsChannels.iterator().next()
+        val connection = connection(peerId)
+        if (connection != null) {
+            return connection
         }
         val peeraddr = reachable[peerId]
         return if (peeraddr != null) {
@@ -70,37 +65,29 @@ internal class Connector(private val selectorManager: SelectorManager) {
         }
     }
 
-
-    fun connections(peerId: PeerId): Set<Connection> {
-        return connections().filter { connection -> connection.remotePeerId() == peerId }.toSet()
+    fun numConnections(): Int {
+        return connections.size
     }
 
-    fun connections(): Set<Connection> {
-
-        val result: MutableSet<Connection> = mutableSetOf()
-        val delete: MutableSet<Connection> = mutableSetOf()
-        for (connection in connections) {
-            if (connection.isConnected) {
-                result.add(connection)
-            } else {
-                delete.add(connection)
+    fun connection(peerId: PeerId): Connection? {
+        val connection = connections[peerId]
+        if (connection != null) {
+            if (!connection.isConnected) {
+                connections.remove(peerId)
+                return null
             }
         }
-        delete.forEach { connection -> removeChannel(connection) }
-        return result
 
+        return connection
     }
 
-    fun registerChannel(connection: Connection) {
-        connections.add(connection)
-    }
 
     fun removeChannel(connection: Connection) {
-        connections.remove(connection)
+        connections.remove(connection.remotePeerId())
     }
 
     fun shutdown() {
-        connections().forEach { connection: Connection -> connection.close() }
+        connections.values.forEach { connection: Connection -> connection.close() }
         connections.clear()
     }
 
@@ -120,7 +107,7 @@ internal class Connector(private val selectorManager: SelectorManager) {
         checkNotNull(socket)
 
         val connection = Connection(peerId, connector, socket)
-        connector.registerChannel(connection)
+        connections.put(peerId, connection)
         return connection
     }
 

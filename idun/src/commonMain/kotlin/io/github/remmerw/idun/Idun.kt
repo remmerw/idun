@@ -185,7 +185,7 @@ class Idun internal constructor(keys: Keys, bootstrap: List<Peeraddr>, peerStore
     }
 
     fun numOutgoingConnections(): Int {
-        return connector.connections().size
+        return connector.numConnections()
     }
 
     internal suspend fun fetchRoot(peerId: PeerId): Long {
