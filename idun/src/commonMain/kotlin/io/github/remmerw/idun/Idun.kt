@@ -35,7 +35,6 @@ import io.ktor.util.collections.ConcurrentSet
 import io.ktor.utils.io.readLong
 import io.ktor.utils.io.writeBuffer
 import io.ktor.utils.io.writeInt
-import io.ktor.utils.io.writeLong
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -121,8 +120,10 @@ class Idun internal constructor(keys: Keys, bootstrap: List<Peeraddr>, peerStore
                 val root = storage.root()
                 if (cid == HALO_ROOT) { // root request
                     // root cid
-                    sendChannel.writeInt(Long.SIZE_BYTES)
-                    sendChannel.writeLong(root.cid())
+                    val buffer = Buffer()
+                    buffer.writeInt(Long.SIZE_BYTES)
+                    buffer.writeLong(root.cid())
+                    sendChannel.writeBuffer(buffer)
 
                 } else {
                     sendChannel.writeInt(storage.blockSize(cid))
