@@ -3,7 +3,6 @@ package io.github.remmerw.idun.core
 import io.github.remmerw.borr.PeerId
 import io.github.remmerw.idun.HALO_ROOT
 import io.github.remmerw.idun.debug
-import io.ktor.utils.io.InternalAPI
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.io.Buffer
@@ -16,7 +15,6 @@ internal class Connection(
 ) {
     private val mutex = Mutex()
 
-    @OptIn(InternalAPI::class)
     suspend fun request(cid: Long): Source {
         val cidRequest = (cid == HALO_ROOT)
 

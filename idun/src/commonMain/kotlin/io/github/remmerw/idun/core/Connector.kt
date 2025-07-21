@@ -10,12 +10,12 @@ import io.github.remmerw.dagr.connectDagr
 import io.github.remmerw.idun.CONNECT_TIMEOUT
 import io.github.remmerw.idun.RESOLVE_TIMEOUT
 import io.github.remmerw.idun.debug
-import io.ktor.util.collections.ConcurrentMap
 import java.net.InetSocketAddress
+import java.util.concurrent.ConcurrentHashMap
 
 internal class Connector() {
-    private val connections: ConcurrentMap<PeerId, Connection> = ConcurrentMap()
-    private val reachable: ConcurrentMap<PeerId, Peeraddr> = ConcurrentMap()
+    private val connections: MutableMap<PeerId, Connection> = ConcurrentHashMap()
+    private val reachable: MutableMap<PeerId, Peeraddr> = ConcurrentHashMap()
 
     fun reachable(peeraddr: Peeraddr) {
         reachable.put(peeraddr.peerId, peeraddr)

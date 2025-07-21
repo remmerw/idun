@@ -1,7 +1,6 @@
 package io.github.remmerw.idun
 
 import io.github.remmerw.idun.core.OCTET_MIME_TYPE
-import io.ktor.utils.io.core.remaining
 import kotlinx.coroutines.runBlocking
 import kotlinx.io.Buffer
 import kotlinx.io.readByteArray
@@ -238,7 +237,7 @@ class AddTest {
         assertTrue(channel.next(buffer) > 0)
         data = buffer.readByteArray()
         assertEquals(split - 100, data.size)
-        assertEquals(0, buffer.remaining.toInt())
+        assertEquals(0, buffer.size.toInt())
 
 
         // test
@@ -248,7 +247,7 @@ class AddTest {
         assertTrue(channel.next(buffer) > 0)
         data = buffer.readByteArray()
         assertEquals(50, data.size)
-        assertEquals(0, buffer.remaining.toInt())
+        assertEquals(0, buffer.size.toInt())
 
         storage.delete()
     }

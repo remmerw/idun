@@ -28,8 +28,9 @@ import io.github.remmerw.idun.core.Stream
 import io.github.remmerw.idun.core.createRaw
 import io.github.remmerw.idun.core.decodeNode
 import io.github.remmerw.idun.core.removeNode
-import io.ktor.network.selector.SelectorManager
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -59,14 +60,13 @@ class Idun internal constructor(keys: Keys, bootstrap: List<Peeraddr>, peerStore
         ) {
             scope.launch {
                 if (dagr != null) {
-                    println("Punching PeerId $peerId")
+
                     withTimeoutOrNull(1000) {
                         addresses.forEach { socketAddress ->
                             val remoteAddress = InetSocketAddress(
                                 hostname(socketAddress.address),
                                 socketAddress.port.toInt()
                             )
-
                             dagr!!.punching(remoteAddress)
 
                         }
@@ -77,7 +77,7 @@ class Idun internal constructor(keys: Keys, bootstrap: List<Peeraddr>, peerStore
         }
 
     })
-    private val scope = SelectorManager(Dispatchers.IO)
+    private val scope = CoroutineScope(Dispatchers.IO)
     private val connector = Connector()
     private var dagr: Dagr? = null
 
@@ -132,7 +132,7 @@ class Idun internal constructor(keys: Keys, bootstrap: List<Peeraddr>, peerStore
     }
 
     fun reservations(): List<String> {
-        return asen.reservations().map { socketAddress -> socketAddress.toString() } // todo
+        return asen.reservations()
     }
 
     fun hasReservations(): Boolean {
@@ -299,7 +299,7 @@ class Idun internal constructor(keys: Keys, bootstrap: List<Peeraddr>, peerStore
         }
 
         try {
-            scope.close()
+            scope.cancel()
         } catch (throwable: Throwable) {
             debug(throwable)
         }
