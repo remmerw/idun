@@ -13,6 +13,10 @@ import io.github.remmerw.asen.newAsen
 import io.github.remmerw.borr.Keys
 import io.github.remmerw.borr.PeerId
 import io.github.remmerw.borr.generateKeys
+import io.github.remmerw.dagr.Acceptor
+import io.github.remmerw.dagr.Connection
+import io.github.remmerw.dagr.Dagr
+import io.github.remmerw.dagr.newDagr
 import io.github.remmerw.idun.core.Connector
 import io.github.remmerw.idun.core.FetchRequest
 import io.github.remmerw.idun.core.Fid
@@ -24,19 +28,7 @@ import io.github.remmerw.idun.core.createRaw
 import io.github.remmerw.idun.core.decodeNode
 import io.github.remmerw.idun.core.removeNode
 import io.ktor.network.selector.SelectorManager
-import io.ktor.network.sockets.InetSocketAddress
-import io.ktor.network.sockets.ServerSocket
-import io.ktor.network.sockets.Socket
-import io.ktor.network.sockets.aSocket
-import io.ktor.network.sockets.isClosed
-import io.ktor.network.sockets.openReadChannel
-import io.ktor.network.sockets.openWriteChannel
-import io.ktor.util.collections.ConcurrentSet
-import io.ktor.utils.io.readLong
-import io.ktor.utils.io.writeBuffer
-import io.ktor.utils.io.writeInt
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.io.Buffer
 import kotlinx.io.RawSink
@@ -52,6 +44,7 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 internal const val RESOLVE_TIMEOUT: Int = 60
+internal const val CONNECT_TIMEOUT: Int = 3
 
 class Idun internal constructor(keys: Keys, bootstrap: List<Peeraddr>, peerStore: PeerStore) {
 
@@ -68,11 +61,9 @@ class Idun internal constructor(keys: Keys, bootstrap: List<Peeraddr>, peerStore
         }
 
     })
-    private val incoming: MutableSet<Socket> = ConcurrentSet()
-    private val selectorManager = SelectorManager(Dispatchers.IO)
     private val scope = SelectorManager(Dispatchers.IO)
-    private val connector = Connector(selectorManager)
-    private var serverSocket: ServerSocket? = null
+    private val connector = Connector()
+    private var dagr: Dagr? = null
 
 
     suspend fun observedAddresses(port: Int): List<SocketAddress> {
@@ -84,68 +75,37 @@ class Idun internal constructor(keys: Keys, bootstrap: List<Peeraddr>, peerStore
     /**
      * starts the server with the given port
      */
-    suspend fun startup(storage: Storage, port: Int) {
+    fun startup(storage: Storage, port: Int) {
 
-        serverSocket = aSocket(selectorManager).tcp().bind(
-            InetSocketAddress("::", port)
-        )
-        scope.launch {
-            try {
-                while (isActive) {
+        dagr = newDagr(port, object : Acceptor{
+            override suspend fun accept(connection: Connection) {
+                try {
 
-                    // accept a connection
-                    val socket = serverSocket!!.accept()
+                    while (true) {
+                        val cid = connection.readLong()
+                        val root = storage.root()
+                        if (cid == HALO_ROOT) { // root request
+                            // root cid
+                            val buffer = Buffer()
+                            buffer.writeInt(Long.SIZE_BYTES)
+                            buffer.writeLong(root.cid())
+                            connection.writeBuffer(buffer)
 
-
-                    registerIncoming(socket)
-                    launch {
-                        handleConnection(storage, socket)
+                        } else {
+                            connection.writeInt(storage.blockSize(cid))
+                            storage.getBlock(cid).use { source ->
+                                connection.writeBuffer(source)
+                            }
+                        }
                     }
+                } catch (_: Throwable) { // ignore happens when connection is closed
+                } finally {
+                    connection.close()
                 }
-            } catch (_: Throwable) {
             }
-        }
+        })
     }
 
-
-    private suspend fun handleConnection(storage: Storage, socket: Socket) {
-        try {
-
-            val receiveChannel = socket.openReadChannel()
-            val sendChannel = socket.openWriteChannel(autoFlush = false)
-
-            while (true) {
-                val cid = receiveChannel.readLong()
-                val root = storage.root()
-                if (cid == HALO_ROOT) { // root request
-                    // root cid
-                    val buffer = Buffer()
-                    buffer.writeInt(Long.SIZE_BYTES)
-                    buffer.writeLong(root.cid())
-                    sendChannel.writeBuffer(buffer)
-
-                } else {
-                    sendChannel.writeInt(storage.blockSize(cid))
-                    storage.getBlock(cid).use { source ->
-                        sendChannel.writeBuffer(source)
-                    }
-                }
-                sendChannel.flush()
-            }
-        } catch (_: Throwable) { // ignore happens when connection is closed
-        } finally {
-            removeIncoming(socket)
-            socketClose(socket)
-        }
-    }
-
-    private fun registerIncoming(socket: Socket) {
-        incoming.add(socket)
-    }
-
-    private fun removeIncoming(socket: Socket) {
-        incoming.remove(socket)
-    }
 
     suspend fun resolveAddresses(target: PeerId, timeout: Long): List<SocketAddress> {
         return asen.resolveAddresses(target, timeout)
@@ -155,8 +115,8 @@ class Idun internal constructor(keys: Keys, bootstrap: List<Peeraddr>, peerStore
         return asen.keys()
     }
 
-    fun reservations(): List<InetSocketAddress> {
-        return asen.reservations()
+    fun reservations(): List<String> {
+        return asen.reservations().map { socketAddress -> socketAddress.toString() } // todo
     }
 
     fun hasReservations(): Boolean {
@@ -171,14 +131,10 @@ class Idun internal constructor(keys: Keys, bootstrap: List<Peeraddr>, peerStore
         return incomingConnections().size
     }
 
-    fun incomingConnections(): Set<InetSocketAddress> {
-        val result: MutableSet<InetSocketAddress> = mutableSetOf()
-        for (connection in incoming) {
-            if (!connection.isClosed) {
-                result.add(connection.remoteAddress as InetSocketAddress)
-            } else {
-                incoming.remove(connection)
-            }
+    fun incomingConnections(): Set<String> {
+        val result: MutableSet<String> = mutableSetOf()
+        dagr?.connections()?.forEach { connection ->
+            result.add(connection.remoteAddress().toString())
         }
         return result
 
@@ -189,8 +145,8 @@ class Idun internal constructor(keys: Keys, bootstrap: List<Peeraddr>, peerStore
     }
 
     internal suspend fun fetchRoot(peerId: PeerId): Long {
-        val pnsChannel = connector.connect(asen, peerId)
-        val payload = pnsChannel.request(HALO_ROOT)
+        val connection = connector.connect(asen, peerId)
+        val payload = connection.request(HALO_ROOT)
         payload.buffered().use { source ->
             return source.readLong()
         }
@@ -321,26 +277,13 @@ class Idun internal constructor(keys: Keys, bootstrap: List<Peeraddr>, peerStore
         }
 
         try {
-            incoming.forEach { socket: Socket -> socketClose(socket) }
-            incoming.clear()
-        } catch (throwable: Throwable) {
-            debug(throwable)
-        }
-
-        try {
-            serverSocket?.close()
+            dagr?.shutdown()
         } catch (throwable: Throwable) {
             debug(throwable)
         }
 
         try {
             scope.close()
-        } catch (throwable: Throwable) {
-            debug(throwable)
-        }
-
-        try {
-            selectorManager.close()
         } catch (throwable: Throwable) {
             debug(throwable)
         }
@@ -356,14 +299,6 @@ fun newIdun(
     peerStore: PeerStore = MemoryPeers()
 ): Idun {
     return Idun(keys, bootstrap, peerStore)
-}
-
-internal fun socketClose(socket: Socket) {
-    try {
-        socket.close()
-    } catch (throwable: Throwable) {
-        debug(throwable)
-    }
 }
 
 

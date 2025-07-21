@@ -41,7 +41,7 @@ kotlin {
             dependencies {
                 implementation(libs.kotlin.stdlib)
                 implementation(libs.kotlinx.io.core)
-                implementation(libs.ktor.network)
+                implementation(libs.ktor.network) // todo replace by utils
 
                 implementation("com.eygraber:uri-kmp:0.0.20")
                 implementation("io.github.remmerw:asen:0.3.9")

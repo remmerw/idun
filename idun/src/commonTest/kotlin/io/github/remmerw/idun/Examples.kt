@@ -31,7 +31,7 @@ class Examples {
         println("Num reservations " + server.numReservations())
         assertTrue(server.hasReservations())
 
-        server.reservations().forEach { address -> println("Relay " + address.hostname) }
+        server.reservations().forEach { address -> println("Relay $address") }
 
         val client = newIdun()
 

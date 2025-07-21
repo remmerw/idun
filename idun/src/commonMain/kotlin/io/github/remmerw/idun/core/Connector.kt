@@ -3,15 +3,17 @@ package io.github.remmerw.idun.core
 import io.github.remmerw.asen.Asen
 import io.github.remmerw.asen.Peeraddr
 import io.github.remmerw.asen.SocketAddress
-import io.github.remmerw.asen.createInetSocketAddress
+import io.github.remmerw.asen.core.hostname
 import io.github.remmerw.borr.PeerId
+import io.github.remmerw.dagr.Listener
+import io.github.remmerw.dagr.connectDagr
+import io.github.remmerw.idun.CONNECT_TIMEOUT
 import io.github.remmerw.idun.RESOLVE_TIMEOUT
 import io.github.remmerw.idun.debug
-import io.ktor.network.selector.SelectorManager
-import io.ktor.network.sockets.aSocket
 import io.ktor.util.collections.ConcurrentMap
+import java.net.InetSocketAddress
 
-internal class Connector(private val selectorManager: SelectorManager) {
+internal class Connector() {
     private val connections: ConcurrentMap<PeerId, Connection> = ConcurrentMap()
     private val reachable: ConcurrentMap<PeerId, Peeraddr> = ConcurrentMap()
 
@@ -30,39 +32,46 @@ internal class Connector(private val selectorManager: SelectorManager) {
         }
 
         val addresses = asen.resolveAddresses(target, RESOLVE_TIMEOUT.toLong())
+
+        // Note: this can be done in the future parallel
         addresses.forEach { address ->
             try {
-                return openConnection(selectorManager, this, target, address)
+                val connection = openConnection(this, target, address)
+                if(connection != null){
+                    return connection
+                }
             } catch (throwable: Throwable) {
                 debug(throwable)
             }
         }
-
         throw Exception("No hop connection established")
     }
 
-    private suspend fun connect(peeraddr: Peeraddr): Connection {
+    private suspend fun connect(peeraddr: Peeraddr): Connection? {
         val connection = connection(peeraddr.peerId)
-        if (connection != null) {
+        if (connection != null && connection.isConnected) {
             return connection
         }
         return openConnection(
-            selectorManager, this,
+            this,
             peeraddr.peerId, peeraddr.toSocketAddress()
         )
     }
 
     suspend fun connect(asen: Asen, peerId: PeerId): Connection {
-        val connection = connection(peerId)
+        var connection = connection(peerId)
         if (connection != null) {
             return connection
         }
         val peeraddr = reachable[peerId]
-        return if (peeraddr != null) {
-            connect(peeraddr)
-        } else {
-            resolveConnection(asen, peerId)
+        if (peeraddr != null) {
+            connection = connect(peeraddr)
         }
+        if(connection != null) {
+            return connection
+        }
+        return resolveConnection(asen, peerId)
+
     }
 
     fun numConnections(): Int {
@@ -86,29 +95,35 @@ internal class Connector(private val selectorManager: SelectorManager) {
         connections.remove(connection.remotePeerId())
     }
 
-    fun shutdown() {
+    suspend fun shutdown() {
         connections.values.forEach { connection: Connection -> connection.close() }
         connections.clear()
     }
 
 
     internal suspend fun openConnection(
-        selectorManager: SelectorManager,
         connector: Connector,
         peerId: PeerId,
         address: SocketAddress
-    ): Connection {
+    ): Connection? {
 
-        val socketAddress = createInetSocketAddress(
-            address.address,
+        val remoteAddress = InetSocketAddress(
+            hostname(address.address),
             address.port.toInt()
         )
-        val socket = aSocket(selectorManager).tcp().connect(socketAddress)
-        checkNotNull(socket)
 
-        val connection = Connection(peerId, connector, socket)
-        connections.put(peerId, connection)
-        return connection
+        val intern = connectDagr(remoteAddress, CONNECT_TIMEOUT, object : Listener {
+            override fun close(connection: io.github.remmerw.dagr.Connection) {
+                connections.remove(peerId)
+            }
+        })
+
+        if(intern != null) {
+            val connection = Connection(peerId, connector, intern)
+            connections.put(peerId, connection)
+            return connection
+        }
+        return null
     }
 
 }
