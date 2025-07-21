@@ -147,7 +147,7 @@ class Idun internal constructor(keys: Keys, bootstrap: List<Peeraddr>, peerStore
     internal suspend fun fetchRoot(peerId: PeerId): Long {
         val connection = connector.connect(asen, peerId)
         val payload = connection.request(HALO_ROOT)
-        payload.buffered().use { source ->
+        payload.use { source ->
             return source.readLong()
         }
     }
