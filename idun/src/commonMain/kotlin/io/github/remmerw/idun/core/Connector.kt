@@ -37,7 +37,7 @@ internal class Connector() {
         addresses.forEach { address ->
             try {
                 val connection = openConnection(this, target, address)
-                if(connection != null){
+                if (connection != null) {
                     return connection
                 }
             } catch (throwable: Throwable) {
@@ -67,7 +67,7 @@ internal class Connector() {
         if (peeraddr != null) {
             connection = connect(peeraddr)
         }
-        if(connection != null) {
+        if (connection != null) {
             return connection
         }
         return resolveConnection(asen, peerId)
@@ -118,7 +118,7 @@ internal class Connector() {
             }
         })
 
-        if(intern != null) {
+        if (intern != null) {
             val connection = Connection(peerId, connector, intern)
             connections.put(peerId, connection)
             return connection

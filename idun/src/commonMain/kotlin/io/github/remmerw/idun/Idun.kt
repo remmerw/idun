@@ -7,6 +7,7 @@ import io.github.remmerw.asen.PeerStore
 import io.github.remmerw.asen.Peeraddr
 import io.github.remmerw.asen.SocketAddress
 import io.github.remmerw.asen.bootstrap
+import io.github.remmerw.asen.core.hostname
 import io.github.remmerw.asen.decode58
 import io.github.remmerw.asen.encode58
 import io.github.remmerw.asen.newAsen
@@ -29,7 +30,9 @@ import io.github.remmerw.idun.core.decodeNode
 import io.github.remmerw.idun.core.removeNode
 import io.ktor.network.selector.SelectorManager
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.io.Buffer
 import kotlinx.io.RawSink
 import kotlinx.io.RawSource
@@ -38,6 +41,7 @@ import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.files.SystemTemporaryDirectory
 import java.io.InputStream
+import java.net.InetSocketAddress
 import kotlin.concurrent.Volatile
 import kotlin.random.Random
 import kotlin.uuid.ExperimentalUuidApi
@@ -54,9 +58,21 @@ class Idun internal constructor(keys: Keys, bootstrap: List<Peeraddr>, peerStore
             addresses: List<SocketAddress>
         ) {
             scope.launch {
+                if (dagr != null) {
+                    println("Punching PeerId $peerId")
+                    withTimeoutOrNull(1000) {
+                        addresses.forEach { socketAddress ->
+                            val remoteAddress = InetSocketAddress(
+                                hostname(socketAddress.address),
+                                socketAddress.port.toInt()
+                            )
 
-                // todo
-                println("PeerId $peerId")
+                            dagr!!.punching(remoteAddress)
+
+                        }
+                        delay(Random.nextLong(50, 100))
+                    }
+                }
             }
         }
 
@@ -77,7 +93,7 @@ class Idun internal constructor(keys: Keys, bootstrap: List<Peeraddr>, peerStore
      */
     fun startup(storage: Storage, port: Int) {
 
-        dagr = newDagr(port, object : Acceptor{
+        dagr = newDagr(port, object : Acceptor {
             override suspend fun accept(connection: Connection) {
                 try {
 
