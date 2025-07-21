@@ -62,7 +62,6 @@ class Idun internal constructor(keys: Keys, bootstrap: List<Peeraddr>, peerStore
         ) {
             scope.launch {
 
-                serverSocket
                 // todo
                 println("PeerId $peerId")
             }
