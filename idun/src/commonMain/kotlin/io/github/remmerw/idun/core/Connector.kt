@@ -3,12 +3,12 @@ package io.github.remmerw.idun.core
 import io.github.remmerw.asen.Asen
 import io.github.remmerw.asen.Peeraddr
 import io.github.remmerw.asen.SocketAddress
-import io.github.remmerw.asen.core.hostname
 import io.github.remmerw.borr.PeerId
 import io.github.remmerw.dagr.Dagr
 import io.github.remmerw.idun.CONNECT_TIMEOUT
 import io.github.remmerw.idun.RESOLVE_TIMEOUT
 import io.github.remmerw.idun.debug
+import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.util.concurrent.ConcurrentHashMap
 
@@ -106,18 +106,22 @@ internal class Connector(val dagr: Dagr) {
         address: SocketAddress
     ): Connection? {
 
-        val remoteAddress = InetSocketAddress(
-            hostname(address.address),
-            address.port.toInt()
-        )
+        try {
+            val remoteAddress = InetSocketAddress(
+                InetAddress.getByAddress(address.address),
+                address.port.toInt()
+            )
 
-        val intern = dagr.connect(remoteAddress, CONNECT_TIMEOUT)
+            val intern = dagr.connect(remoteAddress, CONNECT_TIMEOUT)
 
-        if (intern != null) {
-            val connection = Connection(peerId, connector, intern)
-            intern.enableKeepAlive()
-            connections.put(peerId, connection)
-            return connection
+            if (intern != null) {
+                val connection = Connection(peerId, connector, intern)
+                intern.enableKeepAlive()
+                connections.put(peerId, connection)
+                return connection
+            }
+        } catch (throwable: Throwable) {
+            debug(throwable)
         }
         return null
     }

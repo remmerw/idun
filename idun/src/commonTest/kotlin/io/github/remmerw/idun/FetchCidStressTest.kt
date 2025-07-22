@@ -8,9 +8,9 @@ import kotlin.test.assertEquals
 class FetchCidStressTest {
     @Test
     fun fetchCidIterations(): Unit = runBlocking(Dispatchers.IO) {
-        val serverPort = TestEnv.randomPort()
+
         val storage = newStorage()
-        val server = newIdun(storage, serverPort)
+        val server = newIdun(storage)
 
         checkNotNull(server)
         checkNotNull(server.keys())
@@ -23,7 +23,7 @@ class FetchCidStressTest {
 
 
         client.reachable(
-            TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+            TestEnv.loopbackPeeraddr(server.peerId(), server.localPort())
         )
 
 

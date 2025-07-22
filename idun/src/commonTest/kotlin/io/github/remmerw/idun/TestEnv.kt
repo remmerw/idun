@@ -61,10 +61,6 @@ internal object TestEnv {
         )
     }
 
-    fun randomPort(): Int {
-        return Random.nextInt(4001, 65535)
-    }
-
     fun createContent(
         storage: Storage,
         name: String,

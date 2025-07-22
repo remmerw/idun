@@ -9,11 +9,10 @@ import kotlin.time.measureTime
 class FetchStressTest {
     @Test
     fun stressFetchCalls(): Unit = runBlocking {
-        val serverPort = TestEnv.randomPort()
         val iterations = 10
 
         val storage = newStorage()
-        val server = newIdun(storage, serverPort)
+        val server = newIdun(storage)
 
         var fid: Node? = null
         var now = measureTime {
@@ -39,7 +38,7 @@ class FetchStressTest {
 
 
                 client.reachable(
-                    TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+                    TestEnv.loopbackPeeraddr(server.peerId(), server.localPort())
                 )
 
 

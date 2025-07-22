@@ -11,9 +11,9 @@ import kotlin.time.measureTime
 class FetchServerTest {
     @Test
     fun fetchDataTest(): Unit = runBlocking {
-        val serverPort = TestEnv.randomPort()
+
         val storage = newStorage()
-        val server = newIdun(storage, serverPort)
+        val server = newIdun(storage)
 
 
         var fid: Node? = null
@@ -34,7 +34,7 @@ class FetchServerTest {
 
 
             client.reachable(
-                TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+                TestEnv.loopbackPeeraddr(server.peerId(), server.localPort())
             )
 
 

@@ -11,9 +11,8 @@ class StreamTest {
 
     @Test
     fun testStream(): Unit = runBlocking {
-        val serverPort = TestEnv.randomPort()
         val storage = newStorage()
-        val server = newIdun(storage, serverPort)
+        val server = newIdun(storage)
 
         val packetSize = 3
         val maxData = UShort.MAX_VALUE.toInt()
@@ -27,7 +26,7 @@ class StreamTest {
         val client = newIdun()
 
         client.reachable(
-            TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+            TestEnv.loopbackPeeraddr(server.peerId(), server.localPort())
         )
         val request = pnsUri(server.peerId(), fid.cid())
 

@@ -15,7 +15,7 @@ class Examples {
 
         val server = newIdun(storage)
 
-        val peeraddrs = server.observedAddresses(server.localPort())
+        val peeraddrs = server.observedAddresses()
         checkNotNull(peeraddrs)
         println("Observed addresses ${peeraddrs.size}")
 

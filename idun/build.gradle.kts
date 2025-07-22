@@ -44,7 +44,7 @@ kotlin {
                 implementation(libs.kotlinx.coroutines.core)
 
                 implementation("com.eygraber:uri-kmp:0.0.20")
-                implementation("io.github.remmerw:asen:0.4.0")
+                implementation("io.github.remmerw:asen:0.4.1")
                 implementation("io.github.remmerw:borr:0.0.3")
                 implementation("io.github.remmerw:dagr:0.0.8")
             }

@@ -10,10 +10,10 @@ import kotlin.test.assertTrue
 class AlpnTest {
     @Test
     fun alpnTest(): Unit = runBlocking(Dispatchers.IO) {
-        val serverPort = TestEnv.randomPort()
+
         val storage = newStorage()
 
-        val server = newIdun(storage, serverPort)
+        val server = newIdun(storage)
 
 
         val input = TestEnv.randomBytes(100) //
@@ -28,7 +28,7 @@ class AlpnTest {
         val client = newIdun()
 
         client.reachable(
-            TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+            TestEnv.loopbackPeeraddr(server.peerId(), server.localPort())
         )
 
 

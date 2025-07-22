@@ -8,9 +8,9 @@ import kotlin.test.assertTrue
 class FetchRequestsTest {
     @Test
     fun fetchRequests(): Unit = runBlocking {
-        val serverPort = TestEnv.randomPort()
+
         val storage = newStorage()
-        val server = newIdun(storage, serverPort)
+        val server = newIdun(storage)
 
 
         val content = "Moin Moin"
@@ -26,7 +26,7 @@ class FetchRequestsTest {
         val client = newIdun()
 
         client.reachable(
-            TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+            TestEnv.loopbackPeeraddr(server.peerId(), server.localPort())
         )
 
 

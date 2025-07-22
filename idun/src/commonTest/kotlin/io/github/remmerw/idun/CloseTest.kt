@@ -10,9 +10,8 @@ class CloseTest {
     @Test
     fun closeConnect(): Unit = runBlocking(Dispatchers.IO) {
 
-        val serverPort = TestEnv.randomPort()
         val storage = newStorage()
-        val server = newIdun(storage, serverPort)
+        val server = newIdun(storage)
 
         storage.root("Homepage".encodeToByteArray())
         val raw = storage.root().cid()
@@ -21,7 +20,7 @@ class CloseTest {
         val client = newIdun()
 
         client.reachable(
-            TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+            TestEnv.loopbackPeeraddr(server.peerId(), server.localPort())
         )
 
         val cid = client.fetchRoot(server.peerId())

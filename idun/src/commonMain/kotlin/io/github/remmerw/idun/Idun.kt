@@ -7,7 +7,6 @@ import io.github.remmerw.asen.PeerStore
 import io.github.remmerw.asen.Peeraddr
 import io.github.remmerw.asen.SocketAddress
 import io.github.remmerw.asen.bootstrap
-import io.github.remmerw.asen.core.hostname
 import io.github.remmerw.asen.decode58
 import io.github.remmerw.asen.encode58
 import io.github.remmerw.asen.newAsen
@@ -41,6 +40,7 @@ import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.files.SystemTemporaryDirectory
 import java.io.InputStream
+import java.net.InetAddress
 import java.net.InetSocketAddress
 import kotlin.concurrent.Volatile
 import kotlin.random.Random
@@ -67,11 +67,15 @@ class Idun internal constructor(
 
                 withTimeoutOrNull(1000) {
                     addresses.forEach { socketAddress ->
+                        try {
                         val remoteAddress = InetSocketAddress(
-                            hostname(socketAddress.address),
+                            InetAddress.getByAddress(socketAddress.address),
                             socketAddress.port.toInt()
                         )
                         dagr.punching(remoteAddress)
+                        } catch (throwable: Throwable){
+                            debug(throwable)
+                        }
 
                     }
                     delay(Random.nextLong(50, 100))
@@ -89,9 +93,9 @@ class Idun internal constructor(
         return dagr.localPort()
     }
 
-    suspend fun observedAddresses(port: Int): List<SocketAddress> {
+    suspend fun observedAddresses(): List<SocketAddress> {
         return asen.observedAddresses().map { address ->
-            SocketAddress(address.bytes, port.toUShort())
+            SocketAddress(address.bytes, localPort().toUShort())
         }
     }
 

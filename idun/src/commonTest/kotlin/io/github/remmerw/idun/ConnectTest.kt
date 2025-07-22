@@ -17,15 +17,14 @@ class ConnectTest {
         if (!TestEnv.supportLongRunningTests()) {
             return@runBlocking
         }
-        val serverPort = TestEnv.randomPort()
         val storage = newStorage()
-        val server = newIdun(storage, serverPort)
+        val server = newIdun(storage)
 
         val client = newIdun()
 
 
         client.reachable(
-            TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+            TestEnv.loopbackPeeraddr(server.peerId(), server.localPort())
         )
 
 
@@ -42,15 +41,15 @@ class ConnectTest {
 
     @Test
     fun testClientClose(): Unit = runBlocking {
-        val serverPort = TestEnv.randomPort()
+
         val storage = newStorage()
-        val server = newIdun(storage, serverPort)
+        val server = newIdun(storage)
 
         val client = newIdun()
 
 
         client.reachable(
-            TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+            TestEnv.loopbackPeeraddr(server.peerId(), server.localPort())
         )
 
 
@@ -77,15 +76,15 @@ class ConnectTest {
 
     @Test
     fun testServerClose(): Unit = runBlocking {
-        val serverPort = TestEnv.randomPort()
+
         val storage = newStorage()
-        val server = newIdun(storage, serverPort)
+        val server = newIdun(storage)
 
         val client = newIdun()
 
 
         client.reachable(
-            TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+            TestEnv.loopbackPeeraddr(server.peerId(), server.localPort())
         )
 
 

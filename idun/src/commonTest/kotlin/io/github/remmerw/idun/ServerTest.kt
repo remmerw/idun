@@ -15,12 +15,12 @@ import kotlin.test.fail
 class ServerTest {
     @Test
     fun fetchDataTest(): Unit = runBlocking {
-        val serverPort = TestEnv.randomPort()
+
         val storage = newStorage()
-        val server = newIdun(storage, serverPort)
+        val server = newIdun(storage)
 
 
-        TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+        TestEnv.loopbackPeeraddr(server.peerId(), server.localPort())
 
         val input = TestEnv.randomBytes(10000000) // 10 MB
 
@@ -30,7 +30,7 @@ class ServerTest {
         val client = newIdun()
 
         client.reachable(
-            TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+            TestEnv.loopbackPeeraddr(server.peerId(), server.localPort())
         )
 
 
@@ -45,11 +45,11 @@ class ServerTest {
 
     @Test
     fun serverTest(): Unit = runBlocking(Dispatchers.IO) {
-        val serverPort = TestEnv.randomPort()
-        val storage = newStorage()
-        val server = newIdun(storage, serverPort)
 
-        val loopback = TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+        val storage = newStorage()
+        val server = newIdun(storage)
+
+        val loopback = TestEnv.loopbackPeeraddr(server.peerId(), server.localPort())
         assertNotNull(loopback)
 
         val text = "Hallo das ist ein Test"
@@ -61,7 +61,7 @@ class ServerTest {
         val client = newIdun()
 
         client.reachable(
-            TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+            TestEnv.loopbackPeeraddr(server.peerId(), server.localPort())
         )
 
         val data = client.fetchData(server.peerId(), raw.cid())
@@ -76,12 +76,12 @@ class ServerTest {
     @OptIn(ExperimentalAtomicApi::class)
     @Test
     fun multipleClients(): Unit = runBlocking(Dispatchers.IO) {
-        val serverPort = TestEnv.randomPort()
+
         val storage = newStorage()
-        val server = newIdun(storage, serverPort)
+        val server = newIdun(storage)
 
 
-        TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+        TestEnv.loopbackPeeraddr(server.peerId(), server.localPort())
 
         val input = TestEnv.randomBytes(splitterSize())
 
@@ -97,7 +97,7 @@ class ServerTest {
                 val client = newIdun()
 
                 client.reachable(
-                    TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+                    TestEnv.loopbackPeeraddr(server.peerId(), server.localPort())
                 )
 
                 val output = client.fetchData(server.peerId(), raw.cid())
@@ -119,11 +119,11 @@ class ServerTest {
     @OptIn(ExperimentalAtomicApi::class)
     @Test
     fun multiplePings(): Unit = runBlocking(Dispatchers.IO) {
-        val serverPort = TestEnv.randomPort()
-        val storage = newStorage()
-        val server = newIdun(storage, serverPort)
 
-        val peeraddr = TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+        val storage = newStorage()
+        val server = newIdun(storage)
+
+        val peeraddr = TestEnv.loopbackPeeraddr(server.peerId(), server.localPort())
 
         val finished = AtomicInt(0)
         val instances = 10

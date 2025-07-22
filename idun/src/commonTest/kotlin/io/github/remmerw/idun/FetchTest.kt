@@ -10,10 +10,9 @@ import kotlin.test.assertNotNull
 class FetchTest {
     @Test
     fun testClientServerDownload(): Unit = runBlocking {
-        val serverPort = TestEnv.randomPort()
 
         val storage = newStorage()
-        val server = newIdun(storage, serverPort)
+        val server = newIdun(storage)
 
         val fid = TestEnv.createContent(storage, 100)
         assertNotNull(fid)
@@ -24,7 +23,7 @@ class FetchTest {
         val client = newIdun()
 
         client.reachable(
-            TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+            TestEnv.loopbackPeeraddr(server.peerId(), server.localPort())
         )
 
         val request = pnsUri(server.peerId(), fid.cid())

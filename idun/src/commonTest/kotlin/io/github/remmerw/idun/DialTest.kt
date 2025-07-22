@@ -10,13 +10,11 @@ class DialTest {
 
     @Test
     fun testDial(): Unit = runBlocking(Dispatchers.IO) {
-        val serverPort = TestEnv.randomPort()
-
         val storage = newStorage()
 
-        val server = newIdun(storage, serverPort)
+        val server = newIdun(storage)
 
-        val publicPeeraddrs = TestEnv.loopbackAddress(serverPort)
+        val publicPeeraddrs = TestEnv.loopbackAddress(server.localPort())
 
         server.publishAddresses(publicPeeraddrs, 25, 120)
 

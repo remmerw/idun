@@ -7,16 +7,16 @@ import kotlin.test.assertTrue
 class FetchStressDataTest {
     @Test
     fun stressFetchData(): Unit = runBlocking {
-        val serverPort = TestEnv.randomPort()
+
         val iterations = 100
         val storage = newStorage()
-        val server = newIdun(storage, serverPort)
+        val server = newIdun(storage)
 
         val client = newIdun()
 
 
         client.reachable(
-            TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+            TestEnv.loopbackPeeraddr(server.peerId(), server.localPort())
         )
 
 
