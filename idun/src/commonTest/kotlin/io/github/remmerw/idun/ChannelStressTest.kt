@@ -9,17 +9,18 @@ class ChannelStressTest {
     @Test
     fun channelTestRun(): Unit = runBlocking {
         // create server instance with default values
-        val serverPort = TestEnv.randomPort()
+
         val storage = newStorage()
-        val server = newIdun()
+        val server = newIdun(storage)
 
 
-        server.startup(storage, serverPort)
         val client = newIdun()// client instance default values
 
 
         client.reachable(
-            TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
+            TestEnv.loopbackPeeraddr(
+                server.peerId(), server.localPort()
+            )
         )
 
 

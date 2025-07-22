@@ -10,8 +10,8 @@ class FetchStressDataTest {
         val serverPort = TestEnv.randomPort()
         val iterations = 100
         val storage = newStorage()
-        val server = newIdun()
-        server.startup(storage, serverPort)
+        val server = newIdun(storage, serverPort)
+
         val client = newIdun()
 
 

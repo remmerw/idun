@@ -5,15 +5,14 @@ import io.github.remmerw.asen.Peeraddr
 import io.github.remmerw.asen.SocketAddress
 import io.github.remmerw.asen.core.hostname
 import io.github.remmerw.borr.PeerId
-import io.github.remmerw.dagr.Listener
-import io.github.remmerw.dagr.connectDagr
+import io.github.remmerw.dagr.Dagr
 import io.github.remmerw.idun.CONNECT_TIMEOUT
 import io.github.remmerw.idun.RESOLVE_TIMEOUT
 import io.github.remmerw.idun.debug
 import java.net.InetSocketAddress
 import java.util.concurrent.ConcurrentHashMap
 
-internal class Connector() {
+internal class Connector(val dagr: Dagr) {
     private val connections: MutableMap<PeerId, Connection> = ConcurrentHashMap()
     private val reachable: MutableMap<PeerId, Peeraddr> = ConcurrentHashMap()
 
@@ -91,7 +90,7 @@ internal class Connector() {
     }
 
 
-    fun removeChannel(connection: Connection) {
+    fun remove(connection: Connection) {
         connections.remove(connection.remotePeerId())
     }
 
@@ -112,11 +111,7 @@ internal class Connector() {
             address.port.toInt()
         )
 
-        val intern = connectDagr(remoteAddress, CONNECT_TIMEOUT, object : Listener {
-            override fun close(connection: io.github.remmerw.dagr.Connection) {
-                connections.remove(peerId)
-            }
-        })
+        val intern = dagr.connect(remoteAddress, CONNECT_TIMEOUT)
 
         if (intern != null) {
             val connection = Connection(peerId, connector, intern)

@@ -10,9 +10,7 @@ class FetchRequestsTest {
     fun fetchRequests(): Unit = runBlocking {
         val serverPort = TestEnv.randomPort()
         val storage = newStorage()
-        val server = newIdun()
-
-        server.startup(storage, serverPort)
+        val server = newIdun(storage, serverPort)
 
 
         val content = "Moin Moin"

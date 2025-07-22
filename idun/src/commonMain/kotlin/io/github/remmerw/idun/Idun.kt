@@ -16,7 +16,6 @@ import io.github.remmerw.borr.PeerId
 import io.github.remmerw.borr.generateKeys
 import io.github.remmerw.dagr.Acceptor
 import io.github.remmerw.dagr.Connection
-import io.github.remmerw.dagr.Dagr
 import io.github.remmerw.dagr.newDagr
 import io.github.remmerw.idun.core.Connector
 import io.github.remmerw.idun.core.FetchRequest
@@ -51,7 +50,13 @@ import kotlin.uuid.Uuid
 internal const val RESOLVE_TIMEOUT: Int = 60
 internal const val CONNECT_TIMEOUT: Int = 3
 
-class Idun internal constructor(keys: Keys, bootstrap: List<Peeraddr>, peerStore: PeerStore) {
+class Idun internal constructor(
+    val storage: Storage?,
+    port: Int,
+    keys: Keys,
+    bootstrap: List<Peeraddr>,
+    peerStore: PeerStore
+) : Acceptor {
 
     private val asen = newAsen(keys, bootstrap, peerStore, object : HolePunch {
         override fun invoke(
@@ -59,67 +64,35 @@ class Idun internal constructor(keys: Keys, bootstrap: List<Peeraddr>, peerStore
             addresses: List<SocketAddress>
         ) {
             scope.launch {
-                if (dagr != null) {
 
-                    withTimeoutOrNull(1000) {
-                        addresses.forEach { socketAddress ->
-                            val remoteAddress = InetSocketAddress(
-                                hostname(socketAddress.address),
-                                socketAddress.port.toInt()
-                            )
-                            dagr!!.punching(remoteAddress)
+                withTimeoutOrNull(1000) {
+                    addresses.forEach { socketAddress ->
+                        val remoteAddress = InetSocketAddress(
+                            hostname(socketAddress.address),
+                            socketAddress.port.toInt()
+                        )
+                        dagr.punching(remoteAddress)
 
-                        }
-                        delay(Random.nextLong(50, 100))
                     }
+                    delay(Random.nextLong(50, 100))
                 }
+
             }
         }
-
     })
     private val scope = CoroutineScope(Dispatchers.IO)
-    private val connector = Connector()
-    private var dagr: Dagr? = null
+    private var dagr = newDagr(port, this)
+    private val connector = Connector(dagr)
 
+
+    fun localPort(): Int {
+        return dagr.localPort()
+    }
 
     suspend fun observedAddresses(port: Int): List<SocketAddress> {
         return asen.observedAddresses().map { address ->
             SocketAddress(address.bytes, port.toUShort())
         }
-    }
-
-    /**
-     * starts the server with the given port
-     */
-    fun startup(storage: Storage, port: Int) {
-
-        dagr = newDagr(port, object : Acceptor {
-            override suspend fun accept(connection: Connection) {
-                try {
-
-                    while (true) {
-                        val cid = connection.readLong()
-                        val root = storage.root()
-                        if (cid == HALO_ROOT) { // root request
-                            // root cid
-                            val buffer = Buffer()
-                            buffer.writeInt(Long.SIZE_BYTES)
-                            buffer.writeLong(root.cid())
-                            connection.writeBuffer(buffer)
-
-                        } else {
-                            connection.writeInt(storage.blockSize(cid))
-                            storage.getBlock(cid).use { source ->
-                                connection.writeBuffer(source)
-                            }
-                        }
-                    }
-                } catch (_: Throwable) { // ignore happens when connection is closed
-                } finally {
-                    connection.close()
-                }
-            }
-        })
     }
 
 
@@ -149,7 +122,7 @@ class Idun internal constructor(keys: Keys, bootstrap: List<Peeraddr>, peerStore
 
     fun incomingConnections(): Set<String> {
         val result: MutableSet<String> = mutableSetOf()
-        dagr?.connections()?.forEach { connection ->
+        dagr.incoming().forEach { connection ->
             result.add(connection.remoteAddress().toString())
         }
         return result
@@ -293,7 +266,7 @@ class Idun internal constructor(keys: Keys, bootstrap: List<Peeraddr>, peerStore
         }
 
         try {
-            dagr?.shutdown()
+            dagr.shutdown()
         } catch (throwable: Throwable) {
             debug(throwable)
         }
@@ -305,16 +278,46 @@ class Idun internal constructor(keys: Keys, bootstrap: List<Peeraddr>, peerStore
         }
     }
 
+    override suspend fun accept(connection: Connection) {
+        if (storage != null) {
+            try {
+                while (true) {
+                    val cid = connection.readLong()
+                    val root = storage.root()
+                    if (cid == HALO_ROOT) { // root request
+                        // root cid
+                        val buffer = Buffer()
+                        buffer.writeInt(Long.SIZE_BYTES)
+                        buffer.writeLong(root.cid())
+                        connection.writeBuffer(buffer)
+
+                    } else {
+                        connection.writeInt(storage.blockSize(cid))
+                        storage.getBlock(cid).use { source ->
+                            connection.writeBuffer(source)
+                        }
+                    }
+                    connection.flush()
+                }
+            } catch (_: Throwable) { // ignore happens when connection is closed
+            } finally {
+                connection.close()
+            }
+        }
+    }
+
 
 }
 
 
 fun newIdun(
+    storage: Storage? = null,
+    port: Int = 0,
     keys: Keys = generateKeys(),
     bootstrap: List<Peeraddr> = bootstrap(),
     peerStore: PeerStore = MemoryPeers()
 ): Idun {
-    return Idun(keys, bootstrap, peerStore)
+    return Idun(storage, port, keys, bootstrap, peerStore)
 }
 
 

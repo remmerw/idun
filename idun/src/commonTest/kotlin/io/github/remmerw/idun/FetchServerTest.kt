@@ -13,8 +13,7 @@ class FetchServerTest {
     fun fetchDataTest(): Unit = runBlocking {
         val serverPort = TestEnv.randomPort()
         val storage = newStorage()
-        val server = newIdun()
-        server.startup(storage, serverPort)
+        val server = newIdun(storage, serverPort)
 
 
         var fid: Node? = null

@@ -13,8 +13,7 @@ class FetchTest {
         val serverPort = TestEnv.randomPort()
 
         val storage = newStorage()
-        val server = newIdun()
-        server.startup(storage, serverPort)
+        val server = newIdun(storage, serverPort)
 
         val fid = TestEnv.createContent(storage, 100)
         assertNotNull(fid)

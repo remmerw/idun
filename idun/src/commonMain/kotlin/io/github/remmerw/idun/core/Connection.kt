@@ -47,7 +47,7 @@ internal class Connection(
         } catch (throwable: Throwable) {
             debug(throwable)
         } finally {
-            connector.removeChannel(this)
+            connector.remove(this)
         }
     }
 

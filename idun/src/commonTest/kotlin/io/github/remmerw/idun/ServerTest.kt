@@ -17,8 +17,9 @@ class ServerTest {
     fun fetchDataTest(): Unit = runBlocking {
         val serverPort = TestEnv.randomPort()
         val storage = newStorage()
-        val server = newIdun()
-        server.startup(storage, serverPort)
+        val server = newIdun(storage, serverPort)
+
+
         TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
 
         val input = TestEnv.randomBytes(10000000) // 10 MB
@@ -46,8 +47,8 @@ class ServerTest {
     fun serverTest(): Unit = runBlocking(Dispatchers.IO) {
         val serverPort = TestEnv.randomPort()
         val storage = newStorage()
-        val server = newIdun()
-        server.startup(storage, serverPort)
+        val server = newIdun(storage, serverPort)
+
         val loopback = TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
         assertNotNull(loopback)
 
@@ -77,8 +78,8 @@ class ServerTest {
     fun multipleClients(): Unit = runBlocking(Dispatchers.IO) {
         val serverPort = TestEnv.randomPort()
         val storage = newStorage()
-        val server = newIdun()
-        server.startup(storage, serverPort)
+        val server = newIdun(storage, serverPort)
+
 
         TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
 
@@ -120,8 +121,8 @@ class ServerTest {
     fun multiplePings(): Unit = runBlocking(Dispatchers.IO) {
         val serverPort = TestEnv.randomPort()
         val storage = newStorage()
-        val server = newIdun()
-        server.startup(storage, serverPort)
+        val server = newIdun(storage, serverPort)
+
         val peeraddr = TestEnv.loopbackPeeraddr(server.peerId(), serverPort)
 
         val finished = AtomicInt(0)

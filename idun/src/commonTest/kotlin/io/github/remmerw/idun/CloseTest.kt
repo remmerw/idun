@@ -12,8 +12,8 @@ class CloseTest {
 
         val serverPort = TestEnv.randomPort()
         val storage = newStorage()
-        val server = newIdun()
-        server.startup(storage, serverPort)
+        val server = newIdun(storage, serverPort)
+
         storage.root("Homepage".encodeToByteArray())
         val raw = storage.root().cid()
 

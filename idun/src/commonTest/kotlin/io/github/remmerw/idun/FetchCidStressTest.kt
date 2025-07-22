@@ -10,12 +10,12 @@ class FetchCidStressTest {
     fun fetchCidIterations(): Unit = runBlocking(Dispatchers.IO) {
         val serverPort = TestEnv.randomPort()
         val storage = newStorage()
-        val server = newIdun()
+        val server = newIdun(storage, serverPort)
 
         checkNotNull(server)
         checkNotNull(server.keys())
 
-        server.startup(storage, serverPort)
+
         storage.root("Homepage".encodeToByteArray())
         val raw = storage.root().cid()
 

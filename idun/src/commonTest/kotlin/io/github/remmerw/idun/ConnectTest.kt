@@ -19,8 +19,7 @@ class ConnectTest {
         }
         val serverPort = TestEnv.randomPort()
         val storage = newStorage()
-        val server = newIdun()
-        server.startup(storage, serverPort)
+        val server = newIdun(storage, serverPort)
 
         val client = newIdun()
 
@@ -45,8 +44,7 @@ class ConnectTest {
     fun testClientClose(): Unit = runBlocking {
         val serverPort = TestEnv.randomPort()
         val storage = newStorage()
-        val server = newIdun()
-        server.startup(storage, serverPort)
+        val server = newIdun(storage, serverPort)
 
         val client = newIdun()
 
@@ -81,8 +79,7 @@ class ConnectTest {
     fun testServerClose(): Unit = runBlocking {
         val serverPort = TestEnv.randomPort()
         val storage = newStorage()
-        val server = newIdun()
-        server.startup(storage, serverPort)
+        val server = newIdun(storage, serverPort)
 
         val client = newIdun()
 

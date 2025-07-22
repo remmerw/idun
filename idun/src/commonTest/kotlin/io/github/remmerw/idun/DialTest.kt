@@ -14,8 +14,7 @@ class DialTest {
 
         val storage = newStorage()
 
-        val server = newIdun()
-        server.startup(storage, serverPort)
+        val server = newIdun(storage, serverPort)
 
         val publicPeeraddrs = TestEnv.loopbackAddress(serverPort)
 

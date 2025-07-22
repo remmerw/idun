@@ -26,7 +26,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             ...
-            implementation("io.github.remmerw:idun:0.4.0")
+            implementation("io.github.remmerw:idun:0.4.1")
         }
         ...
     }
@@ -40,20 +40,16 @@ kotlin {
 
     @Test
     fun simpleRequestResponse(): Unit = runBlocking(Dispatchers.IO) {
-
-         val port = TestEnv.randomPort()
+       
         val storage = newStorage()
         val raw = storage.storeText("Moin") // store some text
 
-        val server = newIdun()
+        val server = newIdun(storage)
 
-        val peeraddrs = server.observedPeeraddrs(port)
+        val peeraddrs = server.observedAddresses(server.localPort())
         checkNotNull(peeraddrs)
         println("Observed addresses ${peeraddrs.size}")
 
-
-        // startup the service
-        server.startup(storage, port)
 
         // publish your addresses
         server.publishAddresses(peeraddrs, 25, 60)
@@ -61,6 +57,8 @@ kotlin {
 
         println("Num reservations " + server.numReservations())
         assertTrue(server.hasReservations())
+
+        server.reservations().forEach { address -> println("Relay $address") }
 
         val client = newIdun()
 

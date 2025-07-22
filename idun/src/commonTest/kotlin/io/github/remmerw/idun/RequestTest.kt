@@ -12,9 +12,8 @@ class RequestTest {
     fun storeAndRequestData(): Unit = runBlocking {
         val serverPort = TestEnv.randomPort()
         val storage = newStorage()
-        val server = newIdun()
+        val server = newIdun(storage, serverPort)
 
-        server.startup(storage, serverPort)
         val packetSize = 3
         val maxData = UShort.MAX_VALUE.toInt()
 

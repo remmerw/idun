@@ -10,19 +10,15 @@ class Examples {
     @Test
     fun simpleRequestResponse(): Unit = runBlocking(Dispatchers.IO) {
 
-        val port = TestEnv.randomPort()
         val storage = newStorage()
         val raw = storage.storeText("Moin") // store some text
 
-        val server = newIdun()
+        val server = newIdun(storage)
 
-        val peeraddrs = server.observedAddresses(port)
+        val peeraddrs = server.observedAddresses(server.localPort())
         checkNotNull(peeraddrs)
         println("Observed addresses ${peeraddrs.size}")
 
-
-        // startup the service
-        server.startup(storage, port)
 
         // publish your addresses
         server.publishAddresses(peeraddrs, 25, 60)
