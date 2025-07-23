@@ -124,13 +124,8 @@ class Idun internal constructor(
         return incomingConnections().size
     }
 
-    fun incomingConnections(): Set<String> {
-        val result: MutableSet<String> = mutableSetOf()
-        dagr.incoming().forEach { connection ->
-            result.add(connection.remoteAddress().toString())
-        }
-        return result
-
+    fun incomingConnections(): List<String> {
+        return dagr.incoming().map { connection -> connection.remoteAddress().toString() }
     }
 
     fun numOutgoingConnections(): Int {
