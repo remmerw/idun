@@ -1,12 +1,13 @@
 package io.github.remmerw.idun
 
 import io.github.remmerw.asen.Peeraddr
-import io.github.remmerw.asen.SocketAddress
 import io.github.remmerw.borr.PeerId
 import io.github.remmerw.idun.core.OCTET_MIME_TYPE
 import kotlinx.io.Buffer
 import kotlinx.io.buffered
 import kotlinx.io.files.SystemFileSystem
+import java.net.InetAddress
+import java.net.InetSocketAddress
 import kotlin.random.Random
 
 
@@ -55,9 +56,9 @@ internal object TestEnv {
         return Peeraddr(peerId, byteArrayOf(127, 0, 0, 1), port.toUShort())
     }
 
-    fun loopbackAddress(port: Int): List<SocketAddress> {
+    fun loopbackAddress(port: Int): List<InetSocketAddress> {
         return listOf(
-            SocketAddress(byteArrayOf(127, 0, 0, 1), port.toUShort())
+            InetSocketAddress(InetAddress.getLoopbackAddress(), port)
         )
     }
 

@@ -5,7 +5,6 @@ import io.github.remmerw.asen.HolePunch
 import io.github.remmerw.asen.MemoryPeers
 import io.github.remmerw.asen.PeerStore
 import io.github.remmerw.asen.Peeraddr
-import io.github.remmerw.asen.SocketAddress
 import io.github.remmerw.asen.bootstrap
 import io.github.remmerw.asen.decode58
 import io.github.remmerw.asen.encode58
@@ -40,7 +39,6 @@ import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.files.SystemTemporaryDirectory
 import java.io.InputStream
-import java.net.InetAddress
 import java.net.InetSocketAddress
 import kotlin.concurrent.Volatile
 import kotlin.random.Random
@@ -61,18 +59,14 @@ class Idun internal constructor(
     private val asen = newAsen(keys, bootstrap, peerStore, object : HolePunch {
         override fun invoke(
             peerId: PeerId,
-            addresses: List<SocketAddress>
+            addresses: List<InetSocketAddress>
         ) {
             scope.launch {
 
                 withTimeoutOrNull(1000) {
-                    addresses.forEach { socketAddress ->
+                    addresses.forEach { remoteAddress ->
                         try {
-                        val remoteAddress = InetSocketAddress(
-                            InetAddress.getByAddress(socketAddress.address),
-                            socketAddress.port.toInt()
-                        )
-                        dagr.punching(remoteAddress)
+                            dagr.punching(remoteAddress)
                         } catch (throwable: Throwable){
                             debug(throwable)
                         }
@@ -93,14 +87,14 @@ class Idun internal constructor(
         return dagr.localPort()
     }
 
-    suspend fun observedAddresses(): List<SocketAddress> {
+    suspend fun observedAddresses(): List<InetSocketAddress> {
         return asen.observedAddresses().map { address ->
-            SocketAddress(address.bytes, localPort().toUShort())
+            InetSocketAddress(address, localPort())
         }
     }
 
 
-    suspend fun resolveAddresses(target: PeerId, timeout: Long): List<SocketAddress> {
+    suspend fun resolveAddresses(target: PeerId, timeout: Long): List<InetSocketAddress> {
         return asen.resolveAddresses(target, timeout)
     }
 
@@ -217,7 +211,7 @@ class Idun internal constructor(
 
 
     suspend fun publishAddresses(
-        addresses: List<SocketAddress>,
+        addresses: List<InetSocketAddress>,
         maxPublifications: Int,
         timeout: Int
     ) {

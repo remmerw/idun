@@ -2,13 +2,11 @@ package io.github.remmerw.idun.core
 
 import io.github.remmerw.asen.Asen
 import io.github.remmerw.asen.Peeraddr
-import io.github.remmerw.asen.SocketAddress
 import io.github.remmerw.borr.PeerId
 import io.github.remmerw.dagr.Dagr
 import io.github.remmerw.idun.CONNECT_TIMEOUT
 import io.github.remmerw.idun.RESOLVE_TIMEOUT
 import io.github.remmerw.idun.debug
-import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.util.concurrent.ConcurrentHashMap
 
@@ -53,7 +51,7 @@ internal class Connector(val dagr: Dagr) {
         }
         return openConnection(
             this,
-            peeraddr.peerId, peeraddr.toSocketAddress()
+            peeraddr.peerId, peeraddr.toInetSocketAddress()
         )
     }
 
@@ -103,14 +101,10 @@ internal class Connector(val dagr: Dagr) {
     internal suspend fun openConnection(
         connector: Connector,
         peerId: PeerId,
-        address: SocketAddress
+        remoteAddress: InetSocketAddress
     ): Connection? {
 
         try {
-            val remoteAddress = InetSocketAddress(
-                InetAddress.getByAddress(address.address),
-                address.port.toInt()
-            )
 
             val intern = dagr.connect(remoteAddress, CONNECT_TIMEOUT)
 
