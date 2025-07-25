@@ -6,7 +6,6 @@ import io.github.remmerw.idun.debug
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.io.Buffer
-import kotlinx.io.Source
 
 internal class Connection(
     private val peerId: PeerId,
@@ -15,7 +14,7 @@ internal class Connection(
 ) {
     private val mutex = Mutex()
 
-    suspend fun request(cid: Long): Source {
+    suspend fun request(cid: Long): Buffer {
         val cidRequest = (cid == HALO_ROOT)
 
         mutex.withLock {
@@ -50,7 +49,6 @@ internal class Connection(
             connector.remove(this)
         }
     }
-
 
     val isConnected: Boolean
         get() = intern.isConnected

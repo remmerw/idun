@@ -605,7 +605,7 @@ fun Uri.extractCid(): Long? {
     if (path != null) {
         path = path.trim().removePrefix("/")
         if (path.isNotBlank()) {
-            val cid = path.toLong(radix = 16)
+            val cid = path.hexToLong()
             return cid
         }
     }
@@ -626,7 +626,7 @@ fun pnsUri(peerId: PeerId): String {
 }
 
 fun pnsUri(peerId: PeerId, cid: Long): String {
-    return pnsUri(peerId) + "/" + cid.toString(radix = 16)
+    return pnsUri(peerId) + "/" + cid.toHexString()
 }
 
 

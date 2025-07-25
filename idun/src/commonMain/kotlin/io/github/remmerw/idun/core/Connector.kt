@@ -7,12 +7,15 @@ import io.github.remmerw.dagr.Dagr
 import io.github.remmerw.idun.CONNECT_TIMEOUT
 import io.github.remmerw.idun.RESOLVE_TIMEOUT
 import io.github.remmerw.idun.debug
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.net.InetSocketAddress
 import java.util.concurrent.ConcurrentHashMap
 
 internal class Connector(val dagr: Dagr) {
     private val connections: MutableMap<PeerId, Connection> = ConcurrentHashMap()
     private val reachable: MutableMap<PeerId, Peeraddr> = ConcurrentHashMap()
+    private val mutex = Mutex()
 
     fun reachable(peeraddr: Peeraddr) {
         reachable.put(peeraddr.peerId, peeraddr)
@@ -56,19 +59,20 @@ internal class Connector(val dagr: Dagr) {
     }
 
     suspend fun connect(asen: Asen, peerId: PeerId): Connection {
-        var connection = connection(peerId)
-        if (connection != null) {
-            return connection
+        mutex.withLock {
+            var connection = connection(peerId)
+            if (connection != null && connection.isConnected) {
+                return connection
+            }
+            val peeraddr = reachable[peerId]
+            if (peeraddr != null) {
+                connection = connect(peeraddr)
+            }
+            if (connection != null && connection.isConnected) {
+                return connection
+            }
+            return resolveConnection(asen, peerId)
         }
-        val peeraddr = reachable[peerId]
-        if (peeraddr != null) {
-            connection = connect(peeraddr)
-        }
-        if (connection != null) {
-            return connection
-        }
-        return resolveConnection(asen, peerId)
-
     }
 
     fun numConnections(): Int {
@@ -103,9 +107,7 @@ internal class Connector(val dagr: Dagr) {
         peerId: PeerId,
         remoteAddress: InetSocketAddress
     ): Connection? {
-
         try {
-
             val intern = dagr.connect(remoteAddress, CONNECT_TIMEOUT)
 
             if (intern != null) {
@@ -119,5 +121,4 @@ internal class Connector(val dagr: Dagr) {
         }
         return null
     }
-
 }
