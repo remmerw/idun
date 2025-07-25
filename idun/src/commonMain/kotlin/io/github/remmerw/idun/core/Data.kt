@@ -102,7 +102,7 @@ private fun splitter(
 ): Fid {
     val links: MutableList<Long> = mutableListOf()
 
-    val split = splitterSize()
+    val split = splitterSize().toLong()
     val chunk = Buffer()
 
     var size = 0L
@@ -111,7 +111,8 @@ private fun splitter(
     while (!done) {
         var read = 0L
         while (read < split) {
-            val iterRead = source.readAtMostTo(chunk, split.toLong())
+            val maxToRead = split - read
+            val iterRead = source.readAtMostTo(chunk, maxToRead)
             if (iterRead <= 0) {
                 done = true
                 break
@@ -121,6 +122,7 @@ private fun splitter(
 
         if (read > 0) {
             val cid = nextCid.invoke(Any())
+            require(chunk.size <= split) { "Invalid chunk size" }
             storage.storeBlock(cid, chunk)
             links.add(cid)
             size += read

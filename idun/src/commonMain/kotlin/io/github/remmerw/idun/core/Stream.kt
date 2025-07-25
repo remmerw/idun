@@ -5,6 +5,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.io.Buffer
 import java.io.IOException
 import java.io.InputStream
+import kotlin.math.min
 
 class Stream(private val channel: Channel) : InputStream() {
     private var buffer: Buffer = Buffer()
@@ -30,7 +31,8 @@ class Stream(private val channel: Channel) : InputStream() {
 
     override fun read(bytes: ByteArray, off: Int, len: Int): Int {
         if (!hasData()) return -1
-        return buffer.readAtMostTo(bytes, off, off + len)
+        val endIndex = min(off + len, buffer.size.toInt())
+        return buffer.readAtMostTo(bytes, off, endIndex)
     }
 
     override fun read(bytes: ByteArray): Int {

@@ -67,7 +67,7 @@ class Idun internal constructor(
                     addresses.forEach { remoteAddress ->
                         try {
                             dagr.punching(remoteAddress)
-                        } catch (throwable: Throwable){
+                        } catch (throwable: Throwable) {
                             debug(throwable)
                         }
 

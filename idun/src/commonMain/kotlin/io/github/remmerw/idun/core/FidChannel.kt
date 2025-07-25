@@ -66,13 +66,17 @@ internal class FidChannel(
             // `dagWalker`) to find where we need to go down to next in
             // the search
 
-            val div = offset.toInt().floorDiv(splitterSize())
+            val div = offset.floorDiv(splitterSize())
 
             require(div < Int.MAX_VALUE) { "Invalid number of links" }
 
-            this.index = div
+            this.index = div.toInt()
 
-            this.left = offset.toInt().mod(splitterSize())
+            this.left = offset.mod(splitterSize())
+
+            require(left + (index * splitterSize().toLong()) == offset) {
+                "Wrong calculation of offset"
+            }
 
         } else {
             this.left = offset.toInt()
