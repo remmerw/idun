@@ -8,14 +8,10 @@ import kotlin.test.assertTrue
 class ChannelStressTest {
     @Test
     fun channelTestRun(): Unit = runBlocking {
-        // create server instance with default values
 
         val storage = newStorage()
         val server = newIdun(storage)
-
-
-        val client = newIdun()// client instance default values
-
+        val client = newIdun()
 
         client.reachable(
             TestEnv.loopbackPeeraddr(
@@ -35,6 +31,7 @@ class ChannelStressTest {
             assertNotNull(data)
             assertTrue(storage.fetchData(node).contentEquals(data))
         }
+
         client.shutdown()
         server.shutdown()
         storage.delete()

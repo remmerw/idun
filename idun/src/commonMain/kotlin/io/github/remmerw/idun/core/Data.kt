@@ -243,7 +243,7 @@ private fun lengthFid(
 }
 
 
-internal suspend fun fetchData(node: Node, fetch: Fetch): ByteArray {
+internal fun fetchData(node: Node, fetch: Fetch): ByteArray {
     val size = node.size()
     if (node is Fid) {
 

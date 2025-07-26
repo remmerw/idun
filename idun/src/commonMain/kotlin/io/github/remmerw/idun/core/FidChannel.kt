@@ -20,7 +20,7 @@ internal class FidChannel(
     }
 
 
-    override suspend fun next(buffer: Buffer): Int {
+    override fun next(buffer: Buffer): Int {
         val offset = this.left
         this.left = -1
 
@@ -41,7 +41,7 @@ internal class FidChannel(
         return fetch.fetchBlock(buffer, link)
     }
 
-    override suspend fun readBytes(): ByteArray {
+    override fun readBytes(): ByteArray {
         val buffer = Buffer()
         do {
             val read = next(buffer)

@@ -14,7 +14,7 @@ internal class RawChannel(private val data: ByteArray) : Channel {
         throw Exception("Seek is not supported")
     }
 
-    override suspend fun next(buffer: Buffer): Int {
+    override fun next(buffer: Buffer): Int {
         if (!hasRead) {
             buffer.write(data)
             hasRead = true
@@ -24,7 +24,7 @@ internal class RawChannel(private val data: ByteArray) : Channel {
         }
     }
 
-    override suspend fun readBytes(): ByteArray {
+    override fun readBytes(): ByteArray {
         return data
     }
 }

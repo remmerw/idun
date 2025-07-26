@@ -47,7 +47,7 @@ internal class Connector(val dagr: Dagr) {
         throw Exception("No hop connection established")
     }
 
-    private suspend fun connect(peeraddr: Peeraddr): Connection? {
+    private fun connect(peeraddr: Peeraddr): Connection? {
         val connection = connection(peeraddr.peerId)
         if (connection != null && connection.isConnected) {
             return connection
@@ -92,13 +92,13 @@ internal class Connector(val dagr: Dagr) {
         connections.remove(connection.remotePeerId())
     }
 
-    suspend fun shutdown() {
+    fun shutdown() {
         connections.values.forEach { connection: Connection -> connection.close() }
         connections.clear()
     }
 
 
-    internal suspend fun openConnection(
+    internal fun openConnection(
         connector: Connector,
         peerId: PeerId,
         remoteAddress: InetSocketAddress

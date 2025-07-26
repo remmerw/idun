@@ -3,21 +3,21 @@ package io.github.remmerw.idun.core
 import io.github.remmerw.borr.PeerId
 import io.github.remmerw.idun.HALO_ROOT
 import io.github.remmerw.idun.debug
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.io.Buffer
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 
 internal class Connection(
     private val peerId: PeerId,
     private val connector: Connector,
     private val intern: io.github.remmerw.dagr.Connection
 ) {
-    private val mutex = Mutex()
+    private val lock = ReentrantLock()
 
-    suspend fun request(cid: Long): Buffer {
+    fun request(cid: Long): Buffer {
         val cidRequest = (cid == HALO_ROOT)
 
-        mutex.withLock {
+        lock.withLock {
             try {
                 intern.writeLong(cid)
 
@@ -40,7 +40,7 @@ internal class Connection(
         }
     }
 
-    suspend fun close() {
+    fun close() {
         try {
             intern.close()
         } catch (throwable: Throwable) {

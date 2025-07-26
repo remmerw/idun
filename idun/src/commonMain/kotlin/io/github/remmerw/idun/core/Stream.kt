@@ -1,7 +1,6 @@
 package io.github.remmerw.idun.core
 
 import io.github.remmerw.idun.Channel
-import kotlinx.coroutines.runBlocking
 import kotlinx.io.Buffer
 import java.io.IOException
 import java.io.InputStream
@@ -14,7 +13,7 @@ class Stream(private val channel: Channel) : InputStream() {
         return channel.size().toInt()
     }
 
-    private fun loadNextData(): Unit = runBlocking {
+    private fun loadNextData() {
         try {
             channel.next(buffer)
         } catch (throwable: Throwable) {

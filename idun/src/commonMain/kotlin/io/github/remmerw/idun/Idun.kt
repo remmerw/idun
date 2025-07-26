@@ -190,7 +190,8 @@ class Idun internal constructor(
 
     suspend fun channel(peerId: PeerId, cid: Long? = null): Channel {
         val node = info(peerId, cid)
-        val fetch = FetchRequest(asen, connector, peerId)
+        val connection = connector.connect(asen, peerId)
+        val fetch = FetchRequest(asen, connection, peerId)
         return createChannel(node, fetch)
     }
 
@@ -210,7 +211,8 @@ class Idun internal constructor(
 
     suspend fun info(peerId: PeerId, cid: Long? = null): Node {
         if (cid != null) {
-            val fetch = FetchRequest(asen, connector, peerId)
+            val connection = connector.connect(asen, peerId)
+            val fetch = FetchRequest(asen, connection, peerId)
             val buffer = Buffer()
             fetch.fetchBlock(buffer, cid)
             return decodeNode(cid, buffer)
@@ -260,30 +262,32 @@ class Idun internal constructor(
         }
     }
 
-    override suspend fun accept(connection: Connection) {
+    override fun accept(connection: Connection) {
         if (storage != null) {
-            try {
-                while (true) {
-                    val cid = connection.readLong()
-                    val root = storage.root()
-                    if (cid == HALO_ROOT) { // root request
-                        // root cid
-                        val buffer = Buffer()
-                        buffer.writeInt(Long.SIZE_BYTES)
-                        buffer.writeLong(root.cid())
-                        connection.writeBuffer(buffer)
+            scope.launch {
+                try {
+                    while (true) {
+                        val cid = connection.readLong()
+                        val root = storage.root()
+                        if (cid == HALO_ROOT) { // root request
+                            // root cid
+                            val buffer = Buffer()
+                            buffer.writeInt(Long.SIZE_BYTES)
+                            buffer.writeLong(root.cid())
+                            connection.writeBuffer(buffer)
 
-                    } else {
-                        connection.writeInt(storage.blockSize(cid))
-                        storage.getBlock(cid).use { source ->
-                            connection.writeBuffer(source)
+                        } else {
+                            connection.writeInt(storage.blockSize(cid))
+                            storage.getBlock(cid).use { source ->
+                                connection.writeBuffer(source)
+                            }
                         }
+                        connection.flush()
                     }
-                    connection.flush()
+                } catch (_: Throwable) { // ignore happens when connection is closed
+                } finally {
+                    connection.close()
                 }
-            } catch (_: Throwable) { // ignore happens when connection is closed
-            } finally {
-                connection.close()
             }
         }
     }
@@ -306,12 +310,12 @@ fun newIdun(
 interface Channel {
     fun size(): Long
     fun seek(offset: Long)
-    suspend fun next(buffer: Buffer): Int
+    fun next(buffer: Buffer): Int
 
     /**
      * Read all the bytes from the current offset to the end
      */
-    suspend fun readBytes(): ByteArray
+    fun readBytes(): ByteArray
 }
 
 data class Response(
@@ -390,7 +394,7 @@ data class Storage(private val directory: Path) : Fetch {
     }
 
 
-    override suspend fun fetchBlock(rawSink: RawSink, cid: Long, offset: Int): Int {
+    override fun fetchBlock(rawSink: RawSink, cid: Long, offset: Int): Int {
         getBlock(cid).buffered().use { source ->
             if (offset > 0) {
                 source.skip(offset.toLong())
@@ -477,7 +481,7 @@ data class Storage(private val directory: Path) : Fetch {
 
     }
 
-    suspend fun transferTo(node: Node, path: Path) {
+    fun transferTo(node: Node, path: Path) {
         SystemFileSystem.sink(path, false).use { sink ->
             val buffer = Buffer()
             val channel = channel(node)
@@ -500,11 +504,11 @@ data class Storage(private val directory: Path) : Fetch {
         }
     }
 
-    suspend fun fetchData(node: Node): ByteArray {
+    fun fetchData(node: Node): ByteArray {
         return io.github.remmerw.idun.core.fetchData(node, this)
     }
 
-    suspend fun fetchText(node: Node): String {
+    fun fetchText(node: Node): String {
         return fetchData(node).decodeToString()
     }
 
@@ -572,7 +576,7 @@ fun decodeNode(cid: Long, block: Buffer): Node {
 }
 
 interface Fetch {
-    suspend fun fetchBlock(rawSink: RawSink, cid: Long, offset: Int = 0): Int
+    fun fetchBlock(rawSink: RawSink, cid: Long, offset: Int = 0): Int
 }
 
 fun Uri.extractPeerId(): PeerId {
