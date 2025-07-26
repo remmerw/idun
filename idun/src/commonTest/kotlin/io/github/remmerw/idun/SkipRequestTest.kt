@@ -21,7 +21,7 @@ class SkipRequestTest {
         val skip = fid.size() / 2 - 100
         val rest = fid.size() - skip
 
-        assertEquals(skip+rest, fid.size())
+        assertEquals(skip + rest, fid.size())
 
         val client = newIdun()
 

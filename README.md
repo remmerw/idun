@@ -26,7 +26,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             ...
-            implementation("io.github.remmerw:idun:0.4.4")
+            implementation("io.github.remmerw:idun:0.4.5")
         }
         ...
     }
@@ -56,9 +56,8 @@ kotlin {
 
 
         println("Num reservations " + server.numReservations())
-        assertTrue(server.hasReservations())
+        assertTrue(server.numReservations() > 0)
 
-        server.reservations().forEach { address -> println("Relay $address") }
 
         val client = newIdun()
 

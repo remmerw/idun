@@ -25,9 +25,8 @@ class Examples {
 
 
         println("Num reservations " + server.numReservations())
-        assertTrue(server.hasReservations())
+        assertTrue(server.numReservations() > 0)
 
-        server.reservations().forEach { address -> println("Relay $address") }
 
         val client = newIdun()
 

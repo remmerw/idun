@@ -18,7 +18,7 @@ class DialTest {
 
         server.publishAddresses(publicPeeraddrs, 25, 120)
 
-        assertTrue(server.hasReservations())
+        assertTrue(server.numReservations() > 0)
 
         val client = newIdun()
 

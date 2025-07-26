@@ -75,10 +75,6 @@ internal class Connector(val dagr: Dagr) {
         }
     }
 
-    fun numConnections(): Int {
-        return connections.size
-    }
-
     fun connection(peerId: PeerId): Connection? {
         val connection = connections[peerId]
         if (connection != null) {

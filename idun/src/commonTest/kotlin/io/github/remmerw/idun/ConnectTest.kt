@@ -4,7 +4,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -104,8 +103,7 @@ class ConnectTest {
 
 
         assertEquals(server.numReservations(), 0)
-        val peeraddrs = server.incomingConnections()
-        assertFalse(peeraddrs.isEmpty())
+        assertTrue(server.numIncomingConnections() > 0)
 
         client.shutdown()
 

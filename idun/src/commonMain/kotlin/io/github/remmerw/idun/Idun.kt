@@ -6,11 +6,11 @@ import io.github.remmerw.asen.MemoryPeers
 import io.github.remmerw.asen.PeerStore
 import io.github.remmerw.asen.Peeraddr
 import io.github.remmerw.asen.bootstrap
-import io.github.remmerw.asen.decode58
-import io.github.remmerw.asen.encode58
 import io.github.remmerw.asen.newAsen
 import io.github.remmerw.borr.Keys
 import io.github.remmerw.borr.PeerId
+import io.github.remmerw.borr.decode58
+import io.github.remmerw.borr.encode58
 import io.github.remmerw.borr.generateKeys
 import io.github.remmerw.dagr.Acceptor
 import io.github.remmerw.dagr.Connection
@@ -102,28 +102,17 @@ class Idun internal constructor(
         return asen.keys()
     }
 
-    fun reservations(): List<String> {
-        return asen.reservations()
-    }
-
-    fun hasReservations(): Boolean {
-        return asen.hasReservations()
-    }
 
     fun numReservations(): Int {
         return asen.numReservations()
     }
 
     fun numIncomingConnections(): Int {
-        return incomingConnections().size
-    }
-
-    fun incomingConnections(): List<String> {
-        return dagr.incoming().map { connection -> connection.remoteAddress().toString() }
+        return dagr.numIncomingConnections()
     }
 
     fun numOutgoingConnections(): Int {
-        return connector.numConnections()
+        return dagr.numOutgoingConnections()
     }
 
     internal suspend fun fetchRoot(peerId: PeerId): Long {
