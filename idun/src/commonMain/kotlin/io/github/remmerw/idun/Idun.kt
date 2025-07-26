@@ -226,7 +226,7 @@ class Idun internal constructor(
         if (node is Raw) {
             return node.data()
         }
-        throw Exception("Uri does not reference raw node")
+        throw Exception("cid references not a raw node")
     }
 
     // this is just for testing purpose

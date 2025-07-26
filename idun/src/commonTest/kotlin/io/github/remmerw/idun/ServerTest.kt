@@ -14,7 +14,7 @@ import kotlin.test.fail
 
 class ServerTest {
     @Test
-    fun fetchDataTest(): Unit = runBlocking {
+    fun fetchDataTest(): Unit = runBlocking(Dispatchers.IO) {
 
         val storage = newStorage()
         val server = newIdun(storage)
@@ -32,7 +32,6 @@ class ServerTest {
         client.reachable(
             TestEnv.loopbackPeeraddr(server.peerId(), server.localPort())
         )
-
 
         val data = client.channel(server.peerId(), fid.cid()).readBytes()
         assertTrue(input.contentEquals(data))

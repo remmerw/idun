@@ -1,5 +1,6 @@
 package io.github.remmerw.idun
 
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertNotNull
@@ -7,7 +8,7 @@ import kotlin.test.assertTrue
 
 class ChannelStressTest {
     @Test
-    fun channelTestRun(): Unit = runBlocking {
+    fun channelTestRun(): Unit = runBlocking(Dispatchers.IO) {
 
         val storage = newStorage()
         val server = newIdun(storage)

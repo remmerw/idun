@@ -54,6 +54,6 @@ class Stream(private val channel: Channel) : InputStream() {
 
 
     override fun close() {
-        buffer.close()
+       buffer.close()
     }
 }
