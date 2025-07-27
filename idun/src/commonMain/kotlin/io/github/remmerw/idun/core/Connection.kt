@@ -24,14 +24,10 @@ internal class Connection(
                 val length = intern.readInt() // read cid
                 check(length != EOF) { "EOF" }
 
-                if (cidRequest) {
-                    val root = intern.readLong()
-                    check(root != EOF.toLong()) { "EOF" }
-                    val payload = Buffer()
-                    payload.writeLong(root)
-                    return payload
+                return if (cidRequest) {
+                    intern.readBuffer(Long.SIZE_BYTES)
                 } else {
-                    return intern.readBuffer(length)
+                    intern.readBuffer(length)
                 }
             } catch (throwable: Throwable) {
                 close()

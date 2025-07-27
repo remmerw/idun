@@ -394,13 +394,9 @@ data class Storage(private val directory: Path) : Fetch {
     }
 
 
-    override fun fetchBlock(rawSink: RawSink, cid: Long, offset: Int): Int {
+    override fun fetchBlock(rawSink: RawSink, cid: Long): Int {
         getBlock(cid).buffered().use { source ->
-            if (offset > 0) {
-                source.skip(offset.toLong())
-            }
             return source.transferTo(rawSink).toInt()
-
         }
     }
 
@@ -576,7 +572,7 @@ fun decodeNode(cid: Long, block: Buffer): Node {
 }
 
 interface Fetch {
-    fun fetchBlock(rawSink: RawSink, cid: Long, offset: Int = 0): Int
+    fun fetchBlock(rawSink: RawSink, cid: Long): Int
 }
 
 fun Uri.extractPeerId(): PeerId {

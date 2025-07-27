@@ -12,10 +12,9 @@ internal data class FetchRequest(
     val peerId: PeerId
 ) : Fetch {
 
-    override fun fetchBlock(rawSink: RawSink, cid: Long, offset: Int): Int {
+    override fun fetchBlock(rawSink: RawSink, cid: Long): Int {
 
         connection.request(cid).use { source ->
-            source.skip(offset.toLong())
             return source.transferTo(rawSink).toInt()
         }
     }
