@@ -2,7 +2,6 @@ package io.github.remmerw.idun.core
 
 import io.github.remmerw.borr.PeerId
 import io.github.remmerw.idun.Fetch
-import io.github.remmerw.idun.HALO_ROOT
 import io.github.remmerw.idun.debug
 import kotlinx.io.Buffer
 import java.util.concurrent.locks.ReentrantLock
@@ -16,20 +15,13 @@ internal class Connection(
     private val lock = ReentrantLock()
 
     override fun fetchBlock(sink: Buffer, cid: Long) {
-        val cidRequest = (cid == HALO_ROOT)
 
         lock.withLock {
             try {
                 intern.writeLong(cid)
 
-                val length = intern.readInt() // read cid
-                check(length != EOF) { "EOF" }
-
-                if (cidRequest) {
-                    intern.readBuffer(sink, Long.SIZE_BYTES)
-                } else {
-                    intern.readBuffer(sink, length)
-                }
+                val length = intern.readInt()
+                intern.readBuffer(sink, length)
             } catch (throwable: Throwable) {
                 debug(throwable)
                 close()
