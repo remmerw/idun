@@ -3,6 +3,7 @@ package io.github.remmerw.idun
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class StressTest {
@@ -25,6 +26,7 @@ class StressTest {
         repeat(5000) {
 
             val data = client.fetchData(server.peerId(), node.cid())
+            assertEquals(cmp.size, data.size)
             assertTrue(cmp.contentEquals(data))
         }
 
