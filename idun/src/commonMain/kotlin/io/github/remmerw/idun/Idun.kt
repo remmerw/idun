@@ -117,10 +117,9 @@ class Idun internal constructor(
 
     internal suspend fun fetchRoot(peerId: PeerId): Long {
         val connection = connector.connect(asen, peerId)
-        val payload = connection.request(HALO_ROOT)
-        payload.use { source ->
-            return source.readLong()
-        }
+        val sink = Buffer()
+        connection.request(HALO_ROOT, sink)
+        return sink.readLong()
     }
 
 
@@ -284,7 +283,8 @@ class Idun internal constructor(
                         }
                         connection.flush()
                     }
-                } catch (_: Throwable) { // ignore happens when connection is closed
+                } catch (throwable: Throwable) {
+                    debug(throwable)
                 } finally {
                     connection.close()
                 }
@@ -394,9 +394,9 @@ data class Storage(private val directory: Path) : Fetch {
     }
 
 
-    override fun fetchBlock(rawSink: RawSink, cid: Long): Int {
+    override fun fetchBlock(sink: Buffer, cid: Long): Int {
         getBlock(cid).buffered().use { source ->
-            return source.transferTo(rawSink).toInt()
+            return source.transferTo(sink).toInt()
         }
     }
 
@@ -572,7 +572,7 @@ fun decodeNode(cid: Long, block: Buffer): Node {
 }
 
 interface Fetch {
-    fun fetchBlock(rawSink: RawSink, cid: Long): Int
+    fun fetchBlock(sink: Buffer, cid: Long): Int
 }
 
 fun Uri.extractPeerId(): PeerId {

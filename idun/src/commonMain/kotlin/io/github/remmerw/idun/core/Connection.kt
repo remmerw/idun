@@ -14,7 +14,7 @@ internal class Connection(
 ) {
     private val lock = ReentrantLock()
 
-    fun request(cid: Long): Buffer {
+    fun request(cid: Long, sink: Buffer) {
         val cidRequest = (cid == HALO_ROOT)
 
         lock.withLock {
@@ -24,12 +24,13 @@ internal class Connection(
                 val length = intern.readInt() // read cid
                 check(length != EOF) { "EOF" }
 
-                return if (cidRequest) {
-                    intern.readBuffer(Long.SIZE_BYTES)
+                if (cidRequest) {
+                    sink.write(intern.readByteArray(Long.SIZE_BYTES))
                 } else {
-                    intern.readBuffer(length)
+                    sink.write(intern.readByteArray(length))
                 }
             } catch (throwable: Throwable) {
+                debug(throwable)
                 close()
                 throw throwable
             }
