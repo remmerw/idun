@@ -224,7 +224,7 @@ class Idun internal constructor(
         connection.fetchBlock(buffer, cid)
         val type: Type = decodeType(buffer.readByte())
 
-        require (type == Type.RAW) {"cid does not reference pure data"}
+        require(type == Type.RAW) { "cid does not reference pure data" }
         return buffer.readByteArray()
     }
 
@@ -276,10 +276,10 @@ class Idun internal constructor(
                             connection.writeBuffer(buffer)
 
                         } else {
-                            connection.writeInt(storage.blockSize(cid))
-                            storage.getBlock(cid).use { source ->
-                                connection.writeBuffer(source)
-                            }
+                            val sink = Buffer()
+                            storage.fetchBlock(sink, cid)
+                            connection.writeInt(sink.size.toInt())
+                            connection.writeBuffer(sink)
                         }
                         connection.flush()
                     }
@@ -386,25 +386,14 @@ data class Storage(private val directory: Path) : Fetch {
         return SystemFileSystem.exists(path(cid))
     }
 
-    fun blockSize(cid: Long): Int {
+    override fun fetchBlock(sink: Buffer, cid: Long) {
         require(cid != HALO_ROOT) { "Invalid Cid" }
         val file = path(cid)
         require(SystemFileSystem.exists(file)) { "Block does not exists" }
-        return SystemFileSystem.metadataOrNull(file)!!.size.toInt()
-    }
 
-
-    override fun fetchBlock(sink: Buffer, cid: Long) {
-        getBlock(cid).buffered().use { source ->
+        SystemFileSystem.source(file).buffered().use { source ->
             source.transferTo(sink)
         }
-    }
-
-    fun getBlock(cid: Long): RawSource {
-        require(cid != HALO_ROOT) { "Invalid Cid" }
-        val file = path(cid)
-        require(SystemFileSystem.exists(file)) { "Block does not exists" }
-        return SystemFileSystem.source(file)
     }
 
     fun storeBlock(cid: Long, buffer: Buffer) {
@@ -445,9 +434,9 @@ data class Storage(private val directory: Path) : Fetch {
 
 
     fun info(cid: Long): Node {
-        getBlock(cid).use { block ->
-            return decodeNode(cid, block)
-        }
+        val sink = Buffer()
+        fetchBlock(sink, cid)
+        return decodeNode(cid, sink)
     }
 
     // Note: remove the cid block (add all links blocks recursively)

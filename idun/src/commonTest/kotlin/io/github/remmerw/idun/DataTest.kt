@@ -29,9 +29,9 @@ class DataTest {
         storage.storeBlock(cid, buffer)
 
         // (2) get block
-        storage.getBlock(cid).buffered().use { source ->
-            assertContentEquals(bytes, source.readByteArray())
-        }
+        val sink = Buffer()
+        storage.fetchBlock(sink, cid)
+        assertContentEquals(bytes, sink.readByteArray())
 
 
         // cleanup
