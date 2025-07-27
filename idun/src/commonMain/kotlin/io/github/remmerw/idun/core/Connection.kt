@@ -1,6 +1,7 @@
 package io.github.remmerw.idun.core
 
 import io.github.remmerw.borr.PeerId
+import io.github.remmerw.idun.Fetch
 import io.github.remmerw.idun.HALO_ROOT
 import io.github.remmerw.idun.debug
 import kotlinx.io.Buffer
@@ -11,10 +12,10 @@ internal class Connection(
     private val peerId: PeerId,
     private val connector: Connector,
     private val intern: io.github.remmerw.dagr.Connection
-) {
+) : Fetch {
     private val lock = ReentrantLock()
 
-    fun request(cid: Long, sink: Buffer) {
+    override fun fetchBlock(sink: Buffer, cid: Long) {
         val cidRequest = (cid == HALO_ROOT)
 
         lock.withLock {

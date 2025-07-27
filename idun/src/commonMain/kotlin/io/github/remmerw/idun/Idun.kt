@@ -16,7 +16,6 @@ import io.github.remmerw.dagr.Acceptor
 import io.github.remmerw.dagr.Connection
 import io.github.remmerw.dagr.newDagr
 import io.github.remmerw.idun.core.Connector
-import io.github.remmerw.idun.core.FetchRequest
 import io.github.remmerw.idun.core.Fid
 import io.github.remmerw.idun.core.FidChannel
 import io.github.remmerw.idun.core.Raw
@@ -117,7 +116,7 @@ class Idun internal constructor(
     internal suspend fun fetchRoot(peerId: PeerId): Long {
         val connection = connector.connect(asen, peerId)
         val sink = Buffer()
-        connection.request(HALO_ROOT, sink)
+        connection.fetchBlock(sink,HALO_ROOT)
         return sink.readLong()
     }
 
@@ -188,8 +187,7 @@ class Idun internal constructor(
     suspend fun channel(peerId: PeerId, cid: Long? = null): Channel {
         val node = info(peerId, cid)
         val connection = connector.connect(asen, peerId)
-        val fetch = FetchRequest(asen, connection, peerId)
-        return createChannel(node, fetch)
+        return createChannel(node, connection)
     }
 
     fun peerId(): PeerId {
@@ -209,9 +207,8 @@ class Idun internal constructor(
     suspend fun info(peerId: PeerId, cid: Long? = null): Node {
         if (cid != null) {
             val connection = connector.connect(asen, peerId)
-            val fetch = FetchRequest(asen, connection, peerId)
             val buffer = Buffer()
-            fetch.fetchBlock(buffer, cid)
+            connection.fetchBlock(buffer, cid)
             return decodeNode(cid, buffer)
         } else {
             return info(peerId, fetchRoot(peerId))
@@ -392,9 +389,9 @@ data class Storage(private val directory: Path) : Fetch {
     }
 
 
-    override fun fetchBlock(sink: Buffer, cid: Long): Int {
+    override fun fetchBlock(sink: Buffer, cid: Long) {
         getBlock(cid).buffered().use { source ->
-            return source.transferTo(sink).toInt()
+            source.transferTo(sink)
         }
     }
 
@@ -570,7 +567,7 @@ fun decodeNode(cid: Long, block: Buffer): Node {
 }
 
 interface Fetch {
-    fun fetchBlock(sink: Buffer, cid: Long): Int
+    fun fetchBlock(sink: Buffer, cid: Long)
 }
 
 fun Uri.extractPeerId(): PeerId {
