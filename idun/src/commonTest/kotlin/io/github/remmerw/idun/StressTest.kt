@@ -6,7 +6,7 @@ import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
-class ChannelStressTest {
+class StressTest {
     @Test
     fun channelTestRun(): Unit = runBlocking(Dispatchers.IO) {
 
@@ -19,17 +19,14 @@ class ChannelStressTest {
                 server.peerId(), server.localPort()
             )
         )
-        val node =
-            storage.storeData(
-                TestEnv.randomBytes(splitterSize())
-            ) // store some text
+        val cmp = TestEnv.randomBytes(splitterSize())
+        val node = storage.storeData(cmp)
 
 
         repeat(1000) {
 
-            val data = client.fetchData(server.peerId(), node.cid()) // fetch request
-            assertNotNull(data)
-            assertTrue(storage.fetchData(node).contentEquals(data))
+            val data = client.fetchData(server.peerId(), node.cid())
+            assertTrue(cmp.contentEquals(data))
         }
 
         client.shutdown()
