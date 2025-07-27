@@ -15,7 +15,7 @@ class StreamTest {
         val server = newIdun(storage)
 
         val packetSize = 3
-        val maxData = UShort.MAX_VALUE.toInt()
+        val maxData = splitterSize()
 
         // prepare data
         val fid = TestEnv.createContent(
@@ -37,7 +37,7 @@ class StreamTest {
         response.channel.asInputStream().use { stream ->
             checkNotNull(stream)
 
-            stream.skip(UShort.MAX_VALUE.toLong())
+            stream.skip(splitterSize().toLong())
 
             val result = Buffer()
             val bytes = ByteArray(4096)
@@ -48,7 +48,7 @@ class StreamTest {
                 }
             } while (read > 0)
 
-            assertEquals(result.size.toInt(), UShort.MAX_VALUE.toInt() * 2)
+            assertEquals(result.size.toInt(), splitterSize() * 2)
         }
 
         // cleanup

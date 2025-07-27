@@ -146,9 +146,8 @@ class ServerTest {
         }
 
         assertEquals(finished.load(), instances)
-        runBlocking(Dispatchers.IO) {
-            server.shutdown()
-        }
+
+        server.shutdown()
         storage.delete()
     }
 }

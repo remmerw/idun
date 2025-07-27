@@ -116,7 +116,7 @@ class Idun internal constructor(
     internal suspend fun fetchRoot(peerId: PeerId): Long {
         val connection = connector.connect(asen, peerId)
         val sink = Buffer()
-        connection.fetchBlock(sink,HALO_ROOT)
+        connection.fetchBlock(sink, HALO_ROOT)
         return sink.readLong()
     }
 
@@ -323,7 +323,7 @@ data class Response(
 )
 
 internal const val MAX_CHARS_SIZE = 4096
-private const val SPLITTER_SIZE = UShort.MAX_VALUE
+private const val SPLITTER_SIZE = Short.MAX_VALUE
 const val HALO_ROOT = 0L
 
 fun splitterSize(): Int {

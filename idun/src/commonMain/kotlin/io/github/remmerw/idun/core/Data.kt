@@ -15,7 +15,6 @@ import kotlinx.io.readByteArray
 
 const val OCTET_MIME_TYPE = "application/octet-stream"
 const val UNDEFINED_NAME: String = ""
-internal const val EOF = -1
 
 internal fun encodeType(type: Type): Byte {
     return when (type) {

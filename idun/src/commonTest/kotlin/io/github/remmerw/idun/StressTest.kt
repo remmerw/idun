@@ -2,12 +2,13 @@ package io.github.remmerw.idun
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.yield
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
 class StressTest {
     @Test
-    fun channelTestRun(): Unit = runBlocking(Dispatchers.IO) {
+    fun stressTest(): Unit = runBlocking(Dispatchers.IO) {
 
         val storage = newStorage()
         val server = newIdun(storage)
@@ -22,10 +23,11 @@ class StressTest {
         val node = storage.storeData(cmp)
 
 
-        repeat(1000) {
+        repeat(3000) {
 
             val data = client.fetchData(server.peerId(), node.cid())
             assertTrue(cmp.contentEquals(data))
+            yield()
         }
 
         client.shutdown()

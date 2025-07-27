@@ -15,7 +15,7 @@ class RequestTest {
         val server = newIdun(storage)
 
         val packetSize = 3
-        val maxData = UShort.MAX_VALUE.toInt()
+        val maxData = splitterSize()
 
         // prepare data
         val fid = TestEnv.createContent(
@@ -38,12 +38,12 @@ class RequestTest {
         val channel = response.channel
         checkNotNull(channel)
 
-        channel.seek(UShort.MAX_VALUE.toLong())
+        channel.seek(splitterSize().toLong())
 
 
         val data = channel.readBytes()
 
-        assertEquals(data.size, UShort.MAX_VALUE.toInt() * 2)
+        assertEquals(data.size, splitterSize() * 2)
 
 
         // cleanup
