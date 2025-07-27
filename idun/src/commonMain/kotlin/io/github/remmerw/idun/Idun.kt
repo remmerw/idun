@@ -93,7 +93,6 @@ class Idun internal constructor(
         }
     }
 
-
     suspend fun resolveAddresses(target: PeerId, timeout: Long): List<InetSocketAddress> {
         return asen.resolveAddresses(target, timeout)
     }
@@ -137,8 +136,7 @@ class Idun internal constructor(
         do {
             val read = channel.next(buffer)
             if (read > 0) {
-                totalRead += read
-                buffer.transferTo(rawSink)
+                totalRead += buffer.transferTo(rawSink)
 
                 if (totalRead > 0) {
                     val percent = ((totalRead * 100.0f) / size).toInt()
@@ -283,6 +281,8 @@ class Idun internal constructor(
                         }
                         connection.flush()
                     }
+                } catch (_: InterruptedException) {
+                    // nothing to do here (connection was closed)
                 } catch (throwable: Throwable) {
                     debug(throwable)
                 } finally {
@@ -291,8 +291,6 @@ class Idun internal constructor(
             }
         }
     }
-
-
 }
 
 

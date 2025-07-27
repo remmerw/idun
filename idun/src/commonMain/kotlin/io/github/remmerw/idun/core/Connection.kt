@@ -25,9 +25,9 @@ internal class Connection(
                 check(length != EOF) { "EOF" }
 
                 if (cidRequest) {
-                    sink.write(intern.readByteArray(Long.SIZE_BYTES))
+                    intern.readBuffer(sink, Long.SIZE_BYTES)
                 } else {
-                    sink.write(intern.readByteArray(length))
+                    intern.readBuffer(sink, length)
                 }
             } catch (throwable: Throwable) {
                 debug(throwable)

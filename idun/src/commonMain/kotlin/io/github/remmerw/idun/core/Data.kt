@@ -260,7 +260,6 @@ internal fun decodeNode(cid: Long, source: RawSource): Node {
             val data = buffer.readByteArray()
             return Raw(cid, data)
         } else {
-
             val linksSize = readUnsignedVariant(buffer)
             val links = mutableListOf<Long>()
 

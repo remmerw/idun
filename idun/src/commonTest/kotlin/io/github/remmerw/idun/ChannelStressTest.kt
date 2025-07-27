@@ -19,14 +19,13 @@ class ChannelStressTest {
                 server.peerId(), server.localPort()
             )
         )
+        val node =
+            storage.storeData(
+                TestEnv.randomBytes(splitterSize())
+            ) // store some text
 
 
-        repeat(100) {
-
-            val node =
-                storage.storeData(
-                    TestEnv.randomBytes(splitterSize())
-                ) // store some text
+        repeat(1000) {
 
             val data = client.fetchData(server.peerId(), node.cid()) // fetch request
             assertNotNull(data)
