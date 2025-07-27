@@ -179,7 +179,6 @@ internal fun createRaw(
 internal fun encodeRaw(data: ByteArray): Buffer {
     val buffer = Buffer()
     buffer.writeByte(encodeType(Type.RAW))
-    writeUnsignedVariant(buffer, data.size.toLong())
     buffer.write(data)
     return buffer
 }
@@ -246,12 +245,11 @@ private fun lengthFid(
 internal fun fetchData(node: Node, fetch: Fetch): ByteArray {
     val size = node.size()
     if (node is Fid) {
-
         return FidChannel(node, size, fetch).readBytes()
-
+    } else {
+        val raw = node as Raw
+        return raw.data()
     }
-    val raw = node as Raw
-    return raw.data()
 }
 
 internal fun decodeNode(cid: Long, source: RawSource): Node {
@@ -259,10 +257,8 @@ internal fun decodeNode(cid: Long, source: RawSource): Node {
         val type: Type = decodeType(buffer.readByte())
 
         if (type == Type.RAW) {
-            val dataLength = readUnsignedVariant(buffer)
-            val content = buffer.readByteArray(dataLength)
-            require(buffer.exhausted()) { "still data available" }
-            return Raw(cid, content)
+            val data = buffer.readByteArray()
+            return Raw(cid, data)
         } else {
 
             val linksSize = readUnsignedVariant(buffer)
@@ -272,21 +268,14 @@ internal fun decodeNode(cid: Long, source: RawSource): Node {
                 links.add(buffer.readLong())
             }
 
-
             val size = readLongUnsignedVariant(buffer)
+            val nameLength = readUnsignedVariant(buffer)
+            val name = buffer.readByteArray(nameLength).decodeToString()
 
-            var name = UNDEFINED_NAME
-            var mimeType = UNDEFINED_NAME
 
-            if (type == Type.FID) {
-                val nameLength = readUnsignedVariant(buffer)
-                name = buffer.readByteArray(nameLength).decodeToString()
-            }
+            val mimeTypeLength = readUnsignedVariant(buffer)
+            val mimeType = buffer.readByteArray(mimeTypeLength).decodeToString()
 
-            if (type == Type.FID) {
-                val mimeTypeLength = readUnsignedVariant(buffer)
-                mimeType = buffer.readByteArray(mimeTypeLength).decodeToString()
-            }
 
             return Fid(cid, size, name, mimeType, links)
         }
