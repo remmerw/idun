@@ -47,7 +47,7 @@ kotlin {
 
                 implementation("io.github.remmerw:asen:0.4.3")
                 implementation("io.github.remmerw:borr:0.0.4")
-                implementation("io.github.remmerw:dagr:0.1.5")
+                implementation("io.github.remmerw:dagr:0.1.6")
             }
         }
 

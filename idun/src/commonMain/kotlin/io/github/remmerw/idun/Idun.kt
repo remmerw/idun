@@ -21,8 +21,10 @@ import io.github.remmerw.idun.core.FidChannel
 import io.github.remmerw.idun.core.Raw
 import io.github.remmerw.idun.core.RawChannel
 import io.github.remmerw.idun.core.Stream
+import io.github.remmerw.idun.core.Type
 import io.github.remmerw.idun.core.createRaw
 import io.github.remmerw.idun.core.decodeNode
+import io.github.remmerw.idun.core.decodeType
 import io.github.remmerw.idun.core.removeNode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -37,6 +39,7 @@ import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.files.SystemTemporaryDirectory
+import kotlinx.io.readByteArray
 import java.io.InputStream
 import java.net.InetSocketAddress
 import kotlin.concurrent.Volatile
@@ -215,12 +218,14 @@ class Idun internal constructor(
         }
     }
 
-    suspend fun fetchData(peerId: PeerId, cid: Long? = null): ByteArray {
-        val node = info(peerId, cid)
-        if (node is Raw) {
-            return node.data()
-        }
-        throw Exception("cid references not a raw node")
+    suspend fun fetchData(peerId: PeerId, cid: Long): ByteArray {
+        val connection = connector.connect(asen, peerId)
+        val buffer = Buffer()
+        connection.fetchBlock(buffer, cid)
+        val type: Type = decodeType(buffer.readByte())
+
+        require (type == Type.RAW) {"cid does not reference pure data"}
+        return buffer.readByteArray()
     }
 
     // this is just for testing purpose
