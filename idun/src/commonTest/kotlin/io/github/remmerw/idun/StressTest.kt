@@ -2,7 +2,6 @@ package io.github.remmerw.idun
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.yield
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
@@ -23,11 +22,10 @@ class StressTest {
         val node = storage.storeData(cmp)
 
 
-        repeat(3000) {
+        repeat(5000) {
 
             val data = client.fetchData(server.peerId(), node.cid())
             assertTrue(cmp.contentEquals(data))
-            yield()
         }
 
         client.shutdown()
