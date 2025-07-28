@@ -198,56 +198,49 @@ class AddTest {
 
     @Test
     fun test_readerBig(): Unit = runBlocking {
-        val split = splitterSize()
+
         val storage = newStorage()
 
         val root = storage.root()
         assertNotNull(root)
-        assertEquals(root.size(), 0)
+        assertEquals(root.size, 0)
 
-        val text = TestEnv.randomBytes((split * 2) - 50)
-        val fid = TestEnv.createContent(storage, "random.bin", OCTET_MIME_TYPE, text)
-        storage.root(fid)
+        val text = TestEnv.randomBytes((splitterSize() * 2) - 50)
+
+        storage.root(text)
         val newRoot = storage.root()
         assertNotNull(newRoot)
-        assertEquals(newRoot.size(), fid.size())
+        assertEquals(newRoot.size, text.size)
 
-        assertTrue(storage.hasBlock(fid.cid()))
-
-        val channel = storage.channel(fid)
+        val node = storage.info()
+        var channel = storage.channel(node)
 
         val buffer = Buffer()
         channel.seek(0)
         assertTrue(channel.next(buffer) > 0)
         var data = buffer.readByteArray()
-        assertEquals(split, data.size)
+        assertEquals(text.size, data.size)
 
 
         // test
         buffer.clear()
+        channel = storage.channel(node)
+        channel.seek(50)
         assertTrue(channel.next(buffer) > 0)
         data = buffer.readByteArray()
-        assertEquals(split - 50, data.size)
+        assertEquals(text.size - 50, data.size)
 
 
         // test
         buffer.clear()
-        var pos = split + 50
-        channel.seek(pos.toLong())
+        channel = storage.channel(node)
+        channel.seek(100)
         assertTrue(channel.next(buffer) > 0)
         data = buffer.readByteArray()
-        assertEquals(split - 100, data.size)
+        assertEquals(text.size - 100, data.size)
         assertEquals(0, buffer.size.toInt())
 
 
-        // test
-        buffer.clear()
-        pos = split - 50
-        channel.seek(pos.toLong())
-        assertTrue(channel.next(buffer) > 0)
-        data = buffer.readByteArray()
-        assertEquals(50, data.size)
-        assertEquals(0, buffer.size.toInt())
 
         storage.delete()
     }

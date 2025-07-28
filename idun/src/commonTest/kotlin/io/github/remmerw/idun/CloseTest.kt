@@ -14,7 +14,7 @@ class CloseTest {
         val server = newIdun(storage)
 
         storage.root("Homepage".encodeToByteArray())
-        val raw = storage.root().cid()
+        val raw = storage.info()
 
 
         val client = newIdun()
@@ -23,7 +23,7 @@ class CloseTest {
             TestEnv.loopbackPeeraddr(server.peerId(), server.localPort())
         )
 
-        val cid = client.fetchRoot(server.peerId())
+        val cid = client.info(server.peerId())
         assertEquals(cid, raw)
         client.shutdown()
 

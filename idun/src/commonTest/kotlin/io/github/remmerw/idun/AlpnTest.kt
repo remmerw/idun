@@ -4,7 +4,6 @@ import io.github.remmerw.idun.core.Raw
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class AlpnTest {
@@ -19,9 +18,9 @@ class AlpnTest {
         val input = TestEnv.randomBytes(100) //
 
         storage.root(input)
-        val cid = storage.root().cid()
+        val node = storage.info()
 
-        val cmp = (storage.root() as Raw).data()
+        val cmp = (node as Raw).data()
         assertTrue(input.contentEquals(cmp))
 
 
@@ -32,12 +31,7 @@ class AlpnTest {
         )
 
 
-        val root = client.fetchRoot(server.peerId())
-        checkNotNull(root)
-
-        assertEquals(root, storage.root().cid())
-
-        val data = client.fetchRaw(server.peerId(), cid)
+        val data = client.fetchRaw(server.peerId())
         assertTrue(input.contentEquals(data))
         client.shutdown()
 

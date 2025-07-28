@@ -25,6 +25,7 @@ import io.github.remmerw.idun.core.Type
 import io.github.remmerw.idun.core.createRaw
 import io.github.remmerw.idun.core.decodeNode
 import io.github.remmerw.idun.core.decodeType
+import io.github.remmerw.idun.core.encodeType
 import io.github.remmerw.idun.core.removeNode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -116,13 +117,6 @@ class Idun internal constructor(
         return dagr.numOutgoingConnections()
     }
 
-    internal suspend fun fetchRoot(peerId: PeerId): Long {
-        val connection = connector.connect(asen, peerId)
-        val sink = Buffer()
-        connection.fetchBlock(sink, HALO_ROOT)
-        return sink.readLong()
-    }
-
 
     suspend fun transferTo(rawSink: RawSink, request: String, progress: (Float) -> Unit = {}) {
 
@@ -167,7 +161,7 @@ class Idun internal constructor(
         return request(peerId, cid)
     }
 
-    suspend fun request(peerId: PeerId, cid: Long? = null): Response {
+    suspend fun request(peerId: PeerId, cid: Long = 0): Response {
         try {
             val node = info(peerId, cid) // is resolved
             return if (node is Fid) {
@@ -187,7 +181,7 @@ class Idun internal constructor(
     }
 
 
-    suspend fun channel(peerId: PeerId, cid: Long? = null): Channel {
+    suspend fun channel(peerId: PeerId, cid: Long = 0): Channel {
         val node = info(peerId, cid)
         val connection = connector.connect(asen, peerId)
         return createChannel(node, connection)
@@ -207,18 +201,14 @@ class Idun internal constructor(
     }
 
 
-    suspend fun info(peerId: PeerId, cid: Long? = null): Node {
-        if (cid != null) {
-            val connection = connector.connect(asen, peerId)
-            val buffer = Buffer()
-            connection.fetchBlock(buffer, cid)
-            return decodeNode(cid, buffer)
-        } else {
-            return info(peerId, fetchRoot(peerId))
-        }
+    suspend fun info(peerId: PeerId, cid: Long = 0): Node {
+        val connection = connector.connect(asen, peerId)
+        val buffer = Buffer()
+        connection.fetchBlock(buffer, cid)
+        return decodeNode(cid, buffer)
     }
 
-    suspend fun fetchRaw(peerId: PeerId, cid: Long): ByteArray {
+    suspend fun fetchRaw(peerId: PeerId, cid: Long = 0): ByteArray {
         val connection = connector.connect(asen, peerId)
         val buffer = Buffer()
         connection.fetchBlock(buffer, cid)
@@ -267,12 +257,15 @@ class Idun internal constructor(
                 try {
                     while (true) {
                         val cid = connection.readLong()
-                        val root = storage.root()
-                        if (cid == HALO_ROOT) { // root request
+
+                        if (cid == 0L) { // root request
                             // root cid
+                            val data = storage.root()
+
                             val buffer = Buffer()
-                            buffer.writeInt(Long.SIZE_BYTES)
-                            buffer.writeLong(root.cid())
+                            buffer.writeInt(data.size + 1)
+                            buffer.writeByte(encodeType(Type.RAW))
+                            buffer.write(data)
                             connection.writeBuffer(buffer)
 
                         } else {
@@ -310,7 +303,7 @@ fun newIdun(
 interface Channel {
     fun size(): Long
     fun seek(offset: Long)
-    fun next(buffer: Buffer): Int
+    fun next(sink: Buffer): Int
 
     /**
      * Read all the bytes from the current offset to the end
@@ -329,7 +322,6 @@ data class Response(
 
 internal const val MAX_CHARS_SIZE = 4096
 private const val SPLITTER_SIZE = Short.MAX_VALUE
-const val HALO_ROOT = 0L
 
 fun splitterSize(): Int {
     return SPLITTER_SIZE.toInt()
@@ -349,26 +341,18 @@ interface Node {
 
 data class Storage(private val directory: Path) : Fetch {
     @Volatile
-    private var root: Node = createRaw(this, byteArrayOf()) {
-        nextCid()
-    }
+    private var root = Raw(0, byteArrayOf())
 
     fun directory(): Path {
         return directory
     }
 
     fun root(data: ByteArray) {
-        root(createRaw(this, data) {
-            nextCid()
-        })
+        root = Raw(0, data)
     }
 
-    fun root(node: Node) {
-        root = node
-    }
-
-    fun root(): Node {
-        return root
+    fun root(): ByteArray {
+        return root.data()
     }
 
     fun reset() {
@@ -382,12 +366,12 @@ data class Storage(private val directory: Path) : Fetch {
     }
 
     fun hasBlock(cid: Long): Boolean {
-        require(cid != HALO_ROOT) { "Invalid Cid" }
+        require(cid != 0L) { "Invalid Cid" }
         return SystemFileSystem.exists(path(cid))
     }
 
     override fun fetchBlock(sink: Buffer, cid: Long) {
-        require(cid != HALO_ROOT) { "Invalid Cid" }
+        require(cid != 0L) { "Invalid Cid" }
         val file = path(cid)
         require(SystemFileSystem.exists(file)) { "Block does not exists" }
 
@@ -397,7 +381,7 @@ data class Storage(private val directory: Path) : Fetch {
     }
 
     fun storeBlock(cid: Long, buffer: Buffer) {
-        require(cid != HALO_ROOT) { "Invalid Cid" }
+        require(cid != 0L) { "Invalid Cid" }
         val file = path(cid)
         SystemFileSystem.sink(file, false).use { sink ->
             sink.write(buffer, buffer.size)
@@ -411,19 +395,19 @@ data class Storage(private val directory: Path) : Fetch {
 
     @OptIn(ExperimentalStdlibApi::class)
     private fun path(cid: Long): Path {
-        require(cid != HALO_ROOT) { "Invalid Cid" }
+        require(cid != 0L) { "Invalid Cid" }
         return Path(directory, cid.toHexString())
     }
 
     fun deleteBlock(cid: Long) {
-        require(cid != HALO_ROOT) { "Invalid Cid" }
+        require(cid != 0L) { "Invalid Cid" }
         val file = path(cid)
         SystemFileSystem.delete(file, false)
     }
 
     fun nextCid(): Long {
         val cid = Random.nextLong()
-        if (cid != HALO_ROOT) {
+        if (cid != 0L) {
             val exists = hasBlock(cid)
             if (!exists) {
                 return cid
@@ -433,10 +417,14 @@ data class Storage(private val directory: Path) : Fetch {
     }
 
 
-    fun info(cid: Long): Node {
+    fun info(cid: Long = 0): Node {
         val sink = Buffer()
-        fetchBlock(sink, cid)
-        return decodeNode(cid, sink)
+        if (cid == 0L) {
+            return root
+        } else {
+            fetchBlock(sink, cid)
+            return decodeNode(cid, sink)
+        }
     }
 
     // Note: remove the cid block (add all links blocks recursively)
@@ -578,7 +566,7 @@ private fun validate(pns: Uri): String {
     return host
 }
 
-fun Uri.extractCid(): Long? {
+fun Uri.extractCid(): Long {
     var path = this.path
     if (path != null) {
         path = path.trim().removePrefix("/")
@@ -587,7 +575,7 @@ fun Uri.extractCid(): Long? {
             return cid
         }
     }
-    return null
+    return 0
 }
 
 fun createChannel(node: Node, fetch: Fetch): Channel {

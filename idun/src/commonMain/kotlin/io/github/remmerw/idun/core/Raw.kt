@@ -1,9 +1,7 @@
 package io.github.remmerw.idun.core
 
 import io.github.remmerw.idun.Node
-import io.github.remmerw.idun.splitterSize
 
-@Suppress("ArrayInDataClass")
 internal data class Raw(
     private val cid: Long,
     private val data: ByteArray
@@ -29,7 +27,21 @@ internal data class Raw(
         return cid
     }
 
-    init {
-        require(data.size <= splitterSize()) { "Invalid data size" }
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as Raw
+
+        if (cid != other.cid) return false
+        if (!data.contentEquals(other.data)) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = cid.hashCode()
+        result = 31 * result + data.contentHashCode()
+        return result
     }
 }

@@ -3,7 +3,7 @@ package io.github.remmerw.idun
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
-import kotlin.test.assertEquals
+import kotlin.test.assertContentEquals
 
 class FetchCidStressTest {
     @Test
@@ -15,9 +15,8 @@ class FetchCidStressTest {
         checkNotNull(server)
         checkNotNull(server.keys())
 
-
         storage.root("Homepage".encodeToByteArray())
-        val raw = storage.root().cid()
+        val data = storage.root()
 
         val client = newIdun()
 
@@ -28,8 +27,8 @@ class FetchCidStressTest {
 
 
         repeat(TestEnv.ITERATIONS) {
-            val value = client.fetchRoot(server.peerId())
-            assertEquals(value, raw)
+            val value = client.fetchRaw(server.peerId())
+            assertContentEquals(value, data)
         }
         client.shutdown()
 

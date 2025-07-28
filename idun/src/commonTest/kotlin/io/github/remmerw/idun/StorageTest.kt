@@ -4,7 +4,6 @@ import com.eygraber.uri.Uri
 import io.github.remmerw.borr.PeerId
 import io.github.remmerw.idun.TestEnv.randomBytes
 import io.github.remmerw.idun.core.OCTET_MIME_TYPE
-import io.github.remmerw.idun.core.Raw
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -30,9 +29,8 @@ class StorageTest {
         assertNotNull(data.root())
         data.reset()
         assertNotNull(data.root())
-        val root = data.root() as Raw
-        assertEquals(root.data().size, 0)
-        assertNotNull(root.cid())
+        val root = data.root()
+        assertEquals(root.size, 0)
         data.delete()
 
     }

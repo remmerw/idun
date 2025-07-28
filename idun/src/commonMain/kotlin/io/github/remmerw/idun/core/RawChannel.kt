@@ -2,29 +2,32 @@ package io.github.remmerw.idun.core
 
 import io.github.remmerw.idun.Channel
 import kotlinx.io.Buffer
+import kotlinx.io.readByteArray
 
-internal class RawChannel(private val data: ByteArray) : Channel {
+internal class RawChannel(data: ByteArray) : Channel {
+    private val buffer = Buffer()
 
-    private var hasRead = false
+    init {
+        buffer.write(data)
+    }
+
     override fun size(): Long {
-        return data.size.toLong()
+        return buffer.size
     }
 
     override fun seek(offset: Long) {
-        throw Exception("Seek is not supported")
+        buffer.skip(offset)
     }
 
-    override fun next(buffer: Buffer): Int {
-        if (!hasRead) {
-            buffer.write(data)
-            hasRead = true
-            return data.size
+    override fun next(sink: Buffer): Int {
+        return if (!buffer.exhausted()) {
+            buffer.transferTo(sink).toInt()
         } else {
-            return -1
+            -1
         }
     }
 
     override fun readBytes(): ByteArray {
-        return data
+        return buffer.readByteArray()
     }
 }
