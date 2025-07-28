@@ -25,7 +25,7 @@ class StressTest {
 
         repeat(5000) {
 
-            val data = client.fetchData(server.peerId(), node.cid())
+            val data = client.fetchRaw(server.peerId(), node.cid())
             assertEquals(cmp.size, data.size)
             assertTrue(cmp.contentEquals(data))
         }

@@ -37,7 +37,7 @@ class AlpnTest {
 
         assertEquals(root, storage.root().cid())
 
-        val data = client.fetchData(server.peerId(), cid)
+        val data = client.fetchRaw(server.peerId(), cid)
         assertTrue(input.contentEquals(data))
         client.shutdown()
 

@@ -218,13 +218,13 @@ class Idun internal constructor(
         }
     }
 
-    suspend fun fetchData(peerId: PeerId, cid: Long): ByteArray {
+    suspend fun fetchRaw(peerId: PeerId, cid: Long): ByteArray {
         val connection = connector.connect(asen, peerId)
         val buffer = Buffer()
         connection.fetchBlock(buffer, cid)
         val type: Type = decodeType(buffer.readByte())
 
-        require(type == Type.RAW) { "cid does not reference pure data" }
+        require(type == Type.RAW) { "cid does not reference a raw node" }
         return buffer.readByteArray()
     }
 

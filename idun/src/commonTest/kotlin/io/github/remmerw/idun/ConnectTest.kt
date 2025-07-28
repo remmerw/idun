@@ -55,7 +55,7 @@ class ConnectTest {
         val root = client.fetchRoot(server.peerId())
         assertNotNull(root)
 
-        val data = client.fetchData(server.peerId(), root)
+        val data = client.fetchRaw(server.peerId(), root)
         assertNotNull(data)
         assertTrue(data.contentEquals(byteArrayOf()))
 
@@ -90,7 +90,7 @@ class ConnectTest {
         val root = client.fetchRoot(server.peerId()) // Intern it sets keep alive to true
         assertNotNull(root)
 
-        val data = client.fetchData(server.peerId(), root)
+        val data = client.fetchRaw(server.peerId(), root)
         assertNotNull(data)
         assertTrue(data.contentEquals(byteArrayOf()))
 
