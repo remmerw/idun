@@ -1,7 +1,6 @@
 package io.github.remmerw.idun.core
 
 
-import io.github.remmerw.idun.Fetch
 import io.github.remmerw.idun.MAX_CHARS_SIZE
 import io.github.remmerw.idun.Node
 import io.github.remmerw.idun.Storage
@@ -238,17 +237,6 @@ private fun lengthFid(
 
     length += links.size * Long.SIZE_BYTES
     return length
-}
-
-
-internal fun fetchData(node: Node, fetch: Fetch): ByteArray {
-    val size = node.size()
-    if (node is Fid) {
-        return FidChannel(node, size, fetch).readBytes()
-    } else {
-        val raw = node as Raw
-        return raw.data()
-    }
 }
 
 internal fun decodeNode(cid: Long, source: RawSource): Node {

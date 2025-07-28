@@ -124,15 +124,30 @@ class Idun internal constructor(
         val cid = uri.extractCid()
         val peerId = uri.extractPeerId()
 
-        val channel = channel(peerId, cid)
-        val size = channel.size()
-        var remember = 0
+        val node = info(peerId, cid)
+        val size = node.size()
+
+
         var totalRead = 0L
-        val buffer = Buffer()
-        do {
-            val read = channel.next(buffer)
-            if (read > 0) {
-                totalRead += buffer.transferTo(rawSink)
+        var remember = 0
+        if (node is Raw) {
+            val buffer = Buffer()
+            buffer.write(node.data())
+            val totalRead: Long = node.data().size.toLong()
+            rawSink.write(buffer, totalRead)
+
+
+            val percent = ((totalRead * 100.0f) / size).toInt()
+            progress.invoke(percent / 100.0f)
+        } else {
+            node as Fid
+
+            val links = node.links()
+            val connection = connector.connect(asen, peerId)
+
+
+            links.forEach { link ->
+                totalRead += connection.fetchBlock(rawSink, link)
 
                 if (totalRead > 0) {
                     val percent = ((totalRead * 100.0f) / size).toInt()
@@ -142,7 +157,7 @@ class Idun internal constructor(
                     }
                 }
             }
-        } while (read > 0)
+        }
     }
 
     @Suppress("unused")
@@ -224,7 +239,7 @@ class Idun internal constructor(
     }
 
 
-    suspend fun shutdown() {
+    fun shutdown() {
 
         try {
             asen.shutdown()
@@ -304,10 +319,6 @@ interface Channel {
     fun size(): Long
     fun seek(offset: Long)
     fun next(sink: Buffer): Int
-
-    /**
-     * Read all the bytes from the current offset to the end
-     */
     fun readBytes(): ByteArray
 }
 
@@ -370,13 +381,13 @@ data class Storage(private val directory: Path) : Fetch {
         return SystemFileSystem.exists(path(cid))
     }
 
-    override fun fetchBlock(sink: Buffer, cid: Long) {
+    override fun fetchBlock(sink: RawSink, cid: Long): Int {
         require(cid != 0L) { "Invalid Cid" }
         val file = path(cid)
         require(SystemFileSystem.exists(file)) { "Block does not exists" }
 
         SystemFileSystem.source(file).buffered().use { source ->
-            source.transferTo(sink)
+            return source.transferTo(sink).toInt()
         }
     }
 
@@ -456,20 +467,38 @@ data class Storage(private val directory: Path) : Fetch {
 
     fun transferTo(node: Node, path: Path) {
         SystemFileSystem.sink(path, false).use { sink ->
-            val buffer = Buffer()
-            val channel = channel(node)
-            do {
-                val data = channel.next(buffer)
-                if (data > 0) {
-                    buffer.transferTo(sink)
+
+            if (node is Raw) {
+                val buffer = Buffer()
+                buffer.write(node.data())
+                val totalRead: Long = node.data().size.toLong()
+                sink.write(buffer, totalRead)
+
+            } else {
+                node as Fid
+                val links = node.links()
+
+                links.forEach { link ->
+                    fetchBlock(sink, link)
                 }
-            } while (data > 0)
+            }
         }
     }
 
-    fun channel(node: Node): Channel {
-        return createChannel(node, this)
+    internal fun readByteArray(node: Node): ByteArray {
+        if (node is Raw) {
+            return node.data()
+        } else {
+            node as Fid
+            val links = node.links()
+            val sink = Buffer()
+            links.forEach { link ->
+                fetchBlock(sink, link)
+            }
+            return sink.readByteArray()
+        }
     }
+
 
     fun storeSource(source: RawSource, name: String, mimeType: String): Node {
         return io.github.remmerw.idun.core.storeSource(this, source, name, mimeType) {
@@ -478,7 +507,7 @@ data class Storage(private val directory: Path) : Fetch {
     }
 
     fun fetchData(node: Node): ByteArray {
-        return io.github.remmerw.idun.core.fetchData(node, this)
+        return readByteArray(node)
     }
 
     fun fetchText(node: Node): String {
@@ -549,7 +578,7 @@ fun decodeNode(cid: Long, block: Buffer): Node {
 }
 
 interface Fetch {
-    fun fetchBlock(sink: Buffer, cid: Long)
+    fun fetchBlock(sink: RawSink, cid: Long): Int
 }
 
 fun Uri.extractPeerId(): PeerId {

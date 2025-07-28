@@ -3,7 +3,7 @@ package io.github.remmerw.idun.core
 import io.github.remmerw.borr.PeerId
 import io.github.remmerw.idun.Fetch
 import io.github.remmerw.idun.debug
-import kotlinx.io.Buffer
+import kotlinx.io.RawSink
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
@@ -14,7 +14,7 @@ internal class Connection(
 ) : Fetch {
     private val lock = ReentrantLock()
 
-    override fun fetchBlock(sink: Buffer, cid: Long) {
+    override fun fetchBlock(sink: RawSink, cid: Long): Int {
 
         lock.withLock {
             try {
@@ -22,6 +22,7 @@ internal class Connection(
 
                 val length = intern.readInt()
                 intern.readBuffer(sink, length)
+                return length
             } catch (throwable: Throwable) {
                 debug(throwable)
                 close()

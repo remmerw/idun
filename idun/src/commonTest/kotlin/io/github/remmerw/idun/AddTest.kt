@@ -74,8 +74,7 @@ class AddTest {
         assertNotNull(fid)
         assertTrue(fid.name().isNotEmpty())
 
-        val channel = storage.channel(fid)
-        val bytes = channel.readBytes()
+        val bytes = storage.readByteArray(fid)
         assertEquals(bytes.size.toLong(), fid.size())
         storage.delete()
     }
@@ -96,8 +95,8 @@ class AddTest {
         assertNotNull(fid)
         assertEquals(fid.mimeType(), OCTET_MIME_TYPE)
 
-        val channel = storage.channel(fid)
-        assertEquals(fid.size(), channel.readBytes().size.toLong())
+        val bytes = storage.readByteArray(fid)
+        assertEquals(fid.size(), bytes.size.toLong())
 
         storage.delete()
     }
@@ -115,8 +114,8 @@ class AddTest {
         )
 
 
-        val channel = storage.channel(fid)
-        assertEquals(fid.size(), channel.readBytes().size.toLong())
+        val bytes = storage.readByteArray(fid)
+        assertEquals(fid.size(), bytes.size.toLong())
 
         storage.delete()
     }
@@ -133,8 +132,8 @@ class AddTest {
         )
 
 
-        val channel = storage.channel(fid)
-        assertEquals(channel.readBytes().size.toLong(), fid.size())
+        val bytes = storage.readByteArray(fid)
+        assertEquals(bytes.size.toLong(), fid.size())
         storage.delete()
     }
 
@@ -159,8 +158,7 @@ class AddTest {
         val storage = newStorage()
         val text = TestEnv.randomBytes((splitterSize() * 2) - 50)
         val fid = TestEnv.createContent(storage, "random.bin", OCTET_MIME_TYPE, text)
-        val channel = storage.channel(fid)
-        assertTrue(text.contentEquals(channel.readBytes()))
+        assertTrue(text.contentEquals(storage.readByteArray(fid)))
         storage.delete()
     }
 
@@ -192,55 +190,6 @@ class AddTest {
         channel.seek(pos.toLong())
         channel.next(buffer)
         assertEquals(text.substring(pos), buffer.readByteArray().decodeToString())
-
-        storage.delete()
-    }
-
-    @Test
-    fun test_readerBig(): Unit = runBlocking {
-
-        val storage = newStorage()
-
-        val root = storage.root()
-        assertNotNull(root)
-        assertEquals(root.size, 0)
-
-        val text = TestEnv.randomBytes((splitterSize() * 2) - 50)
-
-        storage.root(text)
-        val newRoot = storage.root()
-        assertNotNull(newRoot)
-        assertEquals(newRoot.size, text.size)
-
-        val node = storage.info()
-        var channel = storage.channel(node)
-
-        val buffer = Buffer()
-        channel.seek(0)
-        assertTrue(channel.next(buffer) > 0)
-        var data = buffer.readByteArray()
-        assertEquals(text.size, data.size)
-
-
-        // test
-        buffer.clear()
-        channel = storage.channel(node)
-        channel.seek(50)
-        assertTrue(channel.next(buffer) > 0)
-        data = buffer.readByteArray()
-        assertEquals(text.size - 50, data.size)
-
-
-        // test
-        buffer.clear()
-        channel = storage.channel(node)
-        channel.seek(100)
-        assertTrue(channel.next(buffer) > 0)
-        data = buffer.readByteArray()
-        assertEquals(text.size - 100, data.size)
-        assertEquals(0, buffer.size.toInt())
-
-
 
         storage.delete()
     }

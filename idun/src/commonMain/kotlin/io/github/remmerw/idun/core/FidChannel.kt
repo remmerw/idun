@@ -20,16 +20,16 @@ internal class FidChannel(
     }
 
 
-    override fun next(buffer: Buffer): Int {
+    override fun next(sink: Buffer): Int {
         val offset = this.left
         this.left = -1
 
         if (offset >= 0) {
             // special case when offset is set
             val link = root.links()[index]
-            fetch.fetchBlock(buffer, link)
-            buffer.skip(offset.toLong())
-            return buffer.size.toInt()
+            fetch.fetchBlock(sink, link)
+            sink.skip(offset.toLong())
+            return sink.size.toInt()
         }
 
         index++
@@ -39,8 +39,8 @@ internal class FidChannel(
             return -1
         }
         val link = links[index]
-        fetch.fetchBlock(buffer, link)
-        return buffer.size.toInt()
+        fetch.fetchBlock(sink, link)
+        return sink.size.toInt()
     }
 
     override fun readBytes(): ByteArray {
