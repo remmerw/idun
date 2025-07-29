@@ -85,17 +85,10 @@ internal fun writeUnsignedVariant(buffer: Buffer, value: Long) {
 
 
 internal fun storeSource(
-    storage: Storage, source: RawSource,
-    name: String, mimeType: String,
-    nextCid: (Any) -> Long
-): Fid {
-    return splitter(storage, source, name, mimeType, nextCid)
-}
-
-
-private fun splitter(
-    storage: Storage, source: RawSource,
-    name: String, mimeType: String,
+    storage: Storage,
+    source: RawSource,
+    name: String,
+    mimeType: String,
     nextCid: (Any) -> Long
 ): Fid {
     val links: MutableList<Long> = mutableListOf()
@@ -105,6 +98,8 @@ private fun splitter(
 
     var size = 0L
     var done = false
+
+    val fidCid = nextCid.invoke(Any())
 
     while (!done) {
         var read = 0L
@@ -129,10 +124,8 @@ private fun splitter(
     }
 
     val buffer = encodeFid(links, size, name, mimeType)
-    val cid = nextCid.invoke(Any())
-    storage.storeBlock(cid, buffer)
-
-    return Fid(cid, size, name, mimeType, links)
+    storage.storeBlock(fidCid, buffer)
+    return Fid(fidCid, size, name, mimeType, links)
 }
 
 internal fun removeNode(storage: Storage, node: Node) {
@@ -164,11 +157,9 @@ private fun removeBlocks(storage: Storage, fid: Fid) {
 
 
 internal fun createRaw(
-    storage: Storage, data: ByteArray,
-    nextCid: (Any) -> Long
+    storage: Storage, cid: Long, data: ByteArray
 ): Raw {
     val buffer = encodeRaw(data)
-    val cid = nextCid.invoke(Any())
     storage.storeBlock(cid, buffer)
     return Raw(cid, data)
 }

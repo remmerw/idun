@@ -1,11 +1,8 @@
 package io.github.remmerw.idun
 
 import io.github.remmerw.idun.core.OCTET_MIME_TYPE
-import kotlinx.coroutines.runBlocking
-import kotlinx.io.Buffer
 import kotlinx.io.buffered
 import kotlinx.io.files.SystemFileSystem
-import kotlinx.io.readByteArray
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
@@ -15,32 +12,28 @@ import kotlin.test.assertNotNull
 class DataTest {
 
     @Test
-    fun storeAndGetBlock(): Unit = runBlocking {
+    fun storeAndGetBlock() {
         val storage = newStorage()
         val maxSize = 50
 
         // prepare data
         val bytes = Random.nextBytes(maxSize)
-        val buffer = Buffer()
-        buffer.write(bytes)
 
-        // (1) store block
-        val cid = storage.nextCid()
-        storage.storeBlock(cid, buffer)
 
-        // (2) get block
-        val sink = Buffer()
-        storage.fetchBlock(sink, cid)
-        assertContentEquals(bytes, sink.readByteArray())
+        // (1) store data
+        val raw = storage.storeData(bytes)
 
+        // (2) get data
+        val data = storage.fetchData(raw)
+        assertContentEquals(bytes, data)
 
         // cleanup
-        storage.deleteBlock(cid)
+        storage.deleteBlock(raw.cid())
         storage.delete()
     }
 
     @Test
-    fun storeAndGetRaw(): Unit = runBlocking {
+    fun storeAndGetRaw() {
         val storage = newStorage()
         val maxSize = 50
 
@@ -63,10 +56,10 @@ class DataTest {
     }
 
     @Test
-    fun storeAndGetFile(): Unit = runBlocking {
+    fun storeAndGetFile() {
         val storage = newStorage()
 
-        val temp = storage.tempFile()
+        val temp = tempFile()
         val iteration = 10
         SystemFileSystem.sink(temp).buffered().use { source ->
             repeat(iteration) {
@@ -83,7 +76,7 @@ class DataTest {
         assertEquals(node.mimeType(), OCTET_MIME_TYPE)
 
         // (2) get the file
-        val outputFile = storage.tempFile()
+        val outputFile = tempFile()
         storage.transferTo(node, outputFile)
 
         // tests

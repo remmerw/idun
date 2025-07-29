@@ -12,9 +12,12 @@ class UriTest {
     fun testUri() {
         val peerId = PeerId(Random.nextBytes(32))
         val cid = 5L
-        val uriString = pnsUri(peerId, cid, mapOf("a" to "b",
-            "c" to "d"))
-
+        val uriString = pnsUri(
+            peerId, cid, mapOf(
+                "a" to "b",
+                "c" to "d"
+            )
+        )
 
 
         val uri = Uri.parse(uriString)
@@ -22,10 +25,10 @@ class UriTest {
         assertEquals(uri.extractCid(), cid)
         assertEquals(uri.extractPeerId(), peerId)
 
-        val b =  uri.getQueryParameter("a")
+        val b = uri.getQueryParameter("a")
         assertEquals(b, "b")
 
-        val d =  uri.getQueryParameter("c")
+        val d = uri.getQueryParameter("c")
         assertEquals(d, "d")
 
         println(uriString)

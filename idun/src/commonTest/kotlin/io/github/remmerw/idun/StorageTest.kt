@@ -76,7 +76,7 @@ class StorageTest {
         assertEquals(node.cid(), cid.cid())
 
 
-        val temp = storage.tempFile()
+        val temp = tempFile()
         val iteration = 10
         SystemFileSystem.sink(temp).buffered().use { source ->
             repeat(iteration) {
@@ -88,6 +88,9 @@ class StorageTest {
 
         node = storage.info(fid.cid())
         assertEquals(node.cid(), fid.cid())
+
+        SystemFileSystem.delete(temp)
+
         storage.delete()
     }
 
@@ -122,7 +125,7 @@ class StorageTest {
         val storage = newStorage()
         val fid = TestEnv.createContent(storage, 100)
         assertNotNull(fid)
-        val temp = storage.tempFile()
+        val temp = tempFile()
         storage.transferTo(fid, temp)
 
         assertEquals(SystemFileSystem.metadataOrNull(temp)?.size, fid.size())
@@ -140,7 +143,7 @@ class StorageTest {
         val maxData = 25000
 
 
-        val inputFile = storage.tempFile()
+        val inputFile = tempFile()
         SystemFileSystem.sink(inputFile).buffered().use { source ->
             repeat(maxData) {
                 source.write(randomBytes(packetSize))
@@ -154,17 +157,17 @@ class StorageTest {
         val fid = storage.storeFile(inputFile, OCTET_MIME_TYPE)
         assertNotNull(fid)
 
-        val temp = storage.tempFile()
+        val temp = tempFile()
 
         storage.transferTo(fid, temp)
         assertEquals(SystemFileSystem.metadataOrNull(temp)?.size, size)
 
 
-        val outputFile1 = storage.tempFile()
+        val outputFile1 = tempFile()
         storage.transferTo(fid, outputFile1)
 
 
-        val outputFile2 = storage.tempFile()
+        val outputFile2 = tempFile()
         storage.transferTo(fid, outputFile2)
 
 
@@ -211,10 +214,9 @@ class StorageTest {
 
         val size = fid.size()
 
-
         assertEquals(fid.size(), size)
 
-        val temp = storage.tempFile()
+        val temp = tempFile()
         storage.transferTo(fid, temp)
 
         assertEquals(SystemFileSystem.metadataOrNull(temp)?.size, size)

@@ -18,7 +18,7 @@ class FetchTest {
         assertNotNull(fid)
 
 
-        val temp = storage.tempFile()
+        val temp = tempFile()
 
         val client = newIdun()
 

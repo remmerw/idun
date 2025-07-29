@@ -27,6 +27,7 @@ import io.github.remmerw.idun.core.decodeNode
 import io.github.remmerw.idun.core.decodeType
 import io.github.remmerw.idun.core.encodeType
 import io.github.remmerw.idun.core.removeNode
+import io.github.remmerw.idun.core.storeSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -35,7 +36,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.io.Buffer
 import kotlinx.io.RawSink
-import kotlinx.io.RawSource
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
@@ -43,7 +43,12 @@ import kotlinx.io.files.SystemTemporaryDirectory
 import kotlinx.io.readByteArray
 import java.io.InputStream
 import java.net.InetSocketAddress
+import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.Volatile
+import kotlin.concurrent.atomics.AtomicLong
+import kotlin.concurrent.atomics.ExperimentalAtomicApi
+import kotlin.concurrent.atomics.incrementAndFetch
+import kotlin.concurrent.withLock
 import kotlin.random.Random
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -350,9 +355,32 @@ interface Node {
     fun mimeType(): String
 }
 
+@OptIn(ExperimentalAtomicApi::class)
 data class Storage(private val directory: Path) : Fetch {
     @Volatile
     private var root = Raw(0, byteArrayOf())
+    private val lock = ReentrantLock()
+
+    @OptIn(ExperimentalAtomicApi::class)
+    private val cid = AtomicLong(0L)
+
+
+    init {
+        var maxCid = 0L
+        val files = SystemFileSystem.list(directory())
+        for (file in files) {
+            try {
+                val res = file.name.hexToLong()
+                if (res > maxCid) {
+                    maxCid = res
+                }
+            } catch (throwable: Throwable) {
+                debug(throwable)
+            }
+        }
+        cid.store(maxCid)
+
+    }
 
     fun directory(): Path {
         return directory
@@ -399,10 +427,6 @@ data class Storage(private val directory: Path) : Fetch {
         }
     }
 
-    @OptIn(ExperimentalUuidApi::class)
-    fun tempFile(): Path {
-        return Path(directory, Uuid.random().toHexString())
-    }
 
     @OptIn(ExperimentalStdlibApi::class)
     private fun path(cid: Long): Path {
@@ -414,17 +438,6 @@ data class Storage(private val directory: Path) : Fetch {
         require(cid != 0L) { "Invalid Cid" }
         val file = path(cid)
         SystemFileSystem.delete(file, false)
-    }
-
-    fun nextCid(): Long {
-        val cid = Random.nextLong()
-        if (cid != 0L) {
-            val exists = hasBlock(cid)
-            if (!exists) {
-                return cid
-            }
-        }
-        return nextCid()
     }
 
 
@@ -444,8 +457,8 @@ data class Storage(private val directory: Path) : Fetch {
     }
 
     fun storeData(data: ByteArray): Node {
-        return createRaw(this, data) {
-            nextCid()
+        lock.withLock {
+            return createRaw(this, cid.incrementAndFetch(), data)
         }
     }
 
@@ -454,15 +467,18 @@ data class Storage(private val directory: Path) : Fetch {
     }
 
     fun storeFile(path: Path, mimeType: String): Node {
-        require(SystemFileSystem.exists(path)) { "Path does not exists" }
-        val metadata = SystemFileSystem.metadataOrNull(path)
-        checkNotNull(metadata) { "Path has no metadata" }
-        require(metadata.isRegularFile) { "Path is not a regular file" }
-        require(mimeType.isNotBlank()) { "MimeType is blank" }
-        SystemFileSystem.source(path).use { source ->
-            return storeSource(source, path.name, mimeType)
+        lock.withLock {
+            require(SystemFileSystem.exists(path)) { "Path does not exists" }
+            val metadata = SystemFileSystem.metadataOrNull(path)
+            checkNotNull(metadata) { "Path has no metadata" }
+            require(metadata.isRegularFile) { "Path is not a regular file" }
+            require(mimeType.isNotBlank()) { "MimeType is blank" }
+            SystemFileSystem.source(path).use { source ->
+                return storeSource(this, source, path.name, mimeType) {
+                    cid.incrementAndFetch()
+                }
+            }
         }
-
     }
 
     fun transferTo(node: Node, path: Path) {
@@ -499,12 +515,6 @@ data class Storage(private val directory: Path) : Fetch {
         }
     }
 
-
-    fun storeSource(source: RawSource, name: String, mimeType: String): Node {
-        return io.github.remmerw.idun.core.storeSource(this, source, name, mimeType) {
-            nextCid()
-        }
-    }
 
     fun fetchData(node: Node): ByteArray {
         return readByteArray(node)
@@ -560,6 +570,11 @@ private fun tempDirectory(): Path {
     val path = Path(SystemTemporaryDirectory, Uuid.random().toHexString())
     SystemFileSystem.createDirectories(path)
     return path
+}
+
+@OptIn(ExperimentalUuidApi::class)
+internal fun tempFile(name: String = Uuid.random().toHexString()): Path {
+    return Path(SystemTemporaryDirectory, name)
 }
 
 
