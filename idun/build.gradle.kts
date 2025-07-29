@@ -12,7 +12,7 @@ plugins {
 }
 
 group = "io.github.remmerw"
-version = "0.4.6"
+version = "0.4.7"
 
 kotlin {
 
@@ -76,9 +76,7 @@ android {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
     }
-    packaging {
-        resources.excludes.add("META-INF/versions/9/OSGI-INF/MANIFEST.MF")
-    }
+
 }
 
 

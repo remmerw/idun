@@ -620,8 +620,17 @@ fun pnsUri(peerId: PeerId): String {
     return "pns://" + encode58(peerId.hash)
 }
 
-fun pnsUri(peerId: PeerId, cid: Long): String {
-    return pnsUri(peerId) + "/" + cid.toHexString()
+
+fun pnsUri(peerId: PeerId, cid: Long, attributes: Map<String, String> = emptyMap()): String {
+    val uri = pnsUri(peerId) + "/" + cid.toHexString()
+    if (attributes.isEmpty()) {
+        return uri
+    }
+    val builder = Uri.parse(uri).buildUpon()
+    attributes.forEach { p0, p1 ->
+        builder.appendQueryParameter(p0, p1)
+    }
+    return builder.toString()
 }
 
 
