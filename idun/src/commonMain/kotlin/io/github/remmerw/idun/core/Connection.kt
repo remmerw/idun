@@ -2,32 +2,24 @@ package io.github.remmerw.idun.core
 
 import io.github.remmerw.borr.PeerId
 import io.github.remmerw.idun.Fetch
+import io.github.remmerw.idun.TIMEOUT
 import io.github.remmerw.idun.debug
 import kotlinx.io.RawSink
-import java.util.concurrent.locks.ReentrantLock
-import kotlin.concurrent.withLock
 
 internal class Connection(
     private val peerId: PeerId,
     private val connector: Connector,
     private val intern: io.github.remmerw.dagr.Connection
 ) : Fetch {
-    private val lock = ReentrantLock()
 
-    override fun fetchBlock(sink: RawSink, cid: Long): Int {
 
-        lock.withLock {
-            try {
-                intern.writeLong(cid)
-
-                val length = intern.readInt()
-                intern.readBuffer(sink, length)
-                return length
-            } catch (throwable: Throwable) {
-                debug(throwable)
-                close()
-                throw throwable
-            }
+    override fun fetchBlock(sink: RawSink, cid: Long) : Int {
+        try {
+            return intern.request(cid, sink, TIMEOUT)
+        } catch (throwable: Throwable) {
+            debug(throwable)
+            close()
+            throw throwable
         }
     }
 

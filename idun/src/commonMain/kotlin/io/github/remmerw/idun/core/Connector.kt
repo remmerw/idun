@@ -4,8 +4,8 @@ import io.github.remmerw.asen.Asen
 import io.github.remmerw.asen.Peeraddr
 import io.github.remmerw.borr.PeerId
 import io.github.remmerw.dagr.Dagr
-import io.github.remmerw.idun.CONNECT_TIMEOUT
 import io.github.remmerw.idun.RESOLVE_TIMEOUT
+import io.github.remmerw.idun.TIMEOUT
 import io.github.remmerw.idun.debug
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -104,7 +104,7 @@ internal class Connector(val dagr: Dagr) {
         remoteAddress: InetSocketAddress
     ): Connection? {
         try {
-            val intern = dagr.connect(remoteAddress, CONNECT_TIMEOUT)
+            val intern = dagr.connect(remoteAddress, TIMEOUT)
 
             if (intern != null) {
                 val connection = Connection(peerId, connector, intern)

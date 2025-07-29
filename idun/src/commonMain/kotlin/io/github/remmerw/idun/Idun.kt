@@ -13,7 +13,7 @@ import io.github.remmerw.borr.decode58
 import io.github.remmerw.borr.encode58
 import io.github.remmerw.borr.generateKeys
 import io.github.remmerw.dagr.Acceptor
-import io.github.remmerw.dagr.Connection
+import io.github.remmerw.dagr.Writer
 import io.github.remmerw.dagr.newDagr
 import io.github.remmerw.idun.core.Connector
 import io.github.remmerw.idun.core.Fid
@@ -54,7 +54,9 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 internal const val RESOLVE_TIMEOUT: Int = 60
-internal const val CONNECT_TIMEOUT: Int = 3
+internal const val TIMEOUT: Int = 2
+
+internal const val MAX_SIZE: Int = 65536 // Note same as dagr Settings
 
 class Idun internal constructor(
     val storage: Storage?,
@@ -272,38 +274,22 @@ class Idun internal constructor(
         }
     }
 
-    override fun accept(connection: Connection) {
+    override fun request(writer: Writer, request:Long) {
         if (storage != null) {
-            scope.launch {
-                try {
-                    while (true) {
-                        val cid = connection.readLong()
+            if (request == 0L) { // root request
+                // root cid
+                val data = storage.root()
 
-                        if (cid == 0L) { // root request
-                            // root cid
-                            val data = storage.root()
+                val buffer = Buffer()
+                buffer.writeInt(data.size + 1)
+                buffer.writeByte(encodeType(Type.RAW))
+                buffer.write(data)
+                writer.writeBuffer(buffer)
 
-                            val buffer = Buffer()
-                            buffer.writeInt(data.size + 1)
-                            buffer.writeByte(encodeType(Type.RAW))
-                            buffer.write(data)
-                            connection.writeBuffer(buffer)
-
-                        } else {
-                            val sink = Buffer()
-                            storage.fetchBlock(sink, cid)
-                            connection.writeInt(sink.size.toInt())
-                            connection.writeBuffer(sink)
-                        }
-                        connection.flush()
-                    }
-                } catch (_: InterruptedException) {
-                    // nothing to do here (connection was closed)
-                } catch (throwable: Throwable) {
-                    debug(throwable)
-                } finally {
-                    connection.close()
-                }
+            } else {
+                val sink = Buffer()
+                storage.getBlock(sink, request)
+                writer.writeBuffer(sink)
             }
         }
     }
@@ -410,7 +396,19 @@ data class Storage(private val directory: Path) : Fetch {
         return SystemFileSystem.exists(path(cid))
     }
 
-    override fun fetchBlock(sink: RawSink, cid: Long): Int {
+    internal fun getBlock(sink: RawSink, cid: Long) {
+        require(cid != 0L) { "Invalid Cid" }
+        val file = path(cid)
+        require(SystemFileSystem.exists(file)) { "Block does not exists" }
+        val size = SystemFileSystem.metadataOrNull(file)!!.size
+        val length = Buffer()
+        length.writeInt(size.toInt())
+        sink.write(length, Int.SIZE_BYTES.toLong())
+        SystemFileSystem.source(file).buffered().use { source ->
+             source.transferTo(sink)
+        }
+    }
+    override fun fetchBlock(sink: RawSink, cid: Long) : Int {
         require(cid != 0L) { "Invalid Cid" }
         val file = path(cid)
         require(SystemFileSystem.exists(file)) { "Block does not exists" }
@@ -422,6 +420,7 @@ data class Storage(private val directory: Path) : Fetch {
 
     fun storeBlock(cid: Long, buffer: Buffer) {
         require(cid != 0L) { "Invalid Cid" }
+        require(buffer.size <= MAX_SIZE) {"Exceeds limit of data length"}
         val file = path(cid)
         SystemFileSystem.sink(file, false).use { sink ->
             sink.write(buffer, buffer.size)
@@ -458,6 +457,7 @@ data class Storage(private val directory: Path) : Fetch {
     }
 
     fun storeData(data: ByteArray): Node {
+        require(data.size <= MAX_SIZE) {"Exceeds limit of data length"}
         lock.withLock {
             return createRaw(this, cid.incrementAndFetch(), data)
         }
@@ -597,7 +597,7 @@ fun decodeNode(cid: Long, block: Buffer): Node {
 }
 
 interface Fetch {
-    fun fetchBlock(sink: RawSink, cid: Long): Int
+    fun fetchBlock(sink: RawSink, cid: Long) : Int
 }
 
 fun Uri.extractPeerId(): PeerId {
