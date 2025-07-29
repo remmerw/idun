@@ -47,20 +47,6 @@ internal fun readUnsignedVariant(buffer: Source): Int {
 }
 
 
-internal fun readLongUnsignedVariant(buffer: Source): Long {
-    var result: Long = 0
-    var cur: Long
-    var count = 0
-    do {
-        cur = (buffer.readByte().toInt() and 0xff).toLong()
-        result = result or ((cur and 0x7fL) shl (count * 7))
-        count++
-    } while (((cur and 0x80L) == 0x80L) && count < 5)
-    check((cur and 0x80L) != 0x80L) { "invalid unsigned variant sequence" }
-    return result
-}
-
-
 internal fun unsignedVariantSize(value: Long): Int {
     var remaining = value shr 7
     var count = 0
@@ -91,7 +77,7 @@ internal fun storeSource(
     mimeType: String,
     nextCid: (Any) -> Long
 ): Fid {
-    val links: MutableList<Long> = mutableListOf()
+    var links = 0
 
     val split = splitterSize().toLong()
     val chunk = Buffer()
@@ -117,7 +103,7 @@ internal fun storeSource(
             val cid = nextCid.invoke(Any())
             require(chunk.size <= split) { "Invalid chunk size" }
             storage.storeBlock(cid, chunk)
-            links.add(cid)
+            links++
             size += read
         }
         chunk.clear()
@@ -149,7 +135,8 @@ private fun removeBlocks(storage: Storage, raw: Raw) {
 }
 
 private fun removeBlocks(storage: Storage, fid: Fid) {
-    for (link in fid.links()) {
+    repeat(fid.links()) { i ->
+        val link = i + 1 + fid.cid()
         storage.deleteBlock(link)
     }
     storage.deleteBlock(fid.cid())
@@ -174,7 +161,7 @@ internal fun encodeRaw(data: ByteArray): Buffer {
 
 
 internal fun encodeFid(
-    links: List<Long>, size: Long, name: String, mimeType: String
+    links: Int, size: Long, name: String, mimeType: String
 ): Buffer {
     require(size >= 0) { "Invalid size" }
     require(
@@ -187,17 +174,12 @@ internal fun encodeFid(
     val rawName = name.encodeToByteArray()
     val rawMimeType = mimeType.encodeToByteArray()
 
-    val length = lengthFid(links, size, rawName, rawMimeType)
+    val length = lengthFid(rawName, rawMimeType)
 
     val buffer = Buffer()
     buffer.writeByte(encodeType(Type.FID))
-    writeUnsignedVariant(buffer, links.size.toLong())
-
-    for (link in links) {
-        buffer.writeLong(link)
-    }
-
-    writeUnsignedVariant(buffer, size)
+    buffer.writeInt(links)
+    buffer.writeLong(size)
 
     writeUnsignedVariant(buffer, rawName.size.toLong())
     buffer.write(rawName)
@@ -210,12 +192,11 @@ internal fun encodeFid(
 }
 
 private fun lengthFid(
-    links: List<Long>, size: Long,
     name: ByteArray, mimeType: ByteArray
 ): Int {
     var length = 1 +
-            unsignedVariantSize(links.size.toLong()) +  // links size
-            unsignedVariantSize(size) // size
+            Int.SIZE_BYTES +  // links size
+            Long.SIZE_BYTES // size
 
 
     length = (length +
@@ -226,7 +207,6 @@ private fun lengthFid(
             unsignedVariantSize(mimeType.size.toLong()) // name size
             + mimeType.size)
 
-    length += links.size * Long.SIZE_BYTES
     return length
 }
 
@@ -238,17 +218,10 @@ internal fun decodeNode(cid: Long, source: RawSource): Node {
             val data = buffer.readByteArray()
             return Raw(cid, data)
         } else {
-            val linksSize = readUnsignedVariant(buffer)
-            val links = mutableListOf<Long>()
-
-            repeat(linksSize) {
-                links.add(buffer.readLong())
-            }
-
-            val size = readLongUnsignedVariant(buffer)
+            val links = buffer.readInt()
+            val size = buffer.readLong()
             val nameLength = readUnsignedVariant(buffer)
             val name = buffer.readByteArray(nameLength).decodeToString()
-
 
             val mimeTypeLength = readUnsignedVariant(buffer)
             val mimeType = buffer.readByteArray(mimeTypeLength).decodeToString()

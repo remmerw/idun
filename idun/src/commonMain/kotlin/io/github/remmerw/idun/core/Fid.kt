@@ -9,10 +9,10 @@ internal data class Fid(
     private val size: Long,
     private val name: String,
     private val mimeType: String,
-    private val links: List<Long>
+    private val links: Int
 ) : Node {
 
-    fun links(): List<Long> {
+    fun links(): Int {
         return links
     }
 

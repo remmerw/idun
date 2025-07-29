@@ -150,8 +150,9 @@ class Idun internal constructor(
             val links = node.links()
             val connection = connector.connect(asen, peerId)
 
+            repeat(links) { i ->
 
-            links.forEach { link ->
+                val link = i + 1 + node.cid()
                 totalRead += connection.fetchBlock(rawSink, link)
 
                 if (totalRead > 0) {
@@ -494,7 +495,8 @@ data class Storage(private val directory: Path) : Fetch {
                 node as Fid
                 val links = node.links()
 
-                links.forEach { link ->
+                repeat(links) { i ->
+                    val link = i + 1 + node.cid()
                     fetchBlock(sink, link)
                 }
             }
@@ -508,9 +510,11 @@ data class Storage(private val directory: Path) : Fetch {
             node as Fid
             val links = node.links()
             val sink = Buffer()
-            links.forEach { link ->
+            repeat(links) { i ->
+                val link = i + 1 + node.cid()
                 fetchBlock(sink, link)
             }
+
             return sink.readByteArray()
         }
     }

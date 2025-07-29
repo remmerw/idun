@@ -163,7 +163,7 @@ class AddTest {
     }
 
     @Test
-    fun test_reader(): Unit = runBlocking {
+    fun test_reader() {
         val storage = newStorage()
         val text = "0123456789 jjjjjjjj"
 

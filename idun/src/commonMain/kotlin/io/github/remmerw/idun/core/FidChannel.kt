@@ -26,20 +26,17 @@ internal class FidChannel(
 
         if (offset >= 0) {
             // special case when offset is set
-            val link = root.links()[index]
-            fetch.fetchBlock(sink, link)
+            fetch.fetchBlock(sink, root.cid() + 1 + index)
             sink.skip(offset.toLong())
             return sink.size.toInt()
         }
 
         index++
 
-        val links = root.links()
-        if (index >= links.size) {
+        if (index >= root.links()) {
             return -1
         }
-        val link = links[index]
-        fetch.fetchBlock(sink, link)
+        fetch.fetchBlock(sink, root.cid() + 1 + index)
         return sink.size.toInt()
     }
 
@@ -62,7 +59,7 @@ internal class FidChannel(
             return
         }
 
-        if (root.links().isNotEmpty()) {
+        if (root.links() > 0) {
             // Internal nodes have no data, so just iterate through the
             // sizes of its children (advancing the child index of the
             // `dagWalker`) to find where we need to go down to next in
