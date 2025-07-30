@@ -37,7 +37,6 @@ kotlin {
 ### Examples
 
 ```
-
     @Test
     fun simpleRequestResponse(): Unit = runBlocking(Dispatchers.IO) {
        
