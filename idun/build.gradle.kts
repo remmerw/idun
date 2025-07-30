@@ -12,7 +12,7 @@ plugins {
 }
 
 group = "io.github.remmerw"
-version = "0.4.8"
+version = "0.4.9"
 
 kotlin {
 
@@ -45,7 +45,7 @@ kotlin {
                 implementation(libs.uri.kmp)
 
 
-                implementation("io.github.remmerw:asen:0.4.4")
+                implementation("io.github.remmerw:asen:0.4.5")
                 implementation("io.github.remmerw:borr:0.0.4")
                 implementation("io.github.remmerw:dagr:0.2.2")
             }
