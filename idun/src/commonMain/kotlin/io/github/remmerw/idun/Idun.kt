@@ -36,6 +36,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.io.Buffer
 import kotlinx.io.RawSink
+import kotlinx.io.RawSource
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
@@ -274,7 +275,7 @@ class Idun internal constructor(
         }
     }
 
-    override fun request(writer: Writer, request:Long) {
+    override fun request(writer: Writer, request: Long) {
         if (storage != null) {
             if (request == 0L) { // root request
                 // root cid
@@ -405,10 +406,11 @@ data class Storage(private val directory: Path) : Fetch {
         length.writeInt(size.toInt())
         sink.write(length, Int.SIZE_BYTES.toLong())
         SystemFileSystem.source(file).buffered().use { source ->
-             source.transferTo(sink)
+            source.transferTo(sink)
         }
     }
-    override fun fetchBlock(sink: RawSink, cid: Long) : Int {
+
+    override fun fetchBlock(sink: RawSink, cid: Long): Int {
         require(cid != 0L) { "Invalid Cid" }
         val file = path(cid)
         require(SystemFileSystem.exists(file)) { "Block does not exists" }
@@ -420,7 +422,7 @@ data class Storage(private val directory: Path) : Fetch {
 
     fun storeBlock(cid: Long, buffer: Buffer) {
         require(cid != 0L) { "Invalid Cid" }
-        require(buffer.size <= MAX_SIZE) {"Exceeds limit of data length"}
+        require(buffer.size <= MAX_SIZE) { "Exceeds limit of data length" }
         val file = path(cid)
         SystemFileSystem.sink(file, false).use { sink ->
             sink.write(buffer, buffer.size)
@@ -457,7 +459,7 @@ data class Storage(private val directory: Path) : Fetch {
     }
 
     fun storeData(data: ByteArray): Node {
-        require(data.size <= MAX_SIZE) {"Exceeds limit of data length"}
+        require(data.size <= MAX_SIZE) { "Exceeds limit of data length" }
         lock.withLock {
             return createRaw(this, cid.incrementAndFetch(), data)
         }
@@ -468,16 +470,22 @@ data class Storage(private val directory: Path) : Fetch {
     }
 
     fun storeFile(path: Path, mimeType: String): Node {
+        require(SystemFileSystem.exists(path)) { "Path does not exists" }
+        val metadata = SystemFileSystem.metadataOrNull(path)
+        checkNotNull(metadata) { "Path has no metadata" }
+        require(metadata.isRegularFile) { "Path is not a regular file" }
+        require(mimeType.isNotBlank()) { "MimeType is blank" }
+        SystemFileSystem.source(path).use { source ->
+            return storeSource(source, path.name, mimeType)
+        }
+    }
+
+    fun storeSource(source: RawSource, name: String, mimeType: String): Node {
         lock.withLock {
-            require(SystemFileSystem.exists(path)) { "Path does not exists" }
-            val metadata = SystemFileSystem.metadataOrNull(path)
-            checkNotNull(metadata) { "Path has no metadata" }
-            require(metadata.isRegularFile) { "Path is not a regular file" }
+            require(name.isNotBlank()) { "Name is blank" }
             require(mimeType.isNotBlank()) { "MimeType is blank" }
-            SystemFileSystem.source(path).use { source ->
-                return storeSource(this, source, path.name, mimeType) {
-                    cid.incrementAndFetch()
-                }
+            return storeSource(this, source, name, mimeType) {
+                cid.incrementAndFetch()
             }
         }
     }
@@ -597,7 +605,7 @@ fun decodeNode(cid: Long, block: Buffer): Node {
 }
 
 interface Fetch {
-    fun fetchBlock(sink: RawSink, cid: Long) : Int
+    fun fetchBlock(sink: RawSink, cid: Long): Int
 }
 
 fun Uri.extractPeerId(): PeerId {
