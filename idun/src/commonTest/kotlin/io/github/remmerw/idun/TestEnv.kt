@@ -1,7 +1,5 @@
 package io.github.remmerw.idun
 
-import io.github.remmerw.asen.Peeraddr
-import io.github.remmerw.borr.PeerId
 import io.github.remmerw.idun.core.OCTET_MIME_TYPE
 import kotlinx.io.buffered
 import kotlinx.io.files.SystemFileSystem
@@ -50,14 +48,8 @@ internal object TestEnv {
     }
 
 
-    internal fun loopbackPeeraddr(peerId: PeerId, port: Int): Peeraddr {
-        return Peeraddr(peerId, byteArrayOf(127, 0, 0, 1), port.toUShort())
-    }
-
-    fun loopbackAddress(port: Int): List<InetSocketAddress> {
-        return listOf(
-            InetSocketAddress(InetAddress.getLoopbackAddress(), port)
-        )
+    fun loopbackAddress(port: Int): InetSocketAddress {
+        return InetSocketAddress(InetAddress.getLoopbackAddress(), port)
     }
 
     fun createContent(

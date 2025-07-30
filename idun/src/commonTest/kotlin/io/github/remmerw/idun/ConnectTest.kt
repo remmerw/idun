@@ -20,7 +20,7 @@ class ConnectTest {
 
 
         client.reachable(
-            TestEnv.loopbackPeeraddr(server.peerId(), server.localPort())
+            server.peerId(), TestEnv.loopbackAddress(server.localPort())
         )
 
 
@@ -52,7 +52,7 @@ class ConnectTest {
 
 
         client.reachable(
-            TestEnv.loopbackPeeraddr(server.peerId(), server.localPort())
+            server.peerId(), TestEnv.loopbackAddress(server.localPort())
         )
 
 

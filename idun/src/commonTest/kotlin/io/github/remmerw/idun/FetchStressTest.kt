@@ -38,7 +38,7 @@ class FetchStressTest {
 
 
                 client.reachable(
-                    TestEnv.loopbackPeeraddr(server.peerId(), server.localPort())
+                    server.peerId(), TestEnv.loopbackAddress(server.localPort())
                 )
 
 

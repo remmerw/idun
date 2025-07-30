@@ -23,7 +23,7 @@ class FetchTest {
         val client = newIdun()
 
         client.reachable(
-            TestEnv.loopbackPeeraddr(server.peerId(), server.localPort())
+            server.peerId(), TestEnv.loopbackAddress(server.localPort())
         )
 
         val request = pnsUri(server.peerId(), fid.cid())

@@ -14,9 +14,11 @@ class DialTest {
 
         val server = newIdun(storage)
 
-        val publicPeeraddrs = TestEnv.loopbackAddress(server.localPort())
+        val peeraddrs = server.observedAddresses()
+        checkNotNull(peeraddrs)
+        println("Observed addresses ${peeraddrs.size}")
 
-        server.publishAddresses(publicPeeraddrs, 25, 120)
+        server.publishAddresses(peeraddrs, 25, 120)
 
         assertTrue(server.numReservations() > 0)
 

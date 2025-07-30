@@ -242,8 +242,8 @@ class Idun internal constructor(
     }
 
     // this is just for testing purpose
-    fun reachable(peeraddr: Peeraddr) {
-        connector.reachable(peeraddr)
+    fun reachable(peerId: PeerId, address: InetSocketAddress) {
+        connector.reachable(peerId, address)
     }
 
 

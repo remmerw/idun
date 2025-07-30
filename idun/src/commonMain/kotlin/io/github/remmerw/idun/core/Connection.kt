@@ -13,7 +13,7 @@ internal class Connection(
 ) : Fetch {
 
 
-    override fun fetchBlock(sink: RawSink, cid: Long) : Int {
+    override fun fetchBlock(sink: RawSink, cid: Long): Int {
         try {
             return intern.request(cid, sink, TIMEOUT)
         } catch (throwable: Throwable) {

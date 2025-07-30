@@ -20,8 +20,6 @@ class ServerTest {
         val server = newIdun(storage)
 
 
-        TestEnv.loopbackPeeraddr(server.peerId(), server.localPort())
-
         val input = TestEnv.randomBytes(10000000) // 10 MB
 
         val fid = TestEnv.createContent(storage, "random.bin", input)
@@ -30,7 +28,7 @@ class ServerTest {
         val client = newIdun()
 
         client.reachable(
-            TestEnv.loopbackPeeraddr(server.peerId(), server.localPort())
+            server.peerId(), TestEnv.loopbackAddress(server.localPort())
         )
 
         val data = client.channel(server.peerId(), fid.cid()).readBytes()
@@ -48,8 +46,6 @@ class ServerTest {
         val storage = newStorage()
         val server = newIdun(storage)
 
-        val loopback = TestEnv.loopbackPeeraddr(server.peerId(), server.localPort())
-        assertNotNull(loopback)
 
         val text = "Hallo das ist ein Test"
         val raw = storage.storeText(text)
@@ -60,7 +56,7 @@ class ServerTest {
         val client = newIdun()
 
         client.reachable(
-            TestEnv.loopbackPeeraddr(server.peerId(), server.localPort())
+            server.peerId(), TestEnv.loopbackAddress(server.localPort())
         )
 
         val data = client.fetchRaw(server.peerId(), raw.cid())
@@ -80,8 +76,6 @@ class ServerTest {
         val server = newIdun(storage)
 
 
-        TestEnv.loopbackPeeraddr(server.peerId(), server.localPort())
-
         val input = TestEnv.randomBytes(splitterSize())
 
         val raw = storage.storeData(input)
@@ -96,7 +90,7 @@ class ServerTest {
                 val client = newIdun()
 
                 client.reachable(
-                    TestEnv.loopbackPeeraddr(server.peerId(), server.localPort())
+                    server.peerId(), TestEnv.loopbackAddress(server.localPort())
                 )
 
                 val output = client.fetchRaw(server.peerId(), raw.cid())
@@ -122,7 +116,6 @@ class ServerTest {
         val storage = newStorage()
         val server = newIdun(storage)
 
-        val peeraddr = TestEnv.loopbackPeeraddr(server.peerId(), server.localPort())
 
         val finished = AtomicInt(0)
         val instances = 10
@@ -133,7 +126,10 @@ class ServerTest {
                 launch {
                     val client = newIdun()
                     try {
-                        client.reachable(peeraddr)
+                        client.reachable(
+                            server.peerId(),
+                            TestEnv.loopbackAddress(server.localPort())
+                        )
                         finished.incrementAndFetch()
                     } catch (throwable: Throwable) {
                         throwable.printStackTrace()

@@ -1,7 +1,6 @@
 package io.github.remmerw.idun.core
 
 import io.github.remmerw.asen.Asen
-import io.github.remmerw.asen.Peeraddr
 import io.github.remmerw.borr.PeerId
 import io.github.remmerw.dagr.Dagr
 import io.github.remmerw.idun.RESOLVE_TIMEOUT
@@ -14,11 +13,11 @@ import java.util.concurrent.ConcurrentHashMap
 
 internal class Connector(val dagr: Dagr) {
     private val connections: MutableMap<PeerId, Connection> = ConcurrentHashMap()
-    private val reachable: MutableMap<PeerId, Peeraddr> = ConcurrentHashMap()
+    private val reachable: MutableMap<PeerId, InetSocketAddress> = ConcurrentHashMap()
     private val mutex = Mutex()
 
-    fun reachable(peeraddr: Peeraddr) {
-        reachable.put(peeraddr.peerId, peeraddr)
+    fun reachable(peerId: PeerId, address: InetSocketAddress) {
+        reachable.put(peerId, address)
     }
 
     private fun resolve(target: PeerId): Connection? {
@@ -38,6 +37,7 @@ internal class Connector(val dagr: Dagr) {
             try {
                 val connection = openConnection(this, target, address)
                 if (connection != null) {
+                    reachable.put(target, address)
                     return connection
                 }
             } catch (throwable: Throwable) {
@@ -47,14 +47,13 @@ internal class Connector(val dagr: Dagr) {
         throw Exception("No hop connection established")
     }
 
-    private fun connect(peeraddr: Peeraddr): Connection? {
-        val connection = connection(peeraddr.peerId)
+    private fun connect(peerId: PeerId, address: InetSocketAddress): Connection? {
+        val connection = connection(peerId)
         if (connection != null && connection.isConnected) {
             return connection
         }
         return openConnection(
-            this,
-            peeraddr.peerId, peeraddr.toInetSocketAddress()
+            this, peerId, address
         )
     }
 
@@ -64,9 +63,9 @@ internal class Connector(val dagr: Dagr) {
             if (connection != null && connection.isConnected) {
                 return connection
             }
-            val peeraddr = reachable[peerId]
-            if (peeraddr != null) {
-                connection = connect(peeraddr)
+            val address = reachable[peerId]
+            if (address != null) {
+                connection = connect(peerId, address)
             }
             if (connection != null && connection.isConnected) {
                 return connection

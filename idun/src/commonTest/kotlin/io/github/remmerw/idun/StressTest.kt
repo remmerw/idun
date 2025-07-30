@@ -15,9 +15,8 @@ class StressTest {
         val client = newIdun()
 
         client.reachable(
-            TestEnv.loopbackPeeraddr(
-                server.peerId(), server.localPort()
-            )
+            server.peerId(),
+            TestEnv.loopbackAddress(server.localPort())
         )
         val cmp = TestEnv.randomBytes(splitterSize())
         val node = storage.storeData(cmp)
