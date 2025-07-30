@@ -107,7 +107,6 @@ internal class Connector(val dagr: Dagr) {
 
             if (intern != null) {
                 val connection = Connection(peerId, connector, intern)
-                intern.enableKeepAlive()
                 connections.put(peerId, connection)
                 return connection
             }
