@@ -32,7 +32,7 @@ class AddTest {
 
             try {
                 val buffer = Buffer()
-                storage.fetchBlock(buffer, node.cid()) // closed exception expected
+                storage.transferBlock(buffer, node.cid()) // closed exception expected
             } finally {
                 storage.delete()
             }

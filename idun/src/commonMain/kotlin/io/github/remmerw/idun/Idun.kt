@@ -4,6 +4,7 @@ import com.eygraber.uri.Uri
 import io.github.remmerw.asen.HolePunch
 import io.github.remmerw.asen.MemoryPeers
 import io.github.remmerw.asen.PeerStore
+
 import io.github.remmerw.asen.Peeraddr
 import io.github.remmerw.asen.bootstrap
 import io.github.remmerw.asen.newAsen
@@ -144,7 +145,7 @@ class Idun internal constructor(
 
             connector.connect(asen, peerId).use { connection ->
                 val buffer = Buffer()
-                connection.fetchBlock(buffer, cid)
+                connection.request(cid,buffer)
                 val node = decodeNode(cid, buffer)
 
                 val size = node.size()
@@ -182,12 +183,12 @@ class Idun internal constructor(
                         val link = i + 1 + node.cid()
                         if (left > 0) {
                             val buffer = Buffer()
-                            connection.fetchBlock(buffer, link)
+                            connection.request(link,buffer)
                             buffer.skip(left.toLong())
                             totalRead += buffer.transferTo(rawSink)
                             left = 0
                         } else {
-                            totalRead += connection.fetchBlock(rawSink, link)
+                            totalRead += connection.request(link, rawSink)
                         }
 
                         if (totalRead > 0) {
@@ -222,7 +223,7 @@ class Idun internal constructor(
         mutex.withLock {
             connector.connect(asen, peerId).use { connection ->
                 val buffer = Buffer()
-                connection.fetchBlock(buffer, cid)
+                connection.request(cid,buffer)
                 val type: Type = decodeType(buffer.readByte())
 
                 require(type == Type.RAW) { "cid does not reference a raw node" }
@@ -241,12 +242,6 @@ class Idun internal constructor(
 
         try {
             asen.shutdown()
-        } catch (throwable: Throwable) {
-            debug(throwable)
-        }
-
-        try {
-            connector.shutdown()
         } catch (throwable: Throwable) {
             debug(throwable)
         }
@@ -293,7 +288,7 @@ interface Node {
 }
 
 @OptIn(ExperimentalAtomicApi::class)
-data class Storage(private val directory: Path) : Fetch {
+data class Storage(private val directory: Path)  {
     private val lock = ReentrantLock()
 
     @OptIn(ExperimentalAtomicApi::class)
@@ -350,7 +345,7 @@ data class Storage(private val directory: Path) : Fetch {
         }
     }
 
-    override fun fetchBlock(sink: RawSink, cid: Long): Int {
+    fun transferBlock(sink: RawSink, cid: Long): Int {
         val file = path(cid)
         require(SystemFileSystem.exists(file)) { "Block does not exists" }
 
@@ -381,7 +376,7 @@ data class Storage(private val directory: Path) : Fetch {
 
     fun info(cid: Long): Node {
         val sink = Buffer()
-        fetchBlock(sink, cid)
+        transferBlock(sink, cid)
         return decodeNode(cid, sink)
     }
 
@@ -437,7 +432,7 @@ data class Storage(private val directory: Path) : Fetch {
 
                 repeat(links) { i ->
                     val link = i + 1 + node.cid()
-                    fetchBlock(sink, link)
+                    transferBlock(sink, link)
                 }
             }
         }
@@ -452,7 +447,7 @@ data class Storage(private val directory: Path) : Fetch {
             val sink = Buffer()
             repeat(links) { i ->
                 val link = i + 1 + node.cid()
-                fetchBlock(sink, link)
+                transferBlock(sink, link)
             }
 
             return sink.readByteArray()
@@ -507,10 +502,6 @@ fun newStorage(directory: Path): Storage {
 
 fun decodeNode(cid: Long, block: Buffer): Node {
     return decodeNode(cid, block)
-}
-
-interface Fetch {
-    fun fetchBlock(sink: RawSink, cid: Long): Int
 }
 
 fun Uri.extractPeerId(): PeerId {

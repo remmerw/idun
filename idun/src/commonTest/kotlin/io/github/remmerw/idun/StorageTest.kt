@@ -67,7 +67,7 @@ class StorageTest {
         try {
             val fault = TestEnv.randomLong()
             val buffer = Buffer()
-            storage.fetchBlock(buffer, fault)
+            storage.transferBlock(buffer, fault)
             fail()
         } catch (_: Exception) {
             // ok

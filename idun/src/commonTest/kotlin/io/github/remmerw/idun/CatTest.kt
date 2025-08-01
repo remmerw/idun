@@ -17,7 +17,7 @@ class CatTest {
         val storage = newStorage()
         try {
             val buffer = Buffer()
-            storage.fetchBlock(buffer, cid)
+            storage.transferBlock(buffer, cid)
             fail()
 
         } catch (_: Exception) {
