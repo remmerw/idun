@@ -168,21 +168,19 @@ class Idun internal constructor(
                     // todo calculate offset
                     val links = node.links()
 
-                    val index = 0
-                    /*
                     val div = offset.floorDiv(splitterSize())
 
                     require(div < Int.MAX_VALUE) { "Invalid number of links" }
 
-                    this.index = div.toInt()
+                    val index = div.toInt()
 
-                    this.left = offset.mod(splitterSize())
+                    val left = offset.mod(splitterSize())
 
                     require(left + (index * splitterSize().toLong()) == offset) {
                         "Wrong calculation of offset"
-                    }*/
+                    }
 
-                    repeat(links) { i->
+                    for(i in index .. (links-1) ) {
 
                         val link = i + 1 + node.cid()
                         totalRead += connection.fetchBlock(rawSink, link)
