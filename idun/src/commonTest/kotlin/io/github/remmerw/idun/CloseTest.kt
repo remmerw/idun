@@ -1,5 +1,6 @@
 package io.github.remmerw.idun
 
+import io.github.remmerw.idun.core.Raw
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -14,9 +15,9 @@ class CloseTest {
         val storage = newStorage()
         val server = newIdun(storage)
 
-        storage.root("Homepage".encodeToByteArray())
-        val raw = storage.root()
+        val node = storage.storeData("Homepage".encodeToByteArray())
 
+        val raw = (node as Raw).data()
 
         val client = newIdun()
 
@@ -24,7 +25,7 @@ class CloseTest {
             server.peerId(), TestEnv.loopbackAddress(server.localPort())
         )
 
-        val data = client.fetchRaw(server.peerId())
+        val data = client.fetchRaw(server.peerId(), node.cid())
         assertContentEquals(data, raw)
         client.shutdown()
 

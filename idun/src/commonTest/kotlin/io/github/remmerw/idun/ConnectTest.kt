@@ -15,6 +15,7 @@ class ConnectTest {
 
         val storage = newStorage()
         val server = newIdun(storage)
+        val node = storage.storeData("aaa".encodeToByteArray())
 
         val client = newIdun()
 
@@ -24,9 +25,9 @@ class ConnectTest {
         )
 
 
-        val data = client.fetchRaw(server.peerId())
+        val data = client.fetchRaw(server.peerId(), node.cid())
         assertNotNull(data)
-        assertTrue(data.contentEquals(byteArrayOf()))
+
 
         assertEquals(server.numIncomingConnections(), 1)
 
@@ -47,7 +48,7 @@ class ConnectTest {
 
         val storage = newStorage()
         val server = newIdun(storage)
-
+        val node = storage.storeData("aaa".encodeToByteArray())
         val client = newIdun()
 
 
@@ -56,9 +57,8 @@ class ConnectTest {
         )
 
 
-        val data = client.fetchRaw(server.peerId())
+        val data = client.fetchRaw(server.peerId(), node.cid())
         assertNotNull(data)
-        assertTrue(data.contentEquals(byteArrayOf()))
 
 
         assertEquals(server.numOutgoingConnections(), 0)

@@ -25,13 +25,14 @@ class StorageTest {
 
     @Test
     fun resetTest() {
-        val data = newStorage()
-        assertNotNull(data.root())
-        data.reset()
-        assertNotNull(data.root())
-        val root = data.root()
-        assertEquals(root.size, 0)
-        data.delete()
+        val storage = newStorage()
+        val node = storage.storeData("aaa".encodeToByteArray())
+        val data = storage.fetchData(node)
+        checkNotNull(data)
+        assertTrue(storage.currentCid() > 0)
+        storage.reset()
+        assertTrue(storage.currentCid() == 0L)
+        storage.delete()
 
     }
 

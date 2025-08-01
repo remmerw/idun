@@ -1,5 +1,6 @@
 package io.github.remmerw.idun
 
+import io.github.remmerw.idun.core.Raw
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
@@ -15,8 +16,9 @@ class FetchCidStressTest {
         checkNotNull(server)
         checkNotNull(server.keys())
 
-        storage.root("Homepage".encodeToByteArray())
-        val data = storage.root()
+        val node = storage.storeData("aaa".encodeToByteArray())
+
+        val data = (node as Raw).data()
 
         val client = newIdun()
 
@@ -27,7 +29,7 @@ class FetchCidStressTest {
 
 
         repeat(TestEnv.ITERATIONS) {
-            val value = client.fetchRaw(server.peerId())
+            val value = client.fetchRaw(server.peerId(), node.cid())
             assertContentEquals(value, data)
         }
         client.shutdown()

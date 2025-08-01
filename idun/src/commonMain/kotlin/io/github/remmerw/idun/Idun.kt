@@ -25,7 +25,6 @@ import io.github.remmerw.idun.core.Type
 import io.github.remmerw.idun.core.createRaw
 import io.github.remmerw.idun.core.decodeNode
 import io.github.remmerw.idun.core.decodeType
-import io.github.remmerw.idun.core.encodeType
 import io.github.remmerw.idun.core.removeNode
 import io.github.remmerw.idun.core.storeSource
 import kotlinx.coroutines.CoroutineScope
@@ -45,7 +44,6 @@ import kotlinx.io.readByteArray
 import java.io.InputStream
 import java.net.InetSocketAddress
 import java.util.concurrent.locks.ReentrantLock
-import kotlin.concurrent.Volatile
 import kotlin.concurrent.atomics.AtomicLong
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.concurrent.atomics.incrementAndFetch
@@ -93,21 +91,9 @@ class Idun internal constructor(
     private var dagr = newDagr(port, object : Acceptor {
         override fun request(writer: Writer, request: Long) {
             if (storage != null) {
-                if (request == 0L) { // root request
-                    // root cid
-                    val data = storage.root()
-
-                    val buffer = Buffer()
-                    buffer.writeInt(data.size + 1)
-                    buffer.writeByte(encodeType(Type.RAW))
-                    buffer.write(data)
-                    writer.writeBuffer(buffer)
-
-                } else {
-                    val sink = Buffer()
-                    storage.getBlock(sink, request)
-                    writer.writeBuffer(sink)
-                }
+                val sink = Buffer()
+                storage.getBlock(sink, request) // todo test when request not available
+                writer.writeBuffer(sink)
             }
         }
     })
@@ -146,8 +132,9 @@ class Idun internal constructor(
     }
 
 
-    suspend fun transferTo(rawSink: RawSink, request: String, progress: (Float) -> Unit = {}) {
+    suspend fun transferTo(rawSink: RawSink, request: String, offset: Long = 0, progress: (Float) -> Unit = {}) {
 
+        require(offset >= 0){"Wrong offset"}
         val uri = Uri.parse(request)
         val cid = uri.extractCid()
         val peerId = uri.extractPeerId()
@@ -161,9 +148,9 @@ class Idun internal constructor(
         if (node is Raw) {
             val buffer = Buffer()
             buffer.write(node.data())
-            val totalRead: Long = node.data().size.toLong()
+            buffer.skip(offset)
+            val totalRead: Long = buffer.size
             rawSink.write(buffer, totalRead)
-
 
             val percent = ((totalRead * 100.0f) / size).toInt()
             progress.invoke(percent / 100.0f)
@@ -172,6 +159,8 @@ class Idun internal constructor(
 
             val links = node.links()
             val connection = connector.connect(asen, peerId)
+
+            // todo calculate offset
 
             repeat(links) { i ->
 
@@ -205,7 +194,7 @@ class Idun internal constructor(
         return request(peerId, cid)
     }
 
-    suspend fun request(peerId: PeerId, cid: Long = 0): Channel {
+    suspend fun request(peerId: PeerId, cid: Long): Channel {
         val node = info(peerId, cid) // is resolved
         return if (node is Fid) {
             channel(peerId, cid)
@@ -215,7 +204,7 @@ class Idun internal constructor(
     }
 
 
-    suspend fun channel(peerId: PeerId, cid: Long = 0): Channel {
+    suspend fun channel(peerId: PeerId, cid: Long): Channel {
         val node = info(peerId, cid)
         val connection = connector.connect(asen, peerId)
         return createChannel(node, connection)
@@ -236,14 +225,14 @@ class Idun internal constructor(
     }
 
 
-    suspend fun info(peerId: PeerId, cid: Long = 0): Node {
+    suspend fun info(peerId: PeerId, cid: Long): Node {
         val connection = connector.connect(asen, peerId)
         val buffer = Buffer()
         connection.fetchBlock(buffer, cid)
         return decodeNode(cid, buffer)
     }
 
-    suspend fun fetchRaw(peerId: PeerId, cid: Long = 0): ByteArray {
+    suspend fun fetchRaw(peerId: PeerId, cid: Long): ByteArray {
         val connection = connector.connect(asen, peerId)
         val buffer = Buffer()
         connection.fetchBlock(buffer, cid)
@@ -330,8 +319,6 @@ interface Node {
 
 @OptIn(ExperimentalAtomicApi::class)
 data class Storage(private val directory: Path) : Fetch {
-    @Volatile
-    private var root = Raw(0, byteArrayOf())
     private val lock = ReentrantLock()
 
     @OptIn(ExperimentalAtomicApi::class)
@@ -352,38 +339,31 @@ data class Storage(private val directory: Path) : Fetch {
             }
         }
         cid.store(maxCid)
+    }
 
+    internal fun currentCid():Long{
+        return cid.load()
     }
 
     fun directory(): Path {
         return directory
     }
 
-    fun root(data: ByteArray) {
-        root = Raw(0, data)
-    }
-
-    fun root(): ByteArray {
-        return root.data()
-    }
-
     fun reset() {
-        root(byteArrayOf())
         cleanupDirectory(directory)
+        cid.store(0L)
     }
 
     fun delete() {
-        cleanupDirectory(directory)
+        reset()
         SystemFileSystem.delete(directory, false)
     }
 
     fun hasBlock(cid: Long): Boolean {
-        require(cid != 0L) { "Invalid Cid" }
         return SystemFileSystem.exists(path(cid))
     }
 
     internal fun getBlock(sink: RawSink, cid: Long) {
-        require(cid != 0L) { "Invalid Cid" }
         val file = path(cid)
         require(SystemFileSystem.exists(file)) { "Block does not exists" }
         val size = SystemFileSystem.metadataOrNull(file)!!.size
@@ -396,7 +376,6 @@ data class Storage(private val directory: Path) : Fetch {
     }
 
     override fun fetchBlock(sink: RawSink, cid: Long): Int {
-        require(cid != 0L) { "Invalid Cid" }
         val file = path(cid)
         require(SystemFileSystem.exists(file)) { "Block does not exists" }
 
@@ -406,7 +385,6 @@ data class Storage(private val directory: Path) : Fetch {
     }
 
     fun storeBlock(cid: Long, buffer: Buffer) {
-        require(cid != 0L) { "Invalid Cid" }
         require(buffer.size <= MAX_SIZE) { "Exceeds limit of data length" }
         val file = path(cid)
         SystemFileSystem.sink(file, false).use { sink ->
@@ -417,25 +395,19 @@ data class Storage(private val directory: Path) : Fetch {
 
     @OptIn(ExperimentalStdlibApi::class)
     private fun path(cid: Long): Path {
-        require(cid != 0L) { "Invalid Cid" }
         return Path(directory, cid.toHexString())
     }
 
     fun deleteBlock(cid: Long) {
-        require(cid != 0L) { "Invalid Cid" }
         val file = path(cid)
         SystemFileSystem.delete(file, false)
     }
 
 
-    fun info(cid: Long = 0): Node {
+    fun info(cid: Long): Node {
         val sink = Buffer()
-        if (cid == 0L) {
-            return root
-        } else {
-            fetchBlock(sink, cid)
-            return decodeNode(cid, sink)
-        }
+        fetchBlock(sink, cid)
+        return decodeNode(cid, sink)
     }
 
     // Note: remove the cid block (add all links blocks recursively)
