@@ -3,7 +3,6 @@ package io.github.remmerw.idun
 import io.github.remmerw.idun.core.OCTET_MIME_TYPE
 import kotlinx.coroutines.runBlocking
 import kotlinx.io.Buffer
-import kotlinx.io.readByteArray
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -159,38 +158,6 @@ class AddTest {
         val text = TestEnv.randomBytes((splitterSize() * 2) - 50)
         val fid = TestEnv.createContent(storage, "random.bin", OCTET_MIME_TYPE, text)
         assertTrue(text.contentEquals(storage.readByteArray(fid)))
-        storage.delete()
-    }
-
-    @Test
-    fun test_reader() {
-        val storage = newStorage()
-        val text = "0123456789 jjjjjjjj"
-
-        val fid =
-            TestEnv.createContent(storage, "text.txt", OCTET_MIME_TYPE, text.encodeToByteArray())
-        assertTrue(storage.hasBlock(fid.cid()))
-
-        val channel = createChannel(fid, storage)
-        val buffer = Buffer()
-        channel.seek(0)
-        channel.next(buffer)
-        assertNotNull(buffer)
-        assertEquals(text, buffer.readByteArray().decodeToString())
-
-
-        buffer.clear()
-        var pos = 11
-        channel.seek(pos.toLong())
-        channel.next(buffer)
-        assertEquals(text.substring(pos), buffer.readByteArray().decodeToString())
-
-        buffer.clear()
-        pos = 5
-        channel.seek(pos.toLong())
-        channel.next(buffer)
-        assertEquals(text.substring(pos), buffer.readByteArray().decodeToString())
-
         storage.delete()
     }
 

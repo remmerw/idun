@@ -17,9 +17,7 @@ import io.github.remmerw.dagr.Writer
 import io.github.remmerw.dagr.newDagr
 import io.github.remmerw.idun.core.Connector
 import io.github.remmerw.idun.core.Fid
-import io.github.remmerw.idun.core.FidChannel
 import io.github.remmerw.idun.core.Raw
-import io.github.remmerw.idun.core.RawChannel
 import io.github.remmerw.idun.core.Type
 import io.github.remmerw.idun.core.createRaw
 import io.github.remmerw.idun.core.decodeNode
@@ -133,9 +131,11 @@ class Idun internal constructor(
     }
 
 
-    suspend fun transferTo(rawSink: RawSink, request: String,
-                           offset: Long = 0, progress: (Float) -> Unit = {}) {
-        require(offset >= 0){"Wrong offset"}
+    suspend fun transferTo(
+        rawSink: RawSink, request: String,
+        offset: Long = 0, progress: (Float) -> Unit = {}
+    ) {
+        require(offset >= 0) { "Wrong offset" }
 
         mutex.withLock {
             val uri = Uri.parse(request)
@@ -163,7 +163,6 @@ class Idun internal constructor(
                 } else {
                     node as Fid
 
-                    // todo calculate offset
                     val links = node.links()
 
                     val div = offset.floorDiv(splitterSize())
@@ -178,10 +177,10 @@ class Idun internal constructor(
                         "Wrong calculation of offset"
                     }
 
-                    for(i in index .. (links-1) ) {
+                    for (i in index..(links - 1)) {
 
                         val link = i + 1 + node.cid()
-                        if(left > 0) {
+                        if (left > 0) {
                             val buffer = Buffer()
                             connection.fetchBlock(buffer, link)
                             buffer.skip(left.toLong())
@@ -278,15 +277,6 @@ fun newIdun(
     return Idun(storage, port, keys, bootstrap, peerStore)
 }
 
-
-interface Channel {
-    fun size(): Long
-    fun seek(offset: Long)
-    fun next(sink: Buffer): Int
-    fun readBytes(): ByteArray
-}
-
-
 internal const val MAX_CHARS_SIZE = 4096
 private const val SPLITTER_SIZE = Short.MAX_VALUE
 
@@ -325,7 +315,7 @@ data class Storage(private val directory: Path) : Fetch {
         cid.store(maxCid)
     }
 
-    internal fun currentCid():Long{
+    internal fun currentCid(): Long {
         return cid.load()
     }
 
@@ -575,16 +565,6 @@ fun Uri.extractMimeType(): String {
         debug(throwable)
     }
     return ""
-}
-
-
-fun createChannel(node: Node, fetch: Fetch): Channel {
-    val size = node.size()
-    if (node is Fid) {
-        return FidChannel(node, size, fetch)
-    }
-    val raw = node as Raw
-    return RawChannel(raw.data())
 }
 
 fun pnsUri(peerId: PeerId): String {
