@@ -26,7 +26,7 @@ class FetchTest {
             server.peerId(), TestEnv.loopbackAddress(server.localPort())
         )
 
-        val request = pnsUri(server.peerId(), fid.cid())
+        val request = pnsUri(server.peerId(), fid)
 
 
         SystemFileSystem.sink(temp).use { sink ->

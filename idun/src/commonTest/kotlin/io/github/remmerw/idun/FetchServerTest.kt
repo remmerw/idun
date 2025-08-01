@@ -39,7 +39,7 @@ class FetchServerTest {
 
 
             val out = tempFile()
-            val request = pnsUri(server.peerId(), fid.cid())
+            val request = pnsUri(server.peerId(), fid)
 
             SystemFileSystem.sink(out).buffered().use { sink ->
                 client.transferTo(sink, request) { progress ->

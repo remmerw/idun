@@ -6,7 +6,7 @@ import io.github.remmerw.idun.TIMEOUT
 import io.github.remmerw.idun.debug
 import kotlinx.io.RawSink
 
-internal class Connection(
+internal class Connection( // todo Autocloseable
     private val peerId: PeerId,
     private val connector: Connector,
     private val intern: io.github.remmerw.dagr.Connection

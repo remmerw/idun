@@ -31,7 +31,7 @@ class ParallelTest {
 
         val tasks = listOf(
             launch {
-                val request = pnsUri(server.peerId(), fid1.cid())
+                val request = pnsUri(server.peerId(), fid1)
                 println("A $request")
                 val bytes = ByteArray(4096)
                 Buffer().use { sink ->
@@ -50,7 +50,7 @@ class ParallelTest {
 
 
             launch {
-                val request = pnsUri(server.peerId(), fid2.cid())
+                val request = pnsUri(server.peerId(), fid2)
                 println("B $request")
                 val bytes = ByteArray(4096)
                 Buffer().use { sink ->
@@ -68,7 +68,7 @@ class ParallelTest {
             },
 
             launch {
-                val request = pnsUri(server.peerId(), fid3.cid())
+                val request = pnsUri(server.peerId(), fid3)
                 println("C $request")
 
                 val bytes = ByteArray(4096)

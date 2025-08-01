@@ -28,7 +28,7 @@ class RequestTest {
         client.reachable(
             server.peerId(), TestEnv.loopbackAddress(server.localPort())
         )
-        val request = pnsUri(server.peerId(), fid.cid())
+        val request = pnsUri(server.peerId(), fid)
 
         val channel = client.request(request)
 

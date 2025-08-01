@@ -65,7 +65,7 @@ class Idun internal constructor(
     keys: Keys,
     bootstrap: List<Peeraddr>,
     peerStore: PeerStore
-) : Acceptor {
+) {
 
     private val asen = newAsen(keys, bootstrap, peerStore, object : HolePunch {
         override fun invoke(
@@ -90,7 +90,27 @@ class Idun internal constructor(
         }
     })
     private val scope = CoroutineScope(Dispatchers.IO)
-    private var dagr = newDagr(port, this)
+    private var dagr = newDagr(port, object : Acceptor {
+        override fun request(writer: Writer, request: Long) {
+            if (storage != null) {
+                if (request == 0L) { // root request
+                    // root cid
+                    val data = storage.root()
+
+                    val buffer = Buffer()
+                    buffer.writeInt(data.size + 1)
+                    buffer.writeByte(encodeType(Type.RAW))
+                    buffer.write(data)
+                    writer.writeBuffer(buffer)
+
+                } else {
+                    val sink = Buffer()
+                    storage.getBlock(sink, request)
+                    writer.writeBuffer(sink)
+                }
+            }
+        }
+    })
     private val connector = Connector(dagr)
 
 
@@ -266,25 +286,7 @@ class Idun internal constructor(
         }
     }
 
-    override fun request(writer: Writer, request: Long) {
-        if (storage != null) {
-            if (request == 0L) { // root request
-                // root cid
-                val data = storage.root()
 
-                val buffer = Buffer()
-                buffer.writeInt(data.size + 1)
-                buffer.writeByte(encodeType(Type.RAW))
-                buffer.write(data)
-                writer.writeBuffer(buffer)
-
-            } else {
-                val sink = Buffer()
-                storage.getBlock(sink, request)
-                writer.writeBuffer(sink)
-            }
-        }
-    }
 }
 
 
@@ -590,6 +592,36 @@ fun Uri.extractCid(): Long {
     return 0
 }
 
+
+fun Uri.extractSize(): Long {
+    try {
+        return this.getQueryParameter(SIZE)!!.toLong()
+    } catch (throwable: Throwable) {
+        debug(throwable)
+    }
+    return 0L
+}
+
+fun Uri.extractName(): String {
+    try {
+        return this.getQueryParameter(NAME)!!
+    } catch (throwable: Throwable) {
+        debug(throwable)
+    }
+    return ""
+}
+
+
+fun Uri.extractMimeType(): String {
+    try {
+        return this.getQueryParameter(MIME_TYPE)!!
+    } catch (throwable: Throwable) {
+        debug(throwable)
+    }
+    return ""
+}
+
+
 fun createChannel(node: Node, fetch: Fetch): Channel {
     val size = node.size()
     if (node is Fid) {
@@ -603,8 +635,35 @@ fun pnsUri(peerId: PeerId): String {
     return "pns://" + encode58(peerId.hash)
 }
 
+const val NAME = "name"
+const val MIME_TYPE = "mimeType"
+const val SIZE = "size"
 
-fun pnsUri(peerId: PeerId, cid: Long, attributes: Map<String, String> = emptyMap()): String {
+
+internal fun pnsUri(peerId: PeerId, node: Node): String {
+    return pnsUri(
+        peerId,
+        cid = node.cid(),
+        name = node.name(),
+        mimeType = node.mimeType(),
+        size = node.size()
+    )
+}
+
+internal fun pnsUri(peerId: PeerId, cid: Long, name: String, mimeType: String, size: Long): String {
+    require(name.isNotBlank()) { "Name should be defined" }
+    require(mimeType.isNotBlank()) { "MimeType should be defined" }
+    require(size >= 0) { "No valid size. should be greater or equal zero" }
+    val attributes = mutableMapOf(
+        NAME to name,
+        MIME_TYPE to mimeType,
+        SIZE to size.toString()
+    )
+    return pnsUri(peerId, cid, attributes)
+}
+
+
+internal fun pnsUri(peerId: PeerId, cid: Long, attributes: Map<String, String>): String {
     val uri = pnsUri(peerId) + "/" + cid.toHexString()
     if (attributes.isEmpty()) {
         return uri

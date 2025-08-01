@@ -38,11 +38,20 @@ class StorageTest {
     @Test
     fun testPns() {
         val peerId = PeerId(randomBytes(32))
-        val uri = pnsUri(peerId, 10)
+        val uri = pnsUri(
+            peerId,
+            cid = 10L,
+            name = "unknown",
+            mimeType = OCTET_MIME_TYPE,
+            size = 0
+        )
         assertNotNull(uri)
         val data = Uri.parse(uri)
         assertEquals(data.extractPeerId(), peerId)
         assertEquals(data.extractCid(), 10)
+        assertEquals(data.extractSize(), 0)
+        assertEquals(data.extractName(), "unknown")
+        assertEquals(data.extractMimeType(), OCTET_MIME_TYPE)
     }
 
     @Test
