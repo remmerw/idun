@@ -27,10 +27,12 @@ class CloseTest {
 
         val data = client.fetchRaw(server.peerId(), node.cid())
         assertContentEquals(data, raw)
+
+        delay(16000) // timeout 15 sec + 1 extra
+        assertEquals(server.numIncomingConnections(), 0)
+
         client.shutdown()
 
-        delay(100)
-        assertEquals(server.numIncomingConnections(), 0)
         server.shutdown()
         storage.delete()
     }

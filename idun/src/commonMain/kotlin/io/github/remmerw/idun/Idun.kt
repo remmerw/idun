@@ -127,10 +127,6 @@ class Idun internal constructor(
         return dagr.numIncomingConnections()
     }
 
-    fun numOutgoingConnections(): Int {
-        return dagr.numOutgoingConnections()
-    }
-
 
     suspend fun transferTo(
         rawSink: RawSink, request: String,

@@ -25,6 +25,7 @@ internal class Connector(val dagr: Dagr) {
         val addresses = asen.resolveAddresses(target, RESOLVE_TIMEOUT.toLong())
 
         // Note: this can be done in the future parallel
+
         addresses.forEach { address ->
             try {
                 val connection = openConnection(address)
