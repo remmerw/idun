@@ -3,10 +3,13 @@ package io.github.remmerw.idun
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.io.Buffer
+import kotlinx.io.readByteArray
 import kotlin.concurrent.atomics.AtomicInt
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.concurrent.atomics.incrementAndFetch
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -31,8 +34,10 @@ class ServerTest {
             server.peerId(), TestEnv.loopbackAddress(server.localPort())
         )
 
-        val data = client.channel(server.peerId(), fid.cid()).readBytes()
-        assertTrue(input.contentEquals(data))
+        val sink = Buffer()
+        client.transferTo(sink, pnsUri(server.peerId(), fid) )
+
+        assertContentEquals(input, sink.readByteArray())
         client.shutdown()
 
         server.shutdown()

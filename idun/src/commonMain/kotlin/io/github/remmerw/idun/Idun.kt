@@ -32,6 +32,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.io.Buffer
 import kotlinx.io.RawSink
@@ -92,12 +94,13 @@ class Idun internal constructor(
         override fun request(writer: Writer, request: Long) {
             if (storage != null) {
                 val sink = Buffer()
-                storage.getBlock(sink, request) // todo test when request not available
+                storage.getBlock(sink, request)
                 writer.writeBuffer(sink)
             }
         }
     })
     private val connector = Connector(dagr)
+    private val mutex = Mutex()
 
 
     fun localPort(): Int {
@@ -132,60 +135,56 @@ class Idun internal constructor(
     }
 
 
-    suspend fun transferTo(rawSink: RawSink, request: String, offset: Long = 0, progress: (Float) -> Unit = {}) {
-
+    suspend fun transferTo(rawSink: RawSink, request: String,
+                           offset: Long = 0, progress: (Float) -> Unit = {}) {
         require(offset >= 0){"Wrong offset"}
-        val uri = Uri.parse(request)
-        val cid = uri.extractCid()
-        val peerId = uri.extractPeerId()
 
-        val node = info(peerId, cid)
-        val size = node.size()
+        mutex.withLock {
+            val uri = Uri.parse(request)
+            val cid = uri.extractCid()
+            val peerId = uri.extractPeerId()
 
+            connector.connect(asen, peerId).use { connection ->
+                val buffer = Buffer()
+                connection.fetchBlock(buffer, cid)
+                val node = decodeNode(cid, buffer)
 
-        var totalRead = 0L
-        var remember = 0
-        if (node is Raw) {
-            val buffer = Buffer()
-            buffer.write(node.data())
-            buffer.skip(offset)
-            val totalRead: Long = buffer.size
-            rawSink.write(buffer, totalRead)
+                val size = node.size()
 
-            val percent = ((totalRead * 100.0f) / size).toInt()
-            progress.invoke(percent / 100.0f)
-        } else {
-            node as Fid
+                var totalRead = 0L
+                var remember = 0
+                if (node is Raw) {
+                    val buffer = Buffer()
+                    buffer.write(node.data())
+                    buffer.skip(offset)
+                    val totalRead: Long = buffer.size
+                    rawSink.write(buffer, totalRead)
 
-            val links = node.links()
-            val connection = connector.connect(asen, peerId)
-
-            // todo calculate offset
-
-            repeat(links) { i ->
-
-                val link = i + 1 + node.cid()
-                totalRead += connection.fetchBlock(rawSink, link)
-
-                if (totalRead > 0) {
                     val percent = ((totalRead * 100.0f) / size).toInt()
-                    if (percent > remember) {
-                        remember = percent
-                        progress.invoke(percent / 100.0f)
+                    progress.invoke(percent / 100.0f)
+                } else {
+                    node as Fid
+
+                    // todo calculate offset
+                    val links = node.links()
+
+                    repeat(links) { i ->
+
+                        val link = i + 1 + node.cid()
+                        totalRead += connection.fetchBlock(rawSink, link)
+
+                        if (totalRead > 0) {
+                            val percent = ((totalRead * 100.0f) / size).toInt()
+                            if (percent > remember) {
+                                remember = percent
+                                progress.invoke(percent / 100.0f)
+                            }
+                        }
                     }
                 }
             }
         }
     }
-
-    @Suppress("unused")
-    suspend fun info(request: String): Node {
-        val uri = Uri.parse(request)
-        val cid = uri.extractCid()
-        val peerId = uri.extractPeerId()
-        return info(peerId, cid)
-    }
-
 
     suspend fun request(request: String): Channel {
         val uri = Uri.parse(request)
@@ -204,7 +203,7 @@ class Idun internal constructor(
     }
 
 
-    suspend fun channel(peerId: PeerId, cid: Long): Channel {
+    private suspend fun channel(peerId: PeerId, cid: Long): Channel {
         val node = info(peerId, cid)
         val connection = connector.connect(asen, peerId)
         return createChannel(node, connection)
@@ -225,21 +224,25 @@ class Idun internal constructor(
     }
 
 
-    suspend fun info(peerId: PeerId, cid: Long): Node {
+    private suspend fun info(peerId: PeerId, cid: Long): Node {
         val connection = connector.connect(asen, peerId)
         val buffer = Buffer()
         connection.fetchBlock(buffer, cid)
         return decodeNode(cid, buffer)
     }
 
-    suspend fun fetchRaw(peerId: PeerId, cid: Long): ByteArray {
-        val connection = connector.connect(asen, peerId)
-        val buffer = Buffer()
-        connection.fetchBlock(buffer, cid)
-        val type: Type = decodeType(buffer.readByte())
 
-        require(type == Type.RAW) { "cid does not reference a raw node" }
-        return buffer.readByteArray()
+    internal suspend fun fetchRaw(peerId: PeerId, cid: Long): ByteArray {
+        mutex.withLock {
+            connector.connect(asen, peerId).use { connection ->
+                val buffer = Buffer()
+                connection.fetchBlock(buffer, cid)
+                val type: Type = decodeType(buffer.readByte())
+
+                require(type == Type.RAW) { "cid does not reference a raw node" }
+                return buffer.readByteArray()
+            }
+        }
     }
 
     // this is just for testing purpose

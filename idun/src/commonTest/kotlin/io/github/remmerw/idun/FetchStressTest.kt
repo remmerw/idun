@@ -1,6 +1,7 @@
 package io.github.remmerw.idun
 
 import kotlinx.coroutines.runBlocking
+import kotlinx.io.Buffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -41,11 +42,10 @@ class FetchStressTest {
                     server.peerId(), TestEnv.loopbackAddress(server.localPort())
                 )
 
-
-                val channel = client.channel(server.peerId(), fid.cid())
-                assertEquals(fid.size(), channel.size())
-                val data = channel.readBytes()
-                assertEquals(fid.size().toInt(), data.size)
+                val sink = Buffer()
+                client.transferTo(sink, pnsUri(server.peerId(), fid) )
+                assertEquals(fid.size(), sink.size)
+                sink.clear()
 
                 client.shutdown()
             }

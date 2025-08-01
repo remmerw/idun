@@ -6,11 +6,11 @@ import io.github.remmerw.idun.TIMEOUT
 import io.github.remmerw.idun.debug
 import kotlinx.io.RawSink
 
-internal class Connection( // todo Autocloseable
+internal class Connection(
     private val peerId: PeerId,
     private val connector: Connector,
     private val intern: io.github.remmerw.dagr.Connection
-) : Fetch {
+) : Fetch, AutoCloseable {
 
 
     override fun fetchBlock(sink: RawSink, cid: Long): Int {
@@ -23,7 +23,7 @@ internal class Connection( // todo Autocloseable
         }
     }
 
-    fun close() {
+    override fun close() {
         try {
             intern.close()
         } catch (throwable: Throwable) {

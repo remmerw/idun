@@ -1,9 +1,11 @@
 package io.github.remmerw.idun
 
 import kotlinx.coroutines.runBlocking
+import kotlinx.io.Buffer
+import kotlinx.io.readByteArray
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
 
 class FetchRequestsTest {
     @Test
@@ -29,15 +31,15 @@ class FetchRequestsTest {
             server.peerId(), TestEnv.loopbackAddress(server.localPort())
         )
 
+        val sink = Buffer()
+        client.transferTo(sink, pnsUri(server.peerId(), fid) )
 
-        var data = client.channel(server.peerId(), fid.cid()).readBytes()
-        assertNotNull(data)
-        assertTrue(data.contentEquals(content.encodeToByteArray()))
+        assertContentEquals(sink.readByteArray(), content.encodeToByteArray())
 
 
-        data = client.channel(server.peerId(), bin.cid()).readBytes()
-        assertNotNull(data)
-        assertTrue(data.contentEquals(bytes))
+        client.transferTo(sink,pnsUri(server.peerId(), bin))
+
+        assertContentEquals(sink.readByteArray(), bytes)
 
 
         client.shutdown()

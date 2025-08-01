@@ -4,7 +4,6 @@ import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
 
 
 class ConnectTest {
@@ -29,13 +28,10 @@ class ConnectTest {
         assertNotNull(data)
 
 
-        assertEquals(server.numIncomingConnections(), 1)
-
-
         assertEquals(server.numOutgoingConnections(), 0)
-        assertEquals(server.numIncomingConnections(), 1)
+        assertEquals(server.numIncomingConnections(), 0)
 
-        assertEquals(client.numOutgoingConnections(), 1)
+        assertEquals(client.numOutgoingConnections(), 0)
         assertEquals(client.numIncomingConnections(), 0)
         client.shutdown()
 
@@ -62,14 +58,13 @@ class ConnectTest {
 
 
         assertEquals(server.numOutgoingConnections(), 0)
-        assertEquals(server.numIncomingConnections(), 1)
+        assertEquals(server.numIncomingConnections(), 0)
 
-        assertEquals(client.numOutgoingConnections(), 1)
+        assertEquals(client.numOutgoingConnections(), 0)
         assertEquals(client.numIncomingConnections(), 0)
 
 
         assertEquals(server.numReservations(), 0)
-        assertTrue(server.numIncomingConnections() > 0)
 
         client.shutdown()
 
