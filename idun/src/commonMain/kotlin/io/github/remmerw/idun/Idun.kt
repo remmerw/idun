@@ -171,7 +171,7 @@ class Idun internal constructor(
 
                     val index = div.toInt()
 
-                    val left = offset.mod(splitterSize())
+                    var left = offset.mod(splitterSize())
 
                     require(left + (index * splitterSize().toLong()) == offset) {
                         "Wrong calculation of offset"
@@ -185,6 +185,7 @@ class Idun internal constructor(
                             connection.fetchBlock(buffer, link)
                             buffer.skip(left.toLong())
                             totalRead += buffer.transferTo(rawSink)
+                            left = 0
                         } else {
                             totalRead += connection.fetchBlock(rawSink, link)
                         }
