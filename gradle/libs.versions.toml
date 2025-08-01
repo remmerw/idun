@@ -1,12 +1,20 @@
 [versions]
 agp = "8.12.0"
+asen = "0.4.5"
+borr = "0.0.4"
+dagr = "0.2.2"
 kotlin = "2.2.0"
+runner = "1.7.0"
 
 [libraries]
+asen = { module = "io.github.remmerw:asen", version.ref = "asen" }
+borr = { module = "io.github.remmerw:borr", version.ref = "borr" }
+dagr = { module = "io.github.remmerw:dagr", version.ref = "dagr" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version = "0.8.0" }
 kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlin" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version = "1.10.2" }
+runner = { module = "androidx.test:runner", version.ref = "runner" }
 uri-kmp = { module = "com.eygraber:uri-kmp", version = "0.0.20" }
 
 [plugins]

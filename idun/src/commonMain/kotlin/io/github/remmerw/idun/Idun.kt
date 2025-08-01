@@ -168,7 +168,21 @@ class Idun internal constructor(
                     // todo calculate offset
                     val links = node.links()
 
-                    repeat(links) { i ->
+                    val index = 0
+                    /*
+                    val div = offset.floorDiv(splitterSize())
+
+                    require(div < Int.MAX_VALUE) { "Invalid number of links" }
+
+                    this.index = div.toInt()
+
+                    this.left = offset.mod(splitterSize())
+
+                    require(left + (index * splitterSize().toLong()) == offset) {
+                        "Wrong calculation of offset"
+                    }*/
+
+                    repeat(links) { i->
 
                         val link = i + 1 + node.cid()
                         totalRead += connection.fetchBlock(rawSink, link)
@@ -193,7 +207,7 @@ class Idun internal constructor(
         return request(peerId, cid)
     }
 
-    suspend fun request(peerId: PeerId, cid: Long): Channel {
+    private suspend fun request(peerId: PeerId, cid: Long): Channel {
         val node = info(peerId, cid) // is resolved
         return if (node is Fid) {
             channel(peerId, cid)

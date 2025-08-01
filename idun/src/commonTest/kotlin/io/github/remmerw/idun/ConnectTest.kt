@@ -1,5 +1,6 @@
 package io.github.remmerw.idun
 
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -27,6 +28,7 @@ class ConnectTest {
         val data = client.fetchRaw(server.peerId(), node.cid())
         assertNotNull(data)
 
+        delay(20)
 
         assertEquals(server.numOutgoingConnections(), 0)
         assertEquals(server.numIncomingConnections(), 0)
@@ -57,6 +59,7 @@ class ConnectTest {
         assertNotNull(data)
 
 
+        delay(20)
         assertEquals(server.numOutgoingConnections(), 0)
         assertEquals(server.numIncomingConnections(), 0)
 

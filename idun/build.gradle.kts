@@ -45,9 +45,9 @@ kotlin {
                 implementation(libs.uri.kmp)
 
 
-                implementation("io.github.remmerw:asen:0.4.5")
-                implementation("io.github.remmerw:borr:0.0.4")
-                implementation("io.github.remmerw:dagr:0.2.2")
+                implementation(libs.asen)
+                implementation(libs.borr)
+                implementation(libs.dagr)
             }
         }
 
@@ -59,7 +59,7 @@ kotlin {
 
         androidInstrumentedTest.dependencies {
             implementation(libs.kotlin.test)
-            implementation("androidx.test:runner:1.6.2")
+            implementation(libs.runner)
         }
     }
 }
