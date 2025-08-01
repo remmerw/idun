@@ -183,7 +183,14 @@ class Idun internal constructor(
                     for(i in index .. (links-1) ) {
 
                         val link = i + 1 + node.cid()
-                        totalRead += connection.fetchBlock(rawSink, link)
+                        if(left > 0) {
+                            val buffer = Buffer()
+                            connection.fetchBlock(buffer, link)
+                            buffer.skip(left.toLong())
+                            totalRead += buffer.transferTo(rawSink)
+                        } else {
+                            totalRead += connection.fetchBlock(rawSink, link)
+                        }
 
                         if (totalRead > 0) {
                             val percent = ((totalRead * 100.0f) / size).toInt()
