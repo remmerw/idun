@@ -5,10 +5,8 @@ import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.io.Buffer
-import kotlin.io.println
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.use
 
 class ParallelTest {
 
@@ -33,16 +31,8 @@ class ParallelTest {
             launch {
                 val request = pnsUri(server.peerId(), fid1)
                 println("A $request")
-                val bytes = ByteArray(4096)
                 Buffer().use { sink ->
-                    client.request(request).asInputStream().use { inputStream ->
-                        do {
-                            val read = inputStream.read(bytes)
-                            if (read > 0) {
-                                sink.write(bytes, 0, read)
-                            }
-                        } while (read > 0)
-                    }
+                    client.transferTo(sink, request)
                     assertEquals(sink.size, fid1.size())
                 }
                 println("A finished")
@@ -52,16 +42,8 @@ class ParallelTest {
             launch {
                 val request = pnsUri(server.peerId(), fid2)
                 println("B $request")
-                val bytes = ByteArray(4096)
                 Buffer().use { sink ->
-                    client.request(request).asInputStream().use { inputStream ->
-                        do {
-                            val read = inputStream.read(bytes)
-                            if (read > 0) {
-                                sink.write(bytes, 0, read)
-                            }
-                        } while (read > 0)
-                    }
+                    client.transferTo(sink, request)
                     assertEquals(sink.size, fid2.size())
                 }
                 println("B finished")
@@ -70,17 +52,8 @@ class ParallelTest {
             launch {
                 val request = pnsUri(server.peerId(), fid3)
                 println("C $request")
-
-                val bytes = ByteArray(4096)
                 Buffer().use { sink ->
-                    client.request(request).asInputStream().use { inputStream ->
-                        do {
-                            val read = inputStream.read(bytes)
-                            if (read > 0) {
-                                sink.write(bytes, 0, read)
-                            }
-                        } while (read > 0)
-                    }
+                    client.transferTo(sink, request)
                     assertEquals(sink.size, fid3.size())
                 }
                 println("C finished")

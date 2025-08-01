@@ -32,12 +32,12 @@ class FetchRequestsTest {
         )
 
         val sink = Buffer()
-        client.transferTo(sink, pnsUri(server.peerId(), fid) )
+        client.transferTo(sink, pnsUri(server.peerId(), fid))
 
         assertContentEquals(sink.readByteArray(), content.encodeToByteArray())
 
 
-        client.transferTo(sink,pnsUri(server.peerId(), bin))
+        client.transferTo(sink, pnsUri(server.peerId(), bin))
 
         assertContentEquals(sink.readByteArray(), bytes)
 

@@ -35,7 +35,7 @@ class ServerTest {
         )
 
         val sink = Buffer()
-        client.transferTo(sink, pnsUri(server.peerId(), fid) )
+        client.transferTo(sink, pnsUri(server.peerId(), fid))
 
         assertContentEquals(input, sink.readByteArray())
         client.shutdown()

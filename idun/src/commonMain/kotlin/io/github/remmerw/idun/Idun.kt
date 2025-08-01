@@ -20,7 +20,6 @@ import io.github.remmerw.idun.core.Fid
 import io.github.remmerw.idun.core.FidChannel
 import io.github.remmerw.idun.core.Raw
 import io.github.remmerw.idun.core.RawChannel
-import io.github.remmerw.idun.core.Stream
 import io.github.remmerw.idun.core.Type
 import io.github.remmerw.idun.core.createRaw
 import io.github.remmerw.idun.core.decodeNode
@@ -43,7 +42,6 @@ import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.files.SystemTemporaryDirectory
 import kotlinx.io.readByteArray
-import java.io.InputStream
 import java.net.InetSocketAddress
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.atomics.AtomicLong
@@ -205,29 +203,6 @@ class Idun internal constructor(
         }
     }
 
-    suspend fun request(request: String): Channel {
-        val uri = Uri.parse(request)
-        val cid = uri.extractCid()
-        val peerId = uri.extractPeerId()
-        return request(peerId, cid)
-    }
-
-    private suspend fun request(peerId: PeerId, cid: Long): Channel {
-        val node = info(peerId, cid) // is resolved
-        return if (node is Fid) {
-            channel(peerId, cid)
-        } else {
-            RawChannel((node as Raw).data())
-        }
-    }
-
-
-    private suspend fun channel(peerId: PeerId, cid: Long): Channel {
-        val node = info(peerId, cid)
-        val connection = connector.connect(asen, peerId)
-        return createChannel(node, connection)
-    }
-
 
     fun peerId(): PeerId {
         return asen.peerId()
@@ -240,14 +215,6 @@ class Idun internal constructor(
         timeout: Int
     ) {
         return asen.makeReservations(addresses, maxPublifications, timeout)
-    }
-
-
-    private suspend fun info(peerId: PeerId, cid: Long): Node {
-        val connection = connector.connect(asen, peerId)
-        val buffer = Buffer()
-        connection.fetchBlock(buffer, cid)
-        return decodeNode(cid, buffer)
     }
 
 
@@ -325,11 +292,6 @@ private const val SPLITTER_SIZE = Short.MAX_VALUE
 
 fun splitterSize(): Int {
     return SPLITTER_SIZE.toInt()
-}
-
-// this is only temporary (will be replaced when kotlinx io has seekable stream)
-fun Channel.asInputStream(): InputStream {
-    return Stream(this)
 }
 
 interface Node {

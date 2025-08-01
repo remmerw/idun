@@ -2,6 +2,8 @@ package io.github.remmerw.idun
 
 import io.github.remmerw.idun.core.OCTET_MIME_TYPE
 import kotlinx.coroutines.runBlocking
+import kotlinx.io.Buffer
+import kotlinx.io.readByteArray
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -30,12 +32,9 @@ class RequestTest {
         )
         val request = pnsUri(server.peerId(), fid)
 
-        val channel = client.request(request)
-
-        channel.seek(splitterSize().toLong())
-
-
-        val data = channel.readBytes()
+        val sink = Buffer()
+        client.transferTo(sink, request, splitterSize().toLong())
+        val data = sink.readByteArray()
 
         assertEquals(data.size, splitterSize() * 2)
 

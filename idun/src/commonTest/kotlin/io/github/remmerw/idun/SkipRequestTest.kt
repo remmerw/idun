@@ -5,7 +5,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.io.Buffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.use
 
 class SkipRequestTest {
 
@@ -31,19 +30,11 @@ class SkipRequestTest {
 
         val request = pnsUri(server.peerId(), fid)
 
-        val bytes = ByteArray(4096)
-        Buffer().use { sink ->
-            client.request(request).asInputStream().use { inputStream ->
-                inputStream.skip(skip)
-                do {
-                    val read = inputStream.read(bytes)
-                    if (read > 0) {
-                        sink.write(bytes, 0, read)
-                    }
-                } while (read > 0)
-            }
-            assertEquals(sink.size, rest)
-        }
+
+        val sink = Buffer()
+        client.transferTo(sink, request, skip)
+        assertEquals(sink.size, rest)
+        sink.clear()
 
 
         client.shutdown()

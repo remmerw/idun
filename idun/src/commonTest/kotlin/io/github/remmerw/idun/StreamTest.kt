@@ -3,9 +3,9 @@ package io.github.remmerw.idun
 import io.github.remmerw.idun.core.OCTET_MIME_TYPE
 import kotlinx.coroutines.runBlocking
 import kotlinx.io.Buffer
+import kotlinx.io.readByteArray
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 
 class StreamTest {
 
@@ -30,26 +30,12 @@ class StreamTest {
         )
         val request = pnsUri(server.peerId(), fid)
 
-        val response = client.request(request)
 
-        assertNotNull(response)
+        val sink = Buffer()
+        client.transferTo(sink, request, splitterSize().toLong())
+        val data = sink.readByteArray()
 
-        response.asInputStream().use { stream ->
-            checkNotNull(stream)
-
-            stream.skip(splitterSize().toLong())
-
-            val result = Buffer()
-            val bytes = ByteArray(4096)
-            do {
-                val read = stream.read(bytes)
-                if (read > 0) {
-                    result.write(bytes, 0, read)
-                }
-            } while (read > 0)
-
-            assertEquals(result.size.toInt(), splitterSize() * 2)
-        }
+        assertEquals(data.size, splitterSize() * 2)
 
         // cleanup
         client.shutdown()
