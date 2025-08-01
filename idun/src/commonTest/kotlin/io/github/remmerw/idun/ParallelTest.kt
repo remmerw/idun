@@ -35,7 +35,7 @@ class ParallelTest {
                 println("A $request")
                 val bytes = ByteArray(4096)
                 Buffer().use { sink ->
-                    client.request(request).channel.asInputStream().use { inputStream ->
+                    client.request(request).asInputStream().use { inputStream ->
                         do {
                             val read = inputStream.read(bytes)
                             if (read > 0) {
@@ -54,7 +54,7 @@ class ParallelTest {
                 println("B $request")
                 val bytes = ByteArray(4096)
                 Buffer().use { sink ->
-                    client.request(request).channel.asInputStream().use { inputStream ->
+                    client.request(request).asInputStream().use { inputStream ->
                         do {
                             val read = inputStream.read(bytes)
                             if (read > 0) {
@@ -73,7 +73,7 @@ class ParallelTest {
 
                 val bytes = ByteArray(4096)
                 Buffer().use { sink ->
-                    client.request(request).channel.asInputStream().use { inputStream ->
+                    client.request(request).asInputStream().use { inputStream ->
                         do {
                             val read = inputStream.read(bytes)
                             if (read > 0) {

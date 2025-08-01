@@ -34,7 +34,7 @@ class StreamTest {
 
         assertNotNull(response)
 
-        response.channel.asInputStream().use { stream ->
+        response.asInputStream().use { stream ->
             checkNotNull(stream)
 
             stream.skip(splitterSize().toLong())

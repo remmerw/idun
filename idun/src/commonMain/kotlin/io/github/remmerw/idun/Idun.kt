@@ -55,7 +55,7 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 internal const val RESOLVE_TIMEOUT: Int = 60
-internal const val TIMEOUT: Int = 2
+internal const val TIMEOUT: Int = 3
 
 internal const val MAX_SIZE: Int = 65536 // Note same as dagr Settings
 
@@ -178,29 +178,19 @@ class Idun internal constructor(
     }
 
 
-    suspend fun request(request: String): Response {
+    suspend fun request(request: String): Channel {
         val uri = Uri.parse(request)
         val cid = uri.extractCid()
         val peerId = uri.extractPeerId()
         return request(peerId, cid)
     }
 
-    suspend fun request(peerId: PeerId, cid: Long = 0): Response {
-        try {
-            val node = info(peerId, cid) // is resolved
-            return if (node is Fid) {
-                val channel = channel(peerId, cid)
-                contentResponse(channel, node)
-            } else {
-                contentResponse(RawChannel((node as Raw).data()), "OK", 200)
-            }
-        } catch (throwable: Throwable) {
-            var message = throwable.message
-            if (message.isNullOrEmpty()) {
-                message = "Service unavailable"
-            }
-            return contentResponse(RawChannel(byteArrayOf()), message, 500)
-
+    suspend fun request(peerId: PeerId, cid: Long = 0): Channel {
+        val node = info(peerId, cid) // is resolved
+        return if (node is Fid) {
+            channel(peerId, cid)
+        } else {
+            RawChannel((node as Raw).data())
         }
     }
 
@@ -210,6 +200,7 @@ class Idun internal constructor(
         val connection = connector.connect(asen, peerId)
         return createChannel(node, connection)
     }
+
 
     fun peerId(): PeerId {
         return asen.peerId()
@@ -315,14 +306,6 @@ interface Channel {
     fun readBytes(): ByteArray
 }
 
-data class Response(
-    val mimeType: String,
-    val encoding: String,
-    val status: Int,
-    val reason: String,
-    val headers: Map<String, String>,
-    val channel: Channel
-)
 
 internal const val MAX_CHARS_SIZE = 4096
 private const val SPLITTER_SIZE = Short.MAX_VALUE
@@ -535,33 +518,6 @@ data class Storage(private val directory: Path) : Fetch {
     fun fetchText(node: Node): String {
         return fetchData(node).decodeToString()
     }
-
-}
-
-
-fun contentResponse(
-    channel: Channel, msg: String, status: Int
-): Response {
-    return Response(
-        "text/html", "UTF-8", status,
-        msg, emptyMap(), channel
-    )
-}
-
-const val CONTENT_TYPE: String = "Content-Type"
-const val CONTENT_LENGTH: String = "Content-Length"
-const val CONTENT_TITLE: String = "Content-Title"
-
-fun contentResponse(channel: Channel, node: Node): Response {
-    val mimeType = node.mimeType()
-    val responseHeaders: MutableMap<String, String> = mutableMapOf()
-    responseHeaders[CONTENT_LENGTH] = node.size().toString()
-    responseHeaders[CONTENT_TYPE] = mimeType
-    responseHeaders[CONTENT_TITLE] = node.name()
-    return Response(
-        mimeType, "UTF-8", 200,
-        "OK", responseHeaders, channel
-    )
 }
 
 fun cleanupDirectory(dir: Path) {

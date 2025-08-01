@@ -4,6 +4,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 
 class CloseTest {
@@ -14,7 +15,7 @@ class CloseTest {
         val server = newIdun(storage)
 
         storage.root("Homepage".encodeToByteArray())
-        val raw = storage.info()
+        val raw = storage.root()
 
 
         val client = newIdun()
@@ -23,8 +24,8 @@ class CloseTest {
             server.peerId(), TestEnv.loopbackAddress(server.localPort())
         )
 
-        val cid = client.info(server.peerId())
-        assertEquals(cid, raw)
+        val data = client.fetchRaw(server.peerId())
+        assertContentEquals(data, raw)
         client.shutdown()
 
         delay(100)

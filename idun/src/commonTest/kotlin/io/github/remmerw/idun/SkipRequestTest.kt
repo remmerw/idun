@@ -33,7 +33,7 @@ class SkipRequestTest {
 
         val bytes = ByteArray(4096)
         Buffer().use { sink ->
-            client.request(request).channel.asInputStream().use { inputStream ->
+            client.request(request).asInputStream().use { inputStream ->
                 inputStream.skip(skip)
                 do {
                     val read = inputStream.read(bytes)

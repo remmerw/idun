@@ -4,7 +4,6 @@ import io.github.remmerw.idun.core.OCTET_MIME_TYPE
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 
 class RequestTest {
 
@@ -31,12 +30,7 @@ class RequestTest {
         )
         val request = pnsUri(server.peerId(), fid.cid())
 
-        val response = client.request(request)
-
-        assertNotNull(response)
-
-        val channel = response.channel
-        checkNotNull(channel)
+        val channel = client.request(request)
 
         channel.seek(splitterSize().toLong())
 
