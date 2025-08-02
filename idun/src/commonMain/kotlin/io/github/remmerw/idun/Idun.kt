@@ -564,7 +564,7 @@ const val MIME_TYPE = "mimeType"
 const val SIZE = "size"
 
 
-internal fun pnsUri(peerId: PeerId, node: Node): String {
+fun pnsUri(peerId: PeerId, node: Node): String {
     return pnsUri(
         peerId,
         cid = node.cid(),
@@ -574,7 +574,7 @@ internal fun pnsUri(peerId: PeerId, node: Node): String {
     )
 }
 
-internal fun pnsUri(peerId: PeerId, cid: Long, name: String, mimeType: String, size: Long): String {
+fun pnsUri(peerId: PeerId, cid: Long, name: String, mimeType: String, size: Long): String {
     require(name.isNotBlank()) { "Name should be defined" }
     require(mimeType.isNotBlank()) { "MimeType should be defined" }
     require(size >= 0) { "No valid size. should be greater or equal zero" }

@@ -1,5 +1,6 @@
 package io.github.remmerw.idun
 
+import io.github.remmerw.dagr.Settings
 import io.github.remmerw.idun.core.Raw
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -28,7 +29,7 @@ class CloseTest {
         val data = client.fetchRaw(server.peerId(), node.cid())
         assertContentEquals(data, raw)
 
-        delay(16000) // timeout 15 sec + 1 extra
+        delay(Settings.IDLE_TIMEOUT.toLong() + 1000) // timeout 5 sec + 1 sec extra
         assertEquals(server.numIncomingConnections(), 0)
 
         client.shutdown()
