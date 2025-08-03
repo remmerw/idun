@@ -43,7 +43,9 @@ kotlin {
         val storage = newStorage()
         val raw = storage.storeText("Moin") // store some text
 
-        val server = newIdun(storage)
+        val server = newIdun()
+        server.startup(storage = storage)
+
 
         val peeraddrs = server.observedAddresses()
         checkNotNull(peeraddrs)
@@ -60,7 +62,7 @@ kotlin {
 
         val client = newIdun()
 
-        val data = client.fetchData(server.peerId(), raw.cid())
+        val data = client.fetchRaw(server.peerId(), raw.cid())
         assertEquals(data.decodeToString(), "Moin")
 
         client.shutdown()
