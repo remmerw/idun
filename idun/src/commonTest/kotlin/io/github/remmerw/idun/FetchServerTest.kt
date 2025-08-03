@@ -13,8 +13,8 @@ class FetchServerTest {
     fun fetchDataTest(): Unit = runBlocking {
 
         val storage = newStorage()
-        val server = newIdun(storage)
-
+        val server = newIdun()
+        server.startup(storage = storage)
 
         var fid: Node? = null
         var timestamp = measureTime {

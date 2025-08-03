@@ -20,7 +20,8 @@ class ServerTest {
     fun fetchDataTest(): Unit = runBlocking(Dispatchers.IO) {
 
         val storage = newStorage()
-        val server = newIdun(storage)
+        val server = newIdun()
+        server.startup(storage = storage)
 
 
         val input = TestEnv.randomBytes(10000000) // 10 MB
@@ -49,7 +50,8 @@ class ServerTest {
     fun serverTest(): Unit = runBlocking(Dispatchers.IO) {
 
         val storage = newStorage()
-        val server = newIdun(storage)
+        val server = newIdun()
+        server.startup(storage = storage)
 
 
         val text = "Hallo das ist ein Test"
@@ -78,8 +80,8 @@ class ServerTest {
     fun multipleClients(): Unit = runBlocking(Dispatchers.IO) {
 
         val storage = newStorage()
-        val server = newIdun(storage)
-
+        val server = newIdun()
+        server.startup(storage = storage)
 
         val input = TestEnv.randomBytes(splitterSize())
 
@@ -119,7 +121,8 @@ class ServerTest {
     fun multiplePings(): Unit = runBlocking(Dispatchers.IO) {
 
         val storage = newStorage()
-        val server = newIdun(storage)
+        val server = newIdun()
+        server.startup(storage = storage)
 
 
         val finished = AtomicInt(0)

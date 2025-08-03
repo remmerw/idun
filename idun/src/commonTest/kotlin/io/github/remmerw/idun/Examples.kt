@@ -13,7 +13,9 @@ class Examples {
         val storage = newStorage()
         val raw = storage.storeText("Moin") // store some text
 
-        val server = newIdun(storage)
+        val server = newIdun()
+        server.startup(storage = storage)
+
 
         val peeraddrs = server.observedAddresses()
         checkNotNull(peeraddrs)

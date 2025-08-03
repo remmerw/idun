@@ -1,8 +1,8 @@
 package io.github.remmerw.idun.core
 
 import io.github.remmerw.borr.PeerId
-import io.github.remmerw.dagr.Connection
-import io.github.remmerw.dagr.Dagr
+import io.github.remmerw.dagr.ClientConnection
+import io.github.remmerw.dagr.connectDagr
 import io.github.remmerw.idun.Idun
 import io.github.remmerw.idun.RESOLVE_TIMEOUT
 import io.github.remmerw.idun.TIMEOUT
@@ -12,7 +12,7 @@ import kotlinx.coroutines.sync.withLock
 import java.net.InetSocketAddress
 import java.util.concurrent.ConcurrentHashMap
 
-internal class Connector(val dagr: Dagr) {
+internal class Connector() {
     private val reachable: MutableMap<PeerId, InetSocketAddress> = ConcurrentHashMap()
     private val mutex = Mutex()
 
@@ -20,7 +20,7 @@ internal class Connector(val dagr: Dagr) {
         reachable.put(peerId, address)
     }
 
-    private suspend fun resolveConnection(idun: Idun, target: PeerId): Connection {
+    private suspend fun resolveConnection(idun: Idun, target: PeerId): ClientConnection {
 
         val addresses = mutableListOf<InetSocketAddress>()
         addresses.addAll(
@@ -46,14 +46,14 @@ internal class Connector(val dagr: Dagr) {
     }
 
 
-    suspend fun connect(idun: Idun, peerId: PeerId): Connection {
+    suspend fun connect(idun: Idun, peerId: PeerId): ClientConnection {
         mutex.withLock {
-            var connection: Connection? = null
+            var connection: ClientConnection? = null
             val address = reachable[peerId]
             if (address != null) {
                 connection = openConnection(address)
             }
-            if (connection != null && connection.isConnected) {
+            if (connection != null && !connection.isClosed) {
                 return connection
             }
             return resolveConnection(idun, peerId)
@@ -61,11 +61,11 @@ internal class Connector(val dagr: Dagr) {
     }
 
 
-    internal fun openConnection(
+    internal suspend fun openConnection(
         remoteAddress: InetSocketAddress
-    ): Connection? {
+    ): ClientConnection? {
         try {
-            return dagr.connect(remoteAddress, TIMEOUT)
+            return connectDagr(remoteAddress, TIMEOUT)
         } catch (throwable: Throwable) {
             debug(throwable)
         }

@@ -13,7 +13,8 @@ class SkipRequestTest {
     fun skipRequest(): Unit = runBlocking(Dispatchers.IO) {
 
         val storage = newStorage()
-        val server = newIdun(storage)
+        val server = newIdun()
+        server.startup(storage = storage)
 
         val fid = TestEnv.createContent(storage, 10)
 

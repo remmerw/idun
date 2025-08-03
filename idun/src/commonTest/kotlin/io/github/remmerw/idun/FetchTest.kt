@@ -12,7 +12,8 @@ class FetchTest {
     fun testClientServerDownload(): Unit = runBlocking {
 
         val storage = newStorage()
-        val server = newIdun(storage)
+        val server = newIdun()
+        server.startup(storage = storage)
 
         val fid = TestEnv.createContent(storage, 100)
         assertNotNull(fid)

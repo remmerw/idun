@@ -12,7 +12,8 @@ class FetchStressDataTest {
 
         val iterations = 1000
         val storage = newStorage()
-        val server = newIdun(storage)
+        val server = newIdun()
+        server.startup(storage = storage)
 
         val client = newIdun()
 

@@ -11,7 +11,8 @@ class FetchCidStressTest {
     fun fetchCidIterations(): Unit = runBlocking(Dispatchers.IO) {
 
         val storage = newStorage()
-        val server = newIdun(storage)
+        val server = newIdun()
+        server.startup(storage = storage)
 
         checkNotNull(server)
         checkNotNull(server.keys())

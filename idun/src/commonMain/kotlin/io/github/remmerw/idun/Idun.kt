@@ -14,7 +14,7 @@ import io.github.remmerw.borr.decode58
 import io.github.remmerw.borr.encode58
 import io.github.remmerw.borr.generateKeys
 import io.github.remmerw.dagr.Acceptor
-import io.github.remmerw.dagr.Settings
+import io.github.remmerw.dagr.Dagr
 import io.github.remmerw.dagr.Writer
 import io.github.remmerw.dagr.newDagr
 import io.github.remmerw.idun.core.Connector
@@ -50,17 +50,16 @@ import kotlin.concurrent.atomics.AtomicLong
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.concurrent.atomics.incrementAndFetch
 import kotlin.concurrent.withLock
+import kotlin.random.Random
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 internal const val RESOLVE_TIMEOUT: Int = 60
-internal const val TIMEOUT: Int = 3
+internal const val TIMEOUT: Int = 10
 
 internal const val MAX_SIZE: Int = 65536 // Note same as dagr Settings
 
 class Idun internal constructor(
-    val storage: Storage?,
-    port: Int,
     keys: Keys,
     bootstrap: List<Peeraddr>,
     peerStore: PeerStore
@@ -92,33 +91,38 @@ class Idun internal constructor(
                 withTimeoutOrNull(1000) {
                     punching.forEach { remoteAddress ->
                         try {
-                            dagr.punching(remoteAddress)
+                            dagr?.punching(remoteAddress)
                         } catch (throwable: Throwable) {
                             debug(throwable)
                         }
                     }
-                    delay(Settings.MAX_DELAY.toLong())
+                    delay(Random.nextLong(75, 150))
                 }
 
             }
         }
     })
     private val scope = CoroutineScope(Dispatchers.IO)
-    private var dagr = newDagr(port, object : Acceptor {
-        override fun request(writer: Writer, request: Long) {
-            if (storage != null) {
+    private var dagr: Dagr? = null
+    private val connector = Connector()
+    private val mutex = Mutex()
+
+    suspend fun startup(port: Int = 0, storage: Storage) {
+        dagr = newDagr(port, object : Acceptor {
+            override suspend fun request(writer: Writer, request: Long) {
                 val sink = Buffer()
                 storage.getBlock(sink, request)
                 writer.writeBuffer(sink)
             }
-        }
-    })
-    private val connector = Connector(dagr)
-    private val mutex = Mutex()
-
+        })
+    }
 
     fun localPort(): Int {
-        return dagr.localPort()
+        return if (dagr != null) {
+            dagr!!.localPort()
+        } else {
+            -1
+        }
     }
 
     suspend fun observedAddresses(): List<InetSocketAddress> {
@@ -143,7 +147,11 @@ class Idun internal constructor(
     }
 
     fun numIncomingConnections(): Int {
-        return dagr.numIncomingConnections()
+        return if (dagr != null) {
+            dagr!!.numIncomingConnections()
+        } else {
+            0
+        }
     }
 
 
@@ -262,7 +270,7 @@ class Idun internal constructor(
         }
 
         try {
-            dagr.shutdown()
+            dagr?.shutdown()
         } catch (throwable: Throwable) {
             debug(throwable)
         }
@@ -279,13 +287,11 @@ class Idun internal constructor(
 
 
 fun newIdun(
-    storage: Storage? = null,
-    port: Int = 0,
     keys: Keys = generateKeys(),
     bootstrap: List<Peeraddr> = bootstrap(),
     peerStore: PeerStore = MemoryPeers()
 ): Idun {
-    return Idun(storage, port, keys, bootstrap, peerStore)
+    return Idun(keys, bootstrap, peerStore)
 }
 
 internal const val MAX_CHARS_SIZE = 4096

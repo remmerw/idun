@@ -13,7 +13,8 @@ class RequestTest {
     fun storeAndRequestData(): Unit = runBlocking {
 
         val storage = newStorage()
-        val server = newIdun(storage)
+        val server = newIdun()
+        server.startup(storage = storage)
 
         val packetSize = 3
         val maxData = splitterSize()

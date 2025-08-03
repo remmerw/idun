@@ -15,7 +15,8 @@ class ParallelTest {
     fun testClientServerDownload(): Unit = runBlocking(Dispatchers.IO) {
 
         val storage = newStorage()
-        val server = newIdun(storage)
+        val server = newIdun()
+        server.startup(storage = storage)
 
         val fid1 = TestEnv.createContent(storage, 10)
         val fid2 = TestEnv.createContent(storage, 10)

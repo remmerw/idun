@@ -11,7 +11,10 @@ class StressTest {
     fun stressTest(): Unit = runBlocking(Dispatchers.IO) {
 
         val storage = newStorage()
-        val server = newIdun(storage)
+        val server = newIdun()
+        server.startup(storage = storage)
+
+
         val client = newIdun()
 
         client.reachable(

@@ -12,7 +12,8 @@ class DialTest {
     fun testDial(): Unit = runBlocking(Dispatchers.IO) {
         val storage = newStorage()
 
-        val server = newIdun(storage)
+        val server = newIdun()
+        server.startup(storage = storage)
 
         val peeraddrs = server.observedAddresses()
         checkNotNull(peeraddrs)
