@@ -108,7 +108,7 @@ class Idun internal constructor(
     private val mutex = Mutex()
 
     suspend fun startup(port: Int = 0, storage: Storage) {
-        dagr = newDagr(port, object : Acceptor {
+        dagr = newDagr(port, TIMEOUT,object : Acceptor {
             override suspend fun request(writer: Writer, request: Long) {
                 val sink = Buffer()
                 storage.getBlock(sink, request)
