@@ -14,6 +14,7 @@ import io.github.remmerw.borr.decode58
 import io.github.remmerw.borr.encode58
 import io.github.remmerw.borr.generateKeys
 import io.github.remmerw.dagr.Acceptor
+import io.github.remmerw.dagr.Settings
 import io.github.remmerw.dagr.Writer
 import io.github.remmerw.dagr.newDagr
 import io.github.remmerw.idun.core.Connector
@@ -41,13 +42,14 @@ import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.files.SystemTemporaryDirectory
 import kotlinx.io.readByteArray
+import java.net.InetAddress
 import java.net.InetSocketAddress
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.atomics.AtomicLong
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.concurrent.atomics.incrementAndFetch
 import kotlin.concurrent.withLock
-import kotlin.random.Random
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -63,24 +65,39 @@ class Idun internal constructor(
     bootstrap: List<Peeraddr>,
     peerStore: PeerStore
 ) {
+    private val observable: MutableSet<InetAddress> = ConcurrentHashMap.newKeySet()
+
+    internal fun observable(): List<InetSocketAddress> {
+        return observable.map { address ->
+            InetSocketAddress(address, localPort())
+        }
+    }
 
     private val asen = newAsen(keys, bootstrap, peerStore, object : HolePunch {
         override fun invoke(
             peerId: PeerId,
             addresses: List<InetSocketAddress>
         ) {
+
+            // punching only non local addresses (and not the same inet address)
+            val punching = addresses.filter { address ->
+                val inet = address.address
+                !(observable.contains(inet) || inet.isAnyLocalAddress || inet.isLinkLocalAddress
+                        || inet.isSiteLocalAddress || inet.isLoopbackAddress)
+            }
+
+
             scope.launch {
 
                 withTimeoutOrNull(1000) {
-                    addresses.forEach { remoteAddress ->
+                    punching.forEach { remoteAddress ->
                         try {
                             dagr.punching(remoteAddress)
                         } catch (throwable: Throwable) {
                             debug(throwable)
                         }
-
                     }
-                    delay(Random.nextLong(50, 100))
+                    delay(Settings.MAX_DELAY.toLong())
                 }
 
             }
@@ -105,9 +122,11 @@ class Idun internal constructor(
     }
 
     suspend fun observedAddresses(): List<InetSocketAddress> {
-        return asen.observedAddresses().map { address ->
-            InetSocketAddress(address, localPort())
-        }
+        val observed = asen.observedAddresses()
+        observable.clear()
+        observable.addAll(observed)
+
+        return observable()
     }
 
     suspend fun resolveAddresses(target: PeerId, timeout: Long): List<InetSocketAddress> {
@@ -139,9 +158,9 @@ class Idun internal constructor(
             val cid = uri.extractCid()
             val peerId = uri.extractPeerId()
 
-            connector.connect(asen, peerId).use { connection ->
+            connector.connect(this, peerId).use { connection ->
                 val buffer = Buffer()
-                connection.request(cid,buffer)
+                connection.request(cid, buffer)
                 val node = decodeNode(cid, buffer)
 
                 val size = node.size()
@@ -179,7 +198,7 @@ class Idun internal constructor(
                         val link = i + 1 + node.cid()
                         if (left > 0) {
                             val buffer = Buffer()
-                            connection.request(link,buffer)
+                            connection.request(link, buffer)
                             buffer.skip(left.toLong())
                             totalRead += buffer.transferTo(rawSink)
                             left = 0
@@ -217,9 +236,9 @@ class Idun internal constructor(
 
     internal suspend fun fetchRaw(peerId: PeerId, cid: Long): ByteArray {
         mutex.withLock {
-            connector.connect(asen, peerId).use { connection ->
+            connector.connect(this, peerId).use { connection ->
                 val buffer = Buffer()
-                connection.request(cid,buffer)
+                connection.request(cid, buffer)
                 val type: Type = decodeType(buffer.readByte())
 
                 require(type == Type.RAW) { "cid does not reference a raw node" }
@@ -284,7 +303,7 @@ interface Node {
 }
 
 @OptIn(ExperimentalAtomicApi::class)
-data class Storage(private val directory: Path)  {
+data class Storage(private val directory: Path) {
     private val lock = ReentrantLock()
 
     @OptIn(ExperimentalAtomicApi::class)
@@ -598,7 +617,6 @@ internal fun pnsUri(peerId: PeerId, cid: Long, attributes: Map<String, String>):
     }
     return builder.toString()
 }
-
 
 fun debug(throwable: Throwable) {
     if (ERROR) {

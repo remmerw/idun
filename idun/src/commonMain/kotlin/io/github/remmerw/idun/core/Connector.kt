@@ -1,9 +1,9 @@
 package io.github.remmerw.idun.core
 
-import io.github.remmerw.asen.Asen
 import io.github.remmerw.borr.PeerId
 import io.github.remmerw.dagr.Connection
 import io.github.remmerw.dagr.Dagr
+import io.github.remmerw.idun.Idun
 import io.github.remmerw.idun.RESOLVE_TIMEOUT
 import io.github.remmerw.idun.TIMEOUT
 import io.github.remmerw.idun.debug
@@ -20,11 +20,16 @@ internal class Connector(val dagr: Dagr) {
         reachable.put(peerId, address)
     }
 
-    private suspend fun resolveConnection(asen: Asen, target: PeerId): Connection {
+    private suspend fun resolveConnection(idun: Idun, target: PeerId): Connection {
 
-        val addresses = asen.resolveAddresses(target, RESOLVE_TIMEOUT.toLong())
+        val addresses = mutableListOf<InetSocketAddress>()
+        addresses.addAll(
+            idun.resolveAddresses(
+                target, RESOLVE_TIMEOUT.toLong()
+            )
+        )
 
-        // Note: this can be done in the future parallel
+        addresses.removeAll(idun.observable()) // do not call yourself
 
         addresses.forEach { address ->
             try {
@@ -41,7 +46,7 @@ internal class Connector(val dagr: Dagr) {
     }
 
 
-    suspend fun connect(asen: Asen, peerId: PeerId): Connection {
+    suspend fun connect(idun: Idun, peerId: PeerId): Connection {
         mutex.withLock {
             var connection: Connection? = null
             val address = reachable[peerId]
@@ -51,7 +56,7 @@ internal class Connector(val dagr: Dagr) {
             if (connection != null && connection.isConnected) {
                 return connection
             }
-            return resolveConnection(asen, peerId)
+            return resolveConnection(idun, peerId)
         }
     }
 
