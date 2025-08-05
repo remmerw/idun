@@ -47,13 +47,13 @@ kotlin {
         server.startup(storage = storage)
 
 
-        val peeraddrs = server.observedAddresses()
-        checkNotNull(peeraddrs)
-        println("Observed addresses ${peeraddrs.size}")
+        val addresses = server.observedAddresses()
+        checkNotNull(addresses)
+        println("Publish addresses ${addresses.size}")
 
 
         // publish your addresses
-        server.publishAddresses(peeraddrs, 25, 60)
+        server.publishAddresses(addresses, 25, 60)
 
 
         println("Num reservations " + server.numReservations())
