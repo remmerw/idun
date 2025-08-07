@@ -1,8 +1,8 @@
 [versions]
 agp = "8.12.0"
-asen = "0.4.6"
+asen = "0.4.7"
 borr = "0.0.4"
-dagr = "0.3.1"
+dagr = "0.3.2"
 kotlin = "2.2.0"
 runner = "1.7.0"
 

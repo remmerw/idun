@@ -1,7 +1,6 @@
 package io.github.remmerw.idun
 
 import com.eygraber.uri.Uri
-import io.github.remmerw.asen.HolePunch
 import io.github.remmerw.asen.MemoryPeers
 import io.github.remmerw.asen.PeerStore
 import io.github.remmerw.asen.Peeraddr
@@ -28,9 +27,6 @@ import io.github.remmerw.idun.core.storeSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.io.Buffer
 import kotlinx.io.RawSink
 import kotlinx.io.RawSource
@@ -47,7 +43,6 @@ import kotlin.concurrent.atomics.AtomicLong
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.concurrent.atomics.incrementAndFetch
 import kotlin.concurrent.withLock
-import kotlin.random.Random
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -69,36 +64,7 @@ class Idun internal constructor(
         }
     }
 
-    private val asen = newAsen(keys, bootstrap, peerStore, object : HolePunch {
-        override fun invoke(
-            peerId: PeerId,
-            addresses: List<InetSocketAddress>
-        ) {
-
-            // punching only non local addresses (and not the same inet address)
-            val punching = addresses.filter { address ->
-                val inet = address.address
-                !(observable.contains(inet) || inet.isAnyLocalAddress || inet.isLinkLocalAddress
-                        || inet.isSiteLocalAddress || inet.isLoopbackAddress)
-            }
-
-
-            scope.launch {
-
-                withTimeoutOrNull(1000) {
-                    punching.forEach { remoteAddress ->
-                        try {
-                            dagr?.punching(remoteAddress)
-                        } catch (throwable: Throwable) {
-                            debug(throwable)
-                        }
-                    }
-                    delay(Random.nextLong(75, 150))
-                }
-
-            }
-        }
-    })
+    private val asen = newAsen(keys, bootstrap, peerStore)
     private val scope = CoroutineScope(Dispatchers.IO)
     private var dagr: Dagr? = null
     private val connector = Connector()
