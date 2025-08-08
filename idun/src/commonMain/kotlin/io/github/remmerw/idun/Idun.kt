@@ -76,9 +76,10 @@ class Idun internal constructor(
     suspend fun startup(port: Int = 0, storage: Storage) {
         dagr = newDagr(port, TIMEOUT, object : Acceptor {
             override suspend fun request(writer: Writer, request: Long) {
-                val sink = Buffer()
-                storage.getBlock(sink, request)
-                writer.writeBuffer(sink)
+                val block = storage.getBlock(request)
+                block.source.use { source ->
+                    writer.writeBuffer(source, block.size)
+                }
             }
         })
     }
@@ -370,16 +371,12 @@ data class Storage(private val directory: Path) {
         return SystemFileSystem.exists(path(cid))
     }
 
-    internal fun getBlock(sink: RawSink, cid: Long) {
+    internal fun getBlock(cid: Long) : Block {
         val file = path(cid)
         require(SystemFileSystem.exists(file)) { "Block does not exists" }
         val size = SystemFileSystem.metadataOrNull(file)!!.size
-        val length = Buffer()
-        length.writeInt(size.toInt())
-        sink.write(length, Int.SIZE_BYTES.toLong())
-        SystemFileSystem.source(file).buffered().use { source ->
-            source.transferTo(sink)
-        }
+
+        return Block(SystemFileSystem.source(file), size.toInt())
     }
 
     fun transferBlock(sink: RawSink, cid: Long): Int {
@@ -639,6 +636,8 @@ internal fun pnsUri(peerId: PeerId, cid: Long, attributes: Map<String, String>):
     }
     return builder.toString()
 }
+
+internal data class Block(val source: RawSource, val size:Int)
 
 fun debug(throwable: Throwable) {
     if (ERROR) {
