@@ -46,7 +46,7 @@ class FetchStressTest {
 
                 val sink = Buffer()
                 client.transferTo(sink, pnsUri(server.peerId(), fid))
-                assertEquals(fid.size(), sink.size)
+                assertEquals(fid.size, sink.size)
                 sink.clear()
 
                 client.shutdown()

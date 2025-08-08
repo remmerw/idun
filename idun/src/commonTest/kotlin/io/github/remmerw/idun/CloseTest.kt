@@ -18,7 +18,7 @@ class CloseTest {
 
         val node = storage.storeData("Homepage".encodeToByteArray())
 
-        val raw = (node as Raw).data()
+        val raw = (node as Raw).data
 
         val client = newIdun()
 
@@ -26,7 +26,7 @@ class CloseTest {
             server.peerId(), TestEnv.loopbackAddress(server.localPort())
         )
 
-        val data = client.fetchRaw(server.peerId(), node.cid())
+        val data = client.fetchRaw(server.peerId(), node.cid)
         assertContentEquals(data, raw)
 
         delay(5000 + 1000) // timeout 5 sec + 1 sec extra

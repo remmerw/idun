@@ -32,7 +32,7 @@ class Examples {
 
         val client = newIdun()
 
-        val data = client.fetchRaw(server.peerId(), raw.cid())
+        val data = client.fetchRaw(server.peerId(), raw.cid)
         assertEquals(data.decodeToString(), "Moin")
 
         client.shutdown()

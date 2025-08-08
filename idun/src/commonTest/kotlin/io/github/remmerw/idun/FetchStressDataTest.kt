@@ -27,7 +27,7 @@ class FetchStressDataTest {
                 val raw = storage.storeData(data)
 
 
-                val cmp = client.fetchRaw(server.peerId(), raw.cid())
+                val cmp = client.fetchRaw(server.peerId(), raw.cid)
                 assertEquals(data.size, cmp.size, "Failed for iteration $iter")
                 assertContentEquals(data, cmp, "Failed for iteration $iter")
             }

@@ -193,13 +193,13 @@ class Idun internal constructor(
             connection.request(cid, buffer)
             val node = decodeNode(cid, buffer)
 
-            val size = node.size()
+            val size = node.size
 
             var totalRead = 0L
             var remember = 0
             if (node is Raw) {
                 val buffer = Buffer()
-                buffer.write(node.data())
+                buffer.write(node.data)
                 buffer.skip(offset)
                 val totalRead: Long = buffer.size
                 rawSink.write(buffer, totalRead)
@@ -209,7 +209,7 @@ class Idun internal constructor(
             } else {
                 node as Fid
 
-                val links = node.links()
+                val links = node.links
 
                 val div = offset.floorDiv(splitterSize())
 
@@ -225,7 +225,7 @@ class Idun internal constructor(
 
                 for (i in index..(links - 1)) {
 
-                    val link = i + 1 + node.cid()
+                    val link = i + 1 + node.cid
                     if (left > 0) {
                         val buffer = Buffer()
                         connection.request(link, buffer)
@@ -318,10 +318,10 @@ fun splitterSize(): Int {
 }
 
 interface Node {
-    fun cid(): Long
-    fun size(): Long
-    fun name(): String
-    fun mimeType(): String
+    val cid: Long
+    val size: Long
+    val name: String
+    val mimeType: String
 }
 
 @OptIn(ExperimentalAtomicApi::class)
@@ -370,7 +370,7 @@ data class Storage(private val directory: Path) {
         return SystemFileSystem.exists(path(cid))
     }
 
-    internal fun getBlock(cid: Long) : Block {
+    internal fun getBlock(cid: Long): Block {
         val file = path(cid)
         require(SystemFileSystem.exists(file)) { "Block does not exists" }
         val size = SystemFileSystem.metadataOrNull(file)!!.size
@@ -455,16 +455,16 @@ data class Storage(private val directory: Path) {
 
             if (node is Raw) {
                 val buffer = Buffer()
-                buffer.write(node.data())
-                val totalRead: Long = node.data().size.toLong()
+                buffer.write(node.data)
+                val totalRead: Long = node.size
                 sink.write(buffer, totalRead)
 
             } else {
                 node as Fid
-                val links = node.links()
+                val links = node.links
 
                 repeat(links) { i ->
-                    val link = i + 1 + node.cid()
+                    val link = i + 1 + node.cid
                     transferBlock(sink, link)
                 }
             }
@@ -473,13 +473,13 @@ data class Storage(private val directory: Path) {
 
     internal fun readByteArray(node: Node): ByteArray {
         if (node is Raw) {
-            return node.data()
+            return node.data
         } else {
             node as Fid
-            val links = node.links()
+            val links = node.links
             val sink = Buffer()
             repeat(links) { i ->
-                val link = i + 1 + node.cid()
+                val link = i + 1 + node.cid
                 transferBlock(sink, link)
             }
 
@@ -604,10 +604,10 @@ const val SIZE = "size"
 fun pnsUri(peerId: PeerId, node: Node): String {
     return pnsUri(
         peerId,
-        cid = node.cid(),
-        name = node.name(),
-        mimeType = node.mimeType(),
-        size = node.size()
+        cid = node.cid,
+        name = node.name,
+        mimeType = node.mimeType,
+        size = node.size
     )
 }
 
@@ -636,7 +636,7 @@ internal fun pnsUri(peerId: PeerId, cid: Long, attributes: Map<String, String>):
     return builder.toString()
 }
 
-internal data class Block(val source: RawSource, val size:Int)
+internal data class Block(val source: RawSource, val size: Int)
 
 fun debug(throwable: Throwable) {
     if (ERROR) {

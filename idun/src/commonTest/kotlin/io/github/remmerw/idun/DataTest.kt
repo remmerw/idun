@@ -28,7 +28,7 @@ class DataTest {
         assertContentEquals(bytes, data)
 
         // cleanup
-        storage.deleteBlock(raw.cid())
+        storage.deleteBlock(raw.cid)
         storage.delete()
     }
 
@@ -46,7 +46,7 @@ class DataTest {
 
         // tests
         assertNotNull(node)
-        assertEquals(node.size(), maxSize.toLong())
+        assertEquals(node.size, maxSize.toLong())
 
 
         // (2) get data
@@ -71,9 +71,9 @@ class DataTest {
 
         // tests
         assertNotNull(node)
-        assertEquals(node.size(), (iteration * splitterSize()).toLong())
-        assertEquals(node.name(), temp.name)
-        assertEquals(node.mimeType(), OCTET_MIME_TYPE)
+        assertEquals(node.size, (iteration * splitterSize()).toLong())
+        assertEquals(node.name, temp.name)
+        assertEquals(node.mimeType, OCTET_MIME_TYPE)
 
         // (2) get the file
         val outputFile = tempFile()

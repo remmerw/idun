@@ -34,7 +34,7 @@ class ParallelTest {
                 println("A $request")
                 Buffer().use { sink ->
                     client.transferTo(sink, request)
-                    assertEquals(sink.size, fid1.size())
+                    assertEquals(sink.size, fid1.size)
                 }
                 println("A finished")
             },
@@ -45,7 +45,7 @@ class ParallelTest {
                 println("B $request")
                 Buffer().use { sink ->
                     client.transferTo(sink, request)
-                    assertEquals(sink.size, fid2.size())
+                    assertEquals(sink.size, fid2.size)
                 }
                 println("B finished")
             },
@@ -55,7 +55,7 @@ class ParallelTest {
                 println("C $request")
                 Buffer().use { sink ->
                     client.transferTo(sink, request)
-                    assertEquals(sink.size, fid3.size())
+                    assertEquals(sink.size, fid3.size)
                 }
                 println("C finished")
             }

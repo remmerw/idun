@@ -82,8 +82,8 @@ class StorageTest {
         val cid = storage.storeText(test)
         assertNotNull(cid)
 
-        var node = storage.info(cid.cid())
-        assertEquals(node.cid(), cid.cid())
+        var node = storage.info(cid.cid)
+        assertEquals(node.cid, cid.cid)
 
 
         val temp = tempFile()
@@ -96,8 +96,8 @@ class StorageTest {
         // (1) store the file
         val fid = storage.storeFile(temp, OCTET_MIME_TYPE)
 
-        node = storage.info(fid.cid())
-        assertEquals(node.cid(), fid.cid())
+        node = storage.info(fid.cid)
+        assertEquals(node.cid, fid.cid)
 
         SystemFileSystem.delete(temp)
 
@@ -138,7 +138,7 @@ class StorageTest {
         val temp = tempFile()
         storage.transferTo(fid, temp)
 
-        assertEquals(SystemFileSystem.metadataOrNull(temp)?.size, fid.size())
+        assertEquals(SystemFileSystem.metadataOrNull(temp)?.size, fid.size)
 
         SystemFileSystem.delete(temp)
         storage.delete(fid)
@@ -203,7 +203,7 @@ class StorageTest {
             randomBytes(data)
         )
 
-        val size = fid.size()
+        val size = fid.size
 
         assertEquals(data, size.toInt())
         storage.delete()
@@ -222,14 +222,10 @@ class StorageTest {
             randomBytes(data)
         )
 
-        val size = fid.size()
-
-        assertEquals(fid.size(), size)
-
         val temp = tempFile()
         storage.transferTo(fid, temp)
 
-        assertEquals(SystemFileSystem.metadataOrNull(temp)?.size, size)
+        assertEquals(SystemFileSystem.metadataOrNull(temp)?.size, fid.size)
 
         // cleanup
         SystemFileSystem.delete(temp)

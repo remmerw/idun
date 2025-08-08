@@ -116,15 +116,15 @@ internal fun removeNode(storage: Storage, node: Node) {
 }
 
 private fun removeBlocks(storage: Storage, raw: Raw) {
-    storage.deleteBlock(raw.cid())
+    storage.deleteBlock(raw.cid)
 }
 
 private fun removeBlocks(storage: Storage, fid: Fid) {
-    repeat(fid.links()) { i ->
-        val link = i + 1 + fid.cid()
+    repeat(fid.links) { i ->
+        val link = i + 1 + fid.cid
         storage.deleteBlock(link)
     }
-    storage.deleteBlock(fid.cid())
+    storage.deleteBlock(fid.cid)
 }
 
 
@@ -133,7 +133,13 @@ internal fun createRaw(
 ): Raw {
     val buffer = encodeRaw(data)
     storage.storeBlock(cid, buffer)
-    return Raw(cid, data)
+    return Raw(
+        cid = cid,
+        size = data.size.toLong(),
+        name = UNDEFINED_NAME,
+        mimeType = OCTET_MIME_TYPE,
+        data = data
+    )
 }
 
 
@@ -201,7 +207,13 @@ internal fun decodeNode(cid: Long, source: RawSource): Node {
 
         if (type == RAW) {
             val data = buffer.readByteArray()
-            return Raw(cid, data)
+            return Raw(
+                cid = cid,
+                size = data.size.toLong(),
+                name = UNDEFINED_NAME,
+                mimeType = OCTET_MIME_TYPE,
+                data = data
+            )
         } else {
             val links = buffer.readInt()
             val size = buffer.readLong()

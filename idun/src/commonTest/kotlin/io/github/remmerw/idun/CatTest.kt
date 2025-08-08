@@ -39,9 +39,9 @@ class CatTest {
 
         val buffer = encodeRaw(content)
 
-        val node = decodeNode(local.cid(), buffer)
+        val node = decodeNode(local.cid, buffer)
         assertNotNull(node)
-        assertEquals(node.cid(), local.cid())
+        assertEquals(node.cid, local.cid)
         storage.delete()
     }
 }

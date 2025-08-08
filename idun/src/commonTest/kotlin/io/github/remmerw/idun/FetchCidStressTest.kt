@@ -19,7 +19,7 @@ class FetchCidStressTest {
 
         val node = storage.storeData("aaa".encodeToByteArray())
 
-        val data = (node as Raw).data()
+        val data = (node as Raw).data
 
         val client = newIdun()
 
@@ -30,7 +30,7 @@ class FetchCidStressTest {
 
 
         repeat(TestEnv.ITERATIONS) {
-            val value = client.fetchRaw(server.peerId(), node.cid())
+            val value = client.fetchRaw(server.peerId(), node.cid)
             assertContentEquals(value, data)
         }
         client.shutdown()

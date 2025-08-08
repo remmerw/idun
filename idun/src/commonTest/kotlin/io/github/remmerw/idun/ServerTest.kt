@@ -66,7 +66,7 @@ class ServerTest {
             server.peerId(), TestEnv.loopbackAddress(server.localPort())
         )
 
-        val data = client.fetchRaw(server.peerId(), raw.cid())
+        val data = client.fetchRaw(server.peerId(), raw.cid)
         assertEquals(text, data.decodeToString())
         client.shutdown()
 
@@ -100,7 +100,7 @@ class ServerTest {
                     server.peerId(), TestEnv.loopbackAddress(server.localPort())
                 )
 
-                val output = client.fetchRaw(server.peerId(), raw.cid())
+                val output = client.fetchRaw(server.peerId(), raw.cid)
                 assertTrue(input.contentEquals(output))
                 finished.incrementAndFetch()
                 client.shutdown()

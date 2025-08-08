@@ -48,7 +48,7 @@ class FetchServerTest {
                     }
                 }
             }
-            assertEquals(SystemFileSystem.metadataOrNull(out)?.size, fid.size())
+            assertEquals(SystemFileSystem.metadataOrNull(out)?.size, fid.size)
             SystemFileSystem.delete(out)
 
             client.shutdown()

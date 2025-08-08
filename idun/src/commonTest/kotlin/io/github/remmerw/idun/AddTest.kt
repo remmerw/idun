@@ -19,12 +19,12 @@ class AddTest {
             val storage = newStorage()
             val content = "Hello cat"
             val node = storage.storeText(content)
-            assertEquals(content.encodeToByteArray().size, node.size().toInt())
+            assertEquals(content.encodeToByteArray().size, node.size.toInt())
 
 
-            assertTrue(storage.hasBlock(node.cid()))
+            assertTrue(storage.hasBlock(node.cid))
 
-            val text = node.cid()
+            val text = node.cid
 
             assertTrue(storage.hasBlock(text))
             storage.delete(node)
@@ -32,7 +32,7 @@ class AddTest {
 
             try {
                 val buffer = Buffer()
-                storage.transferBlock(buffer, node.cid()) // closed exception expected
+                storage.transferBlock(buffer, node.cid) // closed exception expected
             } finally {
                 storage.delete()
             }
@@ -71,10 +71,10 @@ class AddTest {
         )
 
         assertNotNull(fid)
-        assertTrue(fid.name().isNotEmpty())
+        assertTrue(fid.name.isNotEmpty())
 
         val bytes = storage.readByteArray(fid)
-        assertEquals(bytes.size.toLong(), fid.size())
+        assertEquals(bytes.size.toLong(), fid.size)
         storage.delete()
     }
 
@@ -92,10 +92,10 @@ class AddTest {
 
 
         assertNotNull(fid)
-        assertEquals(fid.mimeType(), OCTET_MIME_TYPE)
+        assertEquals(fid.mimeType, OCTET_MIME_TYPE)
 
         val bytes = storage.readByteArray(fid)
-        assertEquals(fid.size(), bytes.size.toLong())
+        assertEquals(fid.size, bytes.size.toLong())
 
         storage.delete()
     }
@@ -114,7 +114,7 @@ class AddTest {
 
 
         val bytes = storage.readByteArray(fid)
-        assertEquals(fid.size(), bytes.size.toLong())
+        assertEquals(fid.size, bytes.size.toLong())
 
         storage.delete()
     }
@@ -132,7 +132,7 @@ class AddTest {
 
 
         val bytes = storage.readByteArray(fid)
-        assertEquals(bytes.size.toLong(), fid.size())
+        assertEquals(bytes.size.toLong(), fid.size)
         storage.delete()
     }
 
@@ -142,7 +142,7 @@ class AddTest {
         val storage = newStorage()
         val text = "moin zehn"
         val node = storage.storeText(text)
-        assertTrue(storage.hasBlock(node.cid()))
+        assertTrue(storage.hasBlock(node.cid))
 
         val bytes = storage.fetchData(node)
         assertNotNull(bytes)

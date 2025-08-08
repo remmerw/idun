@@ -41,7 +41,7 @@ class FetchTest {
         client.shutdown()
 
         val length = SystemFileSystem.metadataOrNull(temp)?.size ?: 0
-        assertEquals(length, fid.size())
+        assertEquals(length, fid.size)
 
         SystemFileSystem.delete(temp)
         server.shutdown()

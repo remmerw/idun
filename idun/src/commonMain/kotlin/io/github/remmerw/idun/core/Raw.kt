@@ -3,29 +3,12 @@ package io.github.remmerw.idun.core
 import io.github.remmerw.idun.Node
 
 internal data class Raw(
-    private val cid: Long,
-    private val data: ByteArray
+    override val cid: Long,
+    override val size: Long,
+    override val name: String,
+    override val mimeType: String,
+    val data: ByteArray,
 ) : Node {
-
-    fun data(): ByteArray {
-        return data
-    }
-
-    override fun name(): String {
-        return UNDEFINED_NAME
-    }
-
-    override fun mimeType(): String {
-        return OCTET_MIME_TYPE
-    }
-
-    override fun size(): Long {
-        return data.size.toLong()
-    }
-
-    override fun cid(): Long {
-        return cid
-    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
