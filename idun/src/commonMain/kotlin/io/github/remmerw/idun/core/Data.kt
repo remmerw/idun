@@ -14,24 +14,9 @@ import kotlinx.io.readByteArray
 
 const val OCTET_MIME_TYPE = "application/octet-stream"
 const val UNDEFINED_NAME: String = ""
+const val RAW = 0x00.toByte()
+const val FID = 0x01.toByte()
 
-internal fun encodeType(type: Type): Byte {
-    return when (type) {
-        Type.RAW -> 0x00.toByte()
-        Type.FID -> 0x01.toByte()
-    }
-}
-
-
-internal fun decodeType(value: Byte): Type {
-    if (value.toInt() == 0x00) {
-        return Type.RAW
-    }
-    if (value.toInt() == 0x01) {
-        return Type.FID
-    }
-    throw IllegalStateException()
-}
 
 internal fun readUnsignedVariant(buffer: Source): Int {
     var result = 0
@@ -154,7 +139,7 @@ internal fun createRaw(
 
 internal fun encodeRaw(data: ByteArray): Buffer {
     val buffer = Buffer()
-    buffer.writeByte(encodeType(Type.RAW))
+    buffer.writeByte(RAW)
     buffer.write(data)
     return buffer
 }
@@ -177,7 +162,7 @@ internal fun encodeFid(
     val length = lengthFid(rawName, rawMimeType)
 
     val buffer = Buffer()
-    buffer.writeByte(encodeType(Type.FID))
+    buffer.writeByte(FID)
     buffer.writeInt(links)
     buffer.writeLong(size)
 
@@ -212,9 +197,9 @@ private fun lengthFid(
 
 internal fun decodeNode(cid: Long, source: RawSource): Node {
     source.buffered().use { buffer ->
-        val type: Type = decodeType(buffer.readByte())
+        val type: Byte = buffer.readByte()
 
-        if (type == Type.RAW) {
+        if (type == RAW) {
             val data = buffer.readByteArray()
             return Raw(cid, data)
         } else {

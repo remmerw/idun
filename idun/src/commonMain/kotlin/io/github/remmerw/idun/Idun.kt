@@ -18,11 +18,10 @@ import io.github.remmerw.dagr.Writer
 import io.github.remmerw.dagr.connectDagr
 import io.github.remmerw.dagr.newDagr
 import io.github.remmerw.idun.core.Fid
+import io.github.remmerw.idun.core.RAW
 import io.github.remmerw.idun.core.Raw
-import io.github.remmerw.idun.core.Type
 import io.github.remmerw.idun.core.createRaw
 import io.github.remmerw.idun.core.decodeNode
-import io.github.remmerw.idun.core.decodeType
 import io.github.remmerw.idun.core.removeNode
 import io.github.remmerw.idun.core.storeSource
 import kotlinx.coroutines.CoroutineScope
@@ -269,9 +268,9 @@ class Idun internal constructor(
         connect(peerId).use { connection ->
             val buffer = Buffer()
             connection.request(cid, buffer)
-            val type: Type = decodeType(buffer.readByte())
+            val type: Byte = buffer.readByte()
 
-            require(type == Type.RAW) { "cid does not reference a raw node" }
+            require(type == RAW) { "cid does not reference a raw node" }
             return buffer.readByteArray()
         }
 
