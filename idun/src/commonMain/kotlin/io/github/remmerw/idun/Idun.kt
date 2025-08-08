@@ -12,10 +12,11 @@ import io.github.remmerw.borr.decode58
 import io.github.remmerw.borr.encode58
 import io.github.remmerw.borr.generateKeys
 import io.github.remmerw.dagr.Acceptor
+import io.github.remmerw.dagr.ClientConnection
 import io.github.remmerw.dagr.Dagr
 import io.github.remmerw.dagr.Writer
+import io.github.remmerw.dagr.connectDagr
 import io.github.remmerw.dagr.newDagr
-import io.github.remmerw.idun.core.Connector
 import io.github.remmerw.idun.core.Fid
 import io.github.remmerw.idun.core.Raw
 import io.github.remmerw.idun.core.Type
@@ -27,6 +28,9 @@ import io.github.remmerw.idun.core.storeSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.io.Buffer
 import kotlinx.io.RawSink
 import kotlinx.io.RawSource
@@ -40,6 +44,7 @@ import java.net.InetSocketAddress
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.atomics.AtomicLong
+import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.concurrent.atomics.incrementAndFetch
 import kotlin.concurrent.withLock
@@ -67,7 +72,6 @@ class Idun internal constructor(
     private val asen = newAsen(keys, bootstrap, peerStore)
     private val scope = CoroutineScope(Dispatchers.IO)
     private var dagr: Dagr? = null
-    private val connector = Connector()
 
     suspend fun startup(port: Int = 0, storage: Storage) {
         dagr = newDagr(port, TIMEOUT, object : Acceptor {
@@ -77,6 +81,62 @@ class Idun internal constructor(
                 writer.writeBuffer(sink)
             }
         })
+    }
+
+    private val reachable: MutableMap<PeerId, InetSocketAddress> = ConcurrentHashMap()
+
+    fun reachable(peerId: PeerId, address: InetSocketAddress) {
+        reachable.put(peerId, address)
+    }
+
+    @OptIn(ExperimentalAtomicApi::class)
+    private suspend fun resolveConnection(target: PeerId): ClientConnection {
+
+        val addresses = mutableListOf<InetSocketAddress>()
+        addresses.addAll(
+            resolveAddresses(
+                target, RESOLVE_TIMEOUT.toLong()
+            )
+        )
+
+        val done: AtomicReference<ClientConnection?> = AtomicReference(null)
+        addresses.removeAll(observable()) // do not call yourself
+
+
+        withContext(Dispatchers.IO) {
+            addresses.forEach { address ->
+                launch {
+                    try {
+                        val connection = connectDagr(address, TIMEOUT)
+                        if (connection != null) {
+                            reachable.put(target, address)
+                            // done
+                            done.store(connection)
+                            coroutineContext.cancelChildren()
+                        }
+                    } catch (throwable: Throwable) {
+                        debug(throwable)
+                    }
+                }
+            }
+        }
+
+
+        return done.load() ?: throw Exception("No hop connection established")
+    }
+
+
+    private suspend fun connect(peerId: PeerId): ClientConnection {
+        var connection: ClientConnection? = null
+        val address = reachable[peerId]
+        if (address != null) {
+            connection = connectDagr(address, TIMEOUT)
+        }
+        if (connection != null && !connection.isClosed) {
+            return connection
+        }
+        return resolveConnection(peerId)
+
     }
 
     fun localPort(): Int {
@@ -128,7 +188,7 @@ class Idun internal constructor(
         val cid = uri.extractCid()
         val peerId = uri.extractPeerId()
 
-        connector.connect(this, peerId).use { connection ->
+        connect(peerId).use { connection ->
             val buffer = Buffer()
             connection.request(cid, buffer)
             val node = decodeNode(cid, buffer)
@@ -186,7 +246,6 @@ class Idun internal constructor(
                 }
             }
         }
-
     }
 
 
@@ -206,7 +265,7 @@ class Idun internal constructor(
 
     suspend fun fetchRaw(peerId: PeerId, cid: Long): ByteArray {
 
-        connector.connect(this, peerId).use { connection ->
+        connect(peerId).use { connection ->
             val buffer = Buffer()
             connection.request(cid, buffer)
             val type: Type = decodeType(buffer.readByte())
@@ -215,11 +274,6 @@ class Idun internal constructor(
             return buffer.readByteArray()
         }
 
-    }
-
-    // this is just for testing purpose
-    fun reachable(peerId: PeerId, address: InetSocketAddress) {
-        connector.reachable(peerId, address)
     }
 
 
