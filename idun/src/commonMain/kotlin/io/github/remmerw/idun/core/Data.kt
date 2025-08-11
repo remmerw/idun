@@ -1,6 +1,10 @@
 package io.github.remmerw.idun.core
 
 
+import io.github.remmerw.borr.Keys
+import io.github.remmerw.borr.PeerId
+import io.github.remmerw.borr.sign
+import io.github.remmerw.borr.verify
 import io.github.remmerw.idun.MAX_CHARS_SIZE
 import io.github.remmerw.idun.Node
 import io.github.remmerw.idun.Storage
@@ -10,12 +14,87 @@ import kotlinx.io.RawSource
 import kotlinx.io.Source
 import kotlinx.io.buffered
 import kotlinx.io.readByteArray
+import kotlinx.io.readUShort
+import kotlinx.io.writeUShort
+import java.net.InetAddress
+import java.net.InetSocketAddress
+import kotlin.time.ExperimentalTime
 
 
 const val OCTET_MIME_TYPE = "application/octet-stream"
 const val UNDEFINED_NAME: String = ""
 const val RAW = 0x00.toByte()
 const val FID = 0x01.toByte()
+
+
+internal fun InetSocketAddress.encoded(): ByteArray {
+    Buffer().use { buffer ->
+        buffer.writeByte(address.address.size.toByte())
+        buffer.write(address.address)
+        buffer.writeUShort(port.toUShort())
+        return buffer.readByteArray()
+    }
+}
+
+internal fun decode(bytes: ByteArray): List<InetSocketAddress> {
+    val result = mutableListOf<InetSocketAddress>()
+    val buffer = Buffer()
+    buffer.write(bytes)
+    while (!buffer.exhausted()) {
+        val size = buffer.readByte().toInt()
+        val address = buffer.readByteArray(size)
+        val port = buffer.readUShort()
+        result.add(
+            InetSocketAddress(
+                InetAddress.getByAddress(address),
+                port.toInt()
+            )
+        )
+    }
+    return result
+}
+
+internal fun concat(vararg chunks: ByteArray): ByteArray {
+    var length = 0
+    for (chunk in chunks) {
+        check(length <= Int.MAX_VALUE - chunk.size) { "exceeded size limit" }
+        length += chunk.size
+    }
+    val result = ByteArray(length)
+    var pos = 0
+    for (chunk in chunks) {
+        chunk.copyInto(result, pos, 0, chunk.size)
+        pos += chunk.size
+    }
+    return result
+}
+
+@OptIn(ExperimentalTime::class)
+internal fun newSignature(keys: Keys, seq: Long, data: ByteArray): ByteArray {
+
+    val signBuffer = Buffer()
+    signBuffer.write("3:seqi".encodeToByteArray())
+    signBuffer.write(seq.toString().encodeToByteArray())
+    signBuffer.write("e1:v".encodeToByteArray())
+    signBuffer.write(data.size.toString().encodeToByteArray())
+    signBuffer.write(":".encodeToByteArray())
+    signBuffer.write(data)
+
+    return sign(keys, signBuffer.readByteArray())
+}
+
+internal fun verifySignature(peerId: PeerId, seq: Long, data: ByteArray, signature: ByteArray) {
+
+    val signBuffer = Buffer()
+    signBuffer.write("3:seqi".encodeToByteArray())
+    signBuffer.write(seq.toString().encodeToByteArray())
+    signBuffer.write("e1:v".encodeToByteArray())
+    signBuffer.write(data.size.toString().encodeToByteArray())
+    signBuffer.write(":".encodeToByteArray())
+    signBuffer.write(data)
+
+    verify(peerId, signBuffer.readByteArray(), signature)
+}
 
 
 internal fun readUnsignedVariant(buffer: Source): Int {

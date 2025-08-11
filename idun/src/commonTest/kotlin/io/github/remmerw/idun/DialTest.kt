@@ -15,11 +15,11 @@ class DialTest {
         val server = newIdun()
         server.startup(storage = storage)
 
-        val peeraddrs = server.observedAddresses()
+        val peeraddrs = server.publishedAddresses()
         checkNotNull(peeraddrs)
         println("Observed addresses ${peeraddrs.size}")
 
-        server.publishAddresses(peeraddrs, 25, 120)
+        server.publishAddresses(peeraddrs, 25, 60)
 
         assertTrue(server.numReservations() > 0)
 

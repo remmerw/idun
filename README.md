@@ -26,7 +26,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             ...
-            implementation("io.github.remmerw:idun:0.5.5")
+            implementation("io.github.remmerw:idun:0.5.6")
         }
         ...
     }
@@ -47,7 +47,7 @@ kotlin {
         server.startup(storage = storage)
 
 
-        val addresses = server.observedAddresses()
+        val addresses = server.publishedAddresses()
         checkNotNull(addresses)
         println("Publish addresses ${addresses.size}")
 
@@ -62,7 +62,7 @@ kotlin {
 
         val client = newIdun()
 
-        val data = client.fetchRaw(server.peerId(), raw.cid())
+        val data = client.fetchRaw(server.peerId(), raw.cid)
         assertEquals(data.decodeToString(), "Moin")
 
         client.shutdown()

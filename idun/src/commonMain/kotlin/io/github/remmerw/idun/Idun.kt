@@ -1,16 +1,12 @@
 package io.github.remmerw.idun
 
 import com.eygraber.uri.Uri
-import io.github.remmerw.asen.MemoryPeers
-import io.github.remmerw.asen.PeerStore
-import io.github.remmerw.asen.Peeraddr
-import io.github.remmerw.asen.bootstrap
-import io.github.remmerw.asen.newAsen
 import io.github.remmerw.borr.Keys
 import io.github.remmerw.borr.PeerId
 import io.github.remmerw.borr.decode58
 import io.github.remmerw.borr.encode58
 import io.github.remmerw.borr.generateKeys
+import io.github.remmerw.buri.BEString
 import io.github.remmerw.dagr.Acceptor
 import io.github.remmerw.dagr.ClientConnection
 import io.github.remmerw.dagr.Dagr
@@ -20,16 +16,31 @@ import io.github.remmerw.dagr.newDagr
 import io.github.remmerw.idun.core.Fid
 import io.github.remmerw.idun.core.RAW
 import io.github.remmerw.idun.core.Raw
+import io.github.remmerw.idun.core.concat
 import io.github.remmerw.idun.core.createRaw
+import io.github.remmerw.idun.core.decode
 import io.github.remmerw.idun.core.decodeNode
+import io.github.remmerw.idun.core.encoded
+import io.github.remmerw.idun.core.newSignature
 import io.github.remmerw.idun.core.removeNode
 import io.github.remmerw.idun.core.storeSource
+import io.github.remmerw.idun.core.verifySignature
+import io.github.remmerw.nott.MemoryStore
+import io.github.remmerw.nott.Store
+import io.github.remmerw.nott.defaultBootstrap
+import io.github.remmerw.nott.newNott
+import io.github.remmerw.nott.nodeId
+import io.github.remmerw.nott.requestGet
+import io.github.remmerw.nott.requestPut
+import io.github.remmerw.nott.sha1
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelChildren
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.io.Buffer
 import kotlinx.io.RawSink
 import kotlinx.io.RawSource
@@ -38,15 +49,19 @@ import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.files.SystemTemporaryDirectory
 import kotlinx.io.readByteArray
-import java.net.InetAddress
 import java.net.InetSocketAddress
+import java.net.NetworkInterface
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.atomics.AtomicBoolean
+import kotlin.concurrent.atomics.AtomicInt
 import kotlin.concurrent.atomics.AtomicLong
 import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.concurrent.atomics.incrementAndFetch
 import kotlin.concurrent.withLock
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
@@ -55,20 +70,15 @@ internal const val TIMEOUT: Int = 10
 
 internal const val MAX_SIZE: Int = 65536 // Note same as dagr Settings
 
+
 class Idun internal constructor(
-    keys: Keys,
-    bootstrap: List<Peeraddr>,
-    peerStore: PeerStore
+    private val keys: Keys,
+    private val store: Store
 ) {
-    private val observable: MutableSet<InetAddress> = ConcurrentHashMap.newKeySet()
+    @OptIn(ExperimentalAtomicApi::class)
+    private val reservations = AtomicInt(0)
 
-    internal fun observable(): List<InetSocketAddress> {
-        return observable.map { address ->
-            InetSocketAddress(address, localPort())
-        }
-    }
 
-    private val asen = newAsen(keys, bootstrap, peerStore)
     private val scope = CoroutineScope(Dispatchers.IO)
     private var dagr: Dagr? = null
 
@@ -92,16 +102,9 @@ class Idun internal constructor(
     @OptIn(ExperimentalAtomicApi::class)
     private suspend fun resolveConnection(target: PeerId): ClientConnection {
 
-        val addresses = mutableListOf<InetSocketAddress>()
-        addresses.addAll(
-            resolveAddresses(
-                target, RESOLVE_TIMEOUT.toLong()
-            )
-        )
+        val addresses = resolveAddresses(target, RESOLVE_TIMEOUT)
 
         val done: AtomicReference<ClientConnection?> = AtomicReference(null)
-        addresses.removeAll(observable()) // do not call yourself
-
 
         withContext(Dispatchers.IO) {
             addresses.forEach { address ->
@@ -122,7 +125,7 @@ class Idun internal constructor(
         }
 
 
-        return done.load() ?: throw Exception("No hop connection established")
+        return done.load() ?: throw Exception("No connection established")
     }
 
 
@@ -147,25 +150,115 @@ class Idun internal constructor(
         }
     }
 
-    suspend fun observedAddresses(): List<InetSocketAddress> {
-        val observed = asen.observedAddresses()
-        observable.clear()
-        observable.addAll(observed)
 
-        return observable()
+    fun publishedAddresses(): List<InetSocketAddress> {
+        val inetAddresses: MutableSet<InetSocketAddress> = mutableSetOf()
+
+        try {
+            if (localPort() > 0) {
+                val interfaces = NetworkInterface.getNetworkInterfaces()
+                for (networkInterface in interfaces) {
+                    if (networkInterface.isUp) {
+                        val addresses = networkInterface.inetAddresses
+                        for (inetAddress in addresses) {
+                            if (!inetAddress.isAnyLocalAddress
+                                && !inetAddress.isLinkLocalAddress
+                                && !inetAddress.isSiteLocalAddress
+                                && !inetAddress.isLoopbackAddress
+                                && !inetAddress.isMulticastAddress
+                            ) {
+                                inetAddresses.add(
+                                    InetSocketAddress(
+                                        inetAddress, localPort()
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (throwable: Throwable) {
+            debug(throwable)
+        }
+        return inetAddresses.toList()
     }
 
-    suspend fun resolveAddresses(target: PeerId, timeout: Long): List<InetSocketAddress> {
-        return asen.resolveAddresses(target, timeout)
+
+    @OptIn(ExperimentalAtomicApi::class)
+    suspend fun resolveAddresses(peerId: PeerId, timeout: Int): List<InetSocketAddress> {
+        val bootstrap: MutableSet<InetSocketAddress> = mutableSetOf()
+        bootstrap.addAll(defaultBootstrap())
+        bootstrap.addAll(store.addresses(25))
+
+        val target = sha1(peerId.hash)
+
+        val lastSec = AtomicLong(0)
+        val increment = AtomicInt(0)
+        val done = AtomicBoolean(false)
+        val result: AtomicReference<List<InetSocketAddress>?> = AtomicReference(null)
+
+        withTimeoutOrNull(timeout.toLong() * 1000) {
+            val nott = newNott(nodeId = nodeId(), port = 0, bootstrap = bootstrap)
+            try {
+                val channel = requestGet(nott, target) {
+                    if (done.load()) {
+                        0 // done
+                    } else {
+                        5000
+                    }
+                }
+
+                for (data in channel) {
+
+                    try {
+                        val seq = data.seq!!
+                        val signature = data.sig!!
+
+                        require(data.k.contentEquals(peerId.hash)) {
+                            "invalid public key (not the expected one)"
+                        }
+
+                        val content = (data.data as BEString).toByteArray()
+
+
+                        verifySignature(peerId, seq, content, signature)
+
+                        val addresses = decode(content)
+                        require(addresses.isNotEmpty()) { "empty addresses (not allowed)" }
+
+
+                        val last = lastSec.load()
+                        if (seq > last) {
+                            lastSec.store(seq)
+                            increment.store(0)
+                            result.store(addresses)
+                        } else if (seq == last) {
+                            val value = increment.incrementAndFetch()
+                            if (value > 3) {
+                                done.store(true)
+                            }
+                        }
+                    } catch (throwable: Throwable) {
+                        debug(throwable)
+                    }
+                }
+            } catch (_: CancellationException) {
+            } finally {
+                nott.shutdown()
+            }
+        }
+
+        return result.load() ?: throw Exception("No address resolved")
     }
 
     fun keys(): Keys {
-        return asen.keys()
+        return keys
     }
 
 
+    @OptIn(ExperimentalAtomicApi::class)
     fun numReservations(): Int {
-        return asen.numReservations()
+        return reservations.load()
     }
 
     fun numIncomingConnections(): Int {
@@ -248,18 +341,63 @@ class Idun internal constructor(
         }
     }
 
-
     fun peerId(): PeerId {
-        return asen.peerId()
+        return keys.peerId
     }
 
 
+    @OptIn(ExperimentalAtomicApi::class, ExperimentalTime::class)
     suspend fun publishAddresses(
         addresses: List<InetSocketAddress>,
         maxPublifications: Int,
         timeout: Int
     ) {
-        return asen.makeReservations(addresses, maxPublifications, timeout)
+
+        val bootstrap: MutableSet<InetSocketAddress> = mutableSetOf()
+        bootstrap.addAll(defaultBootstrap())
+        bootstrap.addAll(store.addresses(25))
+
+        reservations.store(0)
+
+
+        var data = byteArrayOf()
+        for (address in addresses) {
+            val encoded = address.encoded()
+            data = concat(data, encoded)
+        }
+
+        val v = BEString(data)
+        val cas: Long? = null
+        val seq: Long = Clock.System.now().toEpochMilliseconds()
+        val sig = newSignature(keys(), seq, data)
+        val k = keys().peerId.hash
+        val target = sha1(k)
+
+
+        withTimeoutOrNull(timeout.toLong() * 1000) {
+            val nott = newNott(nodeId = nodeId(), port = 0, bootstrap = bootstrap)
+            try {
+                val channel = requestPut(
+                    nott, target, v, cas, k, null, seq, sig
+                ) {
+                    if (reservations.load() >= maxPublifications) {
+                        0 // done
+                    } else {
+                        5000 // wait 5 sec and put
+                    }
+                }
+
+                for (address in channel) {
+                    debug("put to $address")
+                    reservations.incrementAndFetch()
+                }
+            } catch (_: CancellationException) {
+
+            } finally {
+                nott.shutdown()
+            }
+        }
+
     }
 
 
@@ -278,13 +416,6 @@ class Idun internal constructor(
 
 
     fun shutdown() {
-
-        try {
-            asen.shutdown()
-        } catch (throwable: Throwable) {
-            debug(throwable)
-        }
-
         try {
             dagr?.shutdown()
         } catch (throwable: Throwable) {
@@ -304,10 +435,9 @@ class Idun internal constructor(
 
 fun newIdun(
     keys: Keys = generateKeys(),
-    bootstrap: List<Peeraddr> = bootstrap(),
-    peerStore: PeerStore = MemoryPeers()
+    store: Store = MemoryStore()
 ): Idun {
-    return Idun(keys, bootstrap, peerStore)
+    return Idun(keys, store)
 }
 
 internal const val MAX_CHARS_SIZE = 4096
@@ -644,4 +774,12 @@ fun debug(throwable: Throwable) {
     }
 }
 
+
+fun debug(message: String) {
+    if (DEBUG) {
+        println(message)
+    }
+}
+
+private const val DEBUG: Boolean = false
 private const val ERROR: Boolean = true

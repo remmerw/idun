@@ -17,7 +17,7 @@ class Examples {
         server.startup(storage = storage)
 
 
-        val addresses = server.observedAddresses()
+        val addresses = server.publishedAddresses()
         checkNotNull(addresses)
         println("Publish addresses ${addresses.size}")
 
