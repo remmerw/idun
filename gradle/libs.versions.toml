@@ -1,6 +1,6 @@
 [versions]
 agp = "8.12.0"
-nott = "0.1.1"
+nott = "0.1.2"
 borr = "0.0.4"
 buri = "0.0.2"
 dagr = "0.3.4"
