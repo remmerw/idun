@@ -218,7 +218,7 @@ class Idun internal constructor(
                             "invalid public key (not the expected one)"
                         }
 
-                        val content = (data.data as BEString).toByteArray()
+                        val content = (data.v as BEString).toByteArray()
 
 
                         verifySignature(peerId, seq, content, signature)
