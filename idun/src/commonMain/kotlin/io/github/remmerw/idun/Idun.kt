@@ -211,17 +211,24 @@ class Idun internal constructor(
                 for (data in channel) {
 
                     try {
-                        val seq = data.seq!!
-                        val signature = data.sig!!
+                        val seq = data.seq
+                        val v = data.v
+                        val sig = data.sig
+                        val k = data.k
 
-                        require(data.k.contentEquals(peerId.hash)) {
+                        if(seq == null || v == null || sig == null || k == null){
+                            continue
+                        }
+
+
+                        require(k.contentEquals(peerId.hash)) {
                             "invalid public key (not the expected one)"
                         }
 
-                        val content = (data.v as BEString).toByteArray()
+                        val content = (v as BEString).toByteArray()
 
 
-                        verifySignature(peerId, seq, content, signature)
+                        verifySignature(peerId, seq, content, sig)
 
                         val addresses = decode(content)
                         require(addresses.isNotEmpty()) { "empty addresses (not allowed)" }
