@@ -1,17 +1,13 @@
 [versions]
 agp = "8.12.0"
-nott = "0.1.2"
-borr = "0.0.4"
-buri = "0.0.2"
-dagr = "0.3.4"
 kotlin = "2.2.0"
 runner = "1.7.0"
 
 [libraries]
-nott = { module = "io.github.remmerw:nott", version.ref = "nott" }
-borr = { module = "io.github.remmerw:borr", version.ref = "borr" }
-dagr = { module = "io.github.remmerw:dagr", version.ref = "dagr" }
-buri = { module = "io.github.remmerw:buri", version.ref = "buri" }
+nott = { module = "io.github.remmerw:nott", version = "0.1.5" }
+borr = { module = "io.github.remmerw:borr", version = "0.0.4" }
+dagr = { module = "io.github.remmerw:dagr", version = "0.3.4" }
+buri = { module = "io.github.remmerw:buri", version = "0.0.2" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version = "0.8.0" }
 kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlin" }
