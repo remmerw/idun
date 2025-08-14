@@ -10,7 +10,7 @@ import io.github.remmerw.buri.BEString
 import io.github.remmerw.dagr.Acceptor
 import io.github.remmerw.dagr.ClientConnection
 import io.github.remmerw.dagr.Dagr
-import io.github.remmerw.dagr.Writer
+import io.github.remmerw.dagr.Data
 import io.github.remmerw.dagr.connectDagr
 import io.github.remmerw.dagr.newDagr
 import io.github.remmerw.idun.core.Fid
@@ -84,11 +84,8 @@ class Idun internal constructor(
 
     suspend fun startup(port: Int = 0, storage: Storage) {
         dagr = newDagr(port, TIMEOUT, object : Acceptor {
-            override suspend fun request(writer: Writer, request: Long) {
-                val block = storage.getBlock(request)
-                block.source.use { source ->
-                    writer.writeBuffer(source, block.size)
-                }
+            override suspend fun request(request: Long): Data {
+                return storage.getData(request)
             }
         })
     }
@@ -216,9 +213,6 @@ class Idun internal constructor(
                         val sig = data.sig
                         val k = data.k
 
-                        if(seq == null || v == null || sig == null || k == null){
-                            continue
-                        }
 
 
                         require(k.contentEquals(peerId.hash)) {
@@ -507,12 +501,12 @@ data class Storage(private val directory: Path) {
         return SystemFileSystem.exists(path(cid))
     }
 
-    internal fun getBlock(cid: Long): Block {
+    internal fun getData(cid: Long): Data {
         val file = path(cid)
         require(SystemFileSystem.exists(file)) { "Block does not exists" }
         val size = SystemFileSystem.metadataOrNull(file)!!.size
 
-        return Block(SystemFileSystem.source(file), size.toInt())
+        return Data(SystemFileSystem.source(file), size.toInt())
     }
 
     fun transferBlock(sink: RawSink, cid: Long): Int {
@@ -773,7 +767,6 @@ internal fun pnsUri(peerId: PeerId, cid: Long, attributes: Map<String, String>):
     return builder.toString()
 }
 
-internal data class Block(val source: RawSource, val size: Int)
 
 fun debug(throwable: Throwable) {
     if (ERROR) {

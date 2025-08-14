@@ -1,18 +1,17 @@
 [versions]
 agp = "8.12.0"
 kotlin = "2.2.0"
-runner = "1.7.0"
 
 [libraries]
 nott = { module = "io.github.remmerw:nott", version = "0.1.5" }
 borr = { module = "io.github.remmerw:borr", version = "0.0.4" }
-dagr = { module = "io.github.remmerw:dagr", version = "0.3.4" }
+dagr = { module = "io.github.remmerw:dagr", version = "0.3.5" }
 buri = { module = "io.github.remmerw:buri", version = "0.0.2" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version = "0.8.0" }
 kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlin" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version = "1.10.2" }
-runner = { module = "androidx.test:runner", version.ref = "runner" }
+runner = { module = "androidx.test:runner", version = "1.7.0" }
 uri-kmp = { module = "com.eygraber:uri-kmp", version = "0.0.20" }
 
 [plugins]
