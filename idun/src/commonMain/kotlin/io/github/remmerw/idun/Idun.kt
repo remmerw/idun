@@ -84,7 +84,7 @@ class Idun internal constructor(
 
     suspend fun startup(port: Int = 0, storage: Storage) {
         dagr = newDagr(port, TIMEOUT, object : Acceptor {
-            override suspend fun request(request: Long): Data {
+            override fun request(request: Long): Data {
                 return storage.getData(request)
             }
         })
