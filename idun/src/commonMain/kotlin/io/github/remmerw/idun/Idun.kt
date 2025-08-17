@@ -77,14 +77,12 @@ class Idun internal constructor(
 ) {
     @OptIn(ExperimentalAtomicApi::class)
     private val reservations = AtomicInt(0)
-
-
     private val scope = CoroutineScope(Dispatchers.IO)
     private var dagr: Dagr? = null
 
     suspend fun startup(port: Int = 0, storage: Storage) {
         dagr = newDagr(port, TIMEOUT, object : Acceptor {
-            override fun request(request: Long): Data {
+            override fun request(request: Long, offset: Long): Data {
                 return storage.getData(request)
             }
         })
@@ -284,7 +282,7 @@ class Idun internal constructor(
 
         connect(peerId).use { connection ->
             val buffer = Buffer()
-            connection.request(cid, buffer)
+            connection.request(cid, 0, buffer)
             val node = decodeNode(cid, buffer)
 
             val size = node.size
@@ -322,12 +320,12 @@ class Idun internal constructor(
                     val link = i + 1 + node.cid
                     if (left > 0) {
                         val buffer = Buffer()
-                        connection.request(link, buffer)
+                        connection.request(link, 0, buffer)
                         buffer.skip(left.toLong())
                         totalRead += buffer.transferTo(rawSink)
                         left = 0
                     } else {
-                        totalRead += connection.request(link, rawSink)
+                        totalRead += connection.request(link, 0, rawSink)
                     }
 
                     if (totalRead > 0) {
@@ -406,7 +404,7 @@ class Idun internal constructor(
 
         connect(peerId).use { connection ->
             val buffer = Buffer()
-            connection.request(cid, buffer)
+            connection.request(cid, 0, buffer)
             val type: Byte = buffer.readByte()
 
             require(type == RAW) { "cid does not reference a raw node" }
@@ -506,7 +504,7 @@ data class Storage(private val directory: Path) {
         require(SystemFileSystem.exists(file)) { "Block does not exists" }
         val size = SystemFileSystem.metadataOrNull(file)!!.size
 
-        return Data(SystemFileSystem.source(file), size.toInt())
+        return Data(SystemFileSystem.source(file), size)
     }
 
     fun transferBlock(sink: RawSink, cid: Long): Int {
