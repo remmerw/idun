@@ -662,9 +662,6 @@ fun newStorage(directory: Path): Storage {
     return Storage(directory)
 }
 
-fun decodeNode(cid: Long, block: Buffer): Node {
-    return decodeNode(cid, block)
-}
 
 fun Uri.extractPeerId(): PeerId {
     val host = validate(this)
