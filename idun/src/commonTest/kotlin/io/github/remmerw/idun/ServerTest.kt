@@ -83,7 +83,7 @@ class ServerTest {
         val server = newIdun()
         server.startup(storage = storage)
 
-        val input = TestEnv.randomBytes(splitterSize())
+        val input = TestEnv.randomBytes(UShort.MAX_VALUE.toInt())
 
         val raw = storage.storeData(input)
         assertNotNull(raw)

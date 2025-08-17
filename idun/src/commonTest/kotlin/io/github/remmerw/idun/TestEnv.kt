@@ -1,6 +1,5 @@
 package io.github.remmerw.idun
 
-import io.github.remmerw.idun.core.OCTET_MIME_TYPE
 import kotlinx.io.buffered
 import kotlinx.io.files.SystemFileSystem
 import java.net.InetAddress
@@ -21,7 +20,7 @@ internal object TestEnv {
         return Random.nextLong()
     }
 
-    fun createContent(storage: Storage, name: String, data: ByteArray): Node {
+    fun createContent(storage: FileStorage, name: String, data: ByteArray): Node {
         val temp = tempFile(name)
         SystemFileSystem.sink(temp).buffered().use { source ->
             source.write(data)
@@ -33,11 +32,11 @@ internal object TestEnv {
         return node
     }
 
-    fun createContent(storage: Storage, iteration: Int): Node {
+    fun createContent(storage: FileStorage, iteration: Int): Node {
         val temp = tempFile()
         SystemFileSystem.sink(temp).buffered().use { source ->
             repeat(iteration) {
-                source.write(randomBytes(splitterSize()))
+                source.write(randomBytes(UShort.MAX_VALUE.toInt()))
             }
         }
 
@@ -53,7 +52,7 @@ internal object TestEnv {
     }
 
     fun createContent(
-        storage: Storage,
+        storage: FileStorage,
         name: String,
         mimeType: String,
         data: ByteArray

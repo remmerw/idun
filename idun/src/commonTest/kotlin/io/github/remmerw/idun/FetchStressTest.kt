@@ -20,7 +20,7 @@ class FetchStressTest {
         var fid: Node? = null
         var now = measureTime {
 
-            val split = splitterSize()
+            val split = UShort.MAX_VALUE.toInt()
             fid = TestEnv.createContent(
                 storage, "text.bin",
                 TestEnv.randomBytes(split)

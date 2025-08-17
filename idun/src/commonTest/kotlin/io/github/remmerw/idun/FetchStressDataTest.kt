@@ -23,7 +23,7 @@ class FetchStressDataTest {
 
         try {
             repeat(iterations) { iter ->
-                val data = TestEnv.randomBytes(splitterSize())
+                val data = TestEnv.randomBytes(UShort.MAX_VALUE.toInt())
                 val raw = storage.storeData(data)
 
 

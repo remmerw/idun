@@ -3,7 +3,6 @@ package io.github.remmerw.idun
 import com.eygraber.uri.Uri
 import io.github.remmerw.borr.PeerId
 import io.github.remmerw.idun.TestEnv.randomBytes
-import io.github.remmerw.idun.core.OCTET_MIME_TYPE
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -75,34 +74,6 @@ class StorageTest {
         storage.delete()
     }
 
-    @Test
-    fun fetchInfoTest(): Unit = runBlocking {
-        val storage = newStorage()
-        val test = "Moin"
-        val cid = storage.storeText(test)
-        assertNotNull(cid)
-
-        var node = storage.info(cid.cid)
-        assertEquals(node.cid, cid.cid)
-
-
-        val temp = tempFile()
-        val iteration = 10
-        SystemFileSystem.sink(temp).buffered().use { source ->
-            repeat(iteration) {
-                source.write(randomBytes(splitterSize()))
-            }
-        }
-        // (1) store the file
-        val fid = storage.storeFile(temp, OCTET_MIME_TYPE)
-
-        node = storage.info(fid.cid)
-        assertEquals(node.cid, fid.cid)
-
-        SystemFileSystem.delete(temp)
-
-        storage.delete()
-    }
 
     @Test
     fun rawCid() {
@@ -235,7 +206,7 @@ class StorageTest {
     @Test
     fun testString(): Unit = runBlocking {
         val storage = newStorage()
-        val text = "Hello Moin und Zehn Elf"
+        val text = "Hello Moin und Ten Elf"
         val raw = storage.storeText(text)
         assertNotNull(raw)
 
@@ -311,7 +282,7 @@ class StorageTest {
     @Test
     fun testParallel() {
         val storage = newStorage()
-        val data = randomBytes(splitterSize())
+        val data = randomBytes(UShort.MAX_VALUE.toInt())
         val node = storage.storeData(data)
         assertNotNull(node)
 

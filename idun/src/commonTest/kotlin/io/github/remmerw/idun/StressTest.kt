@@ -21,7 +21,7 @@ class StressTest {
             server.peerId(),
             TestEnv.loopbackAddress(server.localPort())
         )
-        val cmp = TestEnv.randomBytes(splitterSize())
+        val cmp = TestEnv.randomBytes(UShort.MAX_VALUE.toInt())
         val node = storage.storeData(cmp)
 
 

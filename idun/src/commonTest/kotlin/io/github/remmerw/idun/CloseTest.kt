@@ -1,6 +1,5 @@
 package io.github.remmerw.idun
 
-import io.github.remmerw.idun.core.Raw
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -16,9 +15,9 @@ class CloseTest {
         val server = newIdun()
         server.startup(storage = storage)
 
-        val node = storage.storeData("Homepage".encodeToByteArray())
+        val cmp = "Homepage".encodeToByteArray()
+        val node = storage.storeData(cmp)
 
-        val raw = (node as Raw).data
 
         val client = newIdun()
 
@@ -27,7 +26,7 @@ class CloseTest {
         )
 
         val data = client.fetchRaw(server.peerId(), node.cid)
-        assertContentEquals(data, raw)
+        assertContentEquals(data, cmp)
 
         delay(5000 + 1000) // timeout 5 sec + 1 sec extra
         assertEquals(server.numIncomingConnections(), 0)

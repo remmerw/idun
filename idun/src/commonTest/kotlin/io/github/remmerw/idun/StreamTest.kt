@@ -1,6 +1,5 @@
 package io.github.remmerw.idun
 
-import io.github.remmerw.idun.core.OCTET_MIME_TYPE
 import kotlinx.coroutines.runBlocking
 import kotlinx.io.Buffer
 import kotlinx.io.readByteArray
@@ -16,7 +15,7 @@ class StreamTest {
         server.startup(storage = storage)
 
         val packetSize = 3
-        val maxData = splitterSize()
+        val maxData = UShort.MAX_VALUE.toInt()
 
         // prepare data
         val fid = TestEnv.createContent(
@@ -33,10 +32,10 @@ class StreamTest {
 
 
         val sink = Buffer()
-        client.transferTo(sink, request, splitterSize().toLong())
+        client.transferTo(sink, request, UShort.MAX_VALUE.toLong())
         val data = sink.readByteArray()
 
-        assertEquals(data.size, splitterSize() * 2)
+        assertEquals(data.size, UShort.MAX_VALUE.toInt() * 2)
 
         // cleanup
         client.shutdown()
