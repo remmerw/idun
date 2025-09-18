@@ -15,7 +15,7 @@ class FetchTest {
         val server = newIdun()
         server.startup(storage = storage)
 
-        val fid = TestEnv.createContent(storage, 100)
+        val fid = createContent(storage, 100)
         assertNotNull(fid)
 
 
@@ -24,7 +24,7 @@ class FetchTest {
         val client = newIdun()
 
         client.reachable(
-            server.peerId(), TestEnv.loopbackAddress(server.localPort())
+            server.peerId(), loopbackAddress(server.localPort())
         )
 
         val request = pnsUri(server.peerId(), fid)

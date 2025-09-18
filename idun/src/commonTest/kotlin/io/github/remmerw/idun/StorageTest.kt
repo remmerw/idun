@@ -2,7 +2,6 @@ package io.github.remmerw.idun
 
 import com.eygraber.uri.Uri
 import io.github.remmerw.borr.PeerId
-import io.github.remmerw.idun.TestEnv.randomBytes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -64,7 +63,7 @@ class StorageTest {
         assertNotNull(bytes)
         assertEquals(test, bytes.decodeToString())
         try {
-            val fault = TestEnv.randomLong()
+            val fault = randomLong()
             val buffer = Buffer()
             storage.transferBlock(buffer, fault)
             fail()
@@ -104,7 +103,7 @@ class StorageTest {
     @Test
     fun compareFileSizes(): Unit = runBlocking {
         val storage = newStorage()
-        val fid = TestEnv.createContent(storage, 100)
+        val fid = createContent(storage, 100)
         assertNotNull(fid)
         val temp = tempFile()
         storage.transferTo(fid, temp)
@@ -169,7 +168,7 @@ class StorageTest {
     fun contentWrite() {
         val storage = newStorage()
         val data = 1000000
-        val fid = TestEnv.createContent(
+        val fid = createContent(
             storage, "test.bin", OCTET_MIME_TYPE,
             randomBytes(data)
         )
@@ -188,7 +187,7 @@ class StorageTest {
         val storage = newStorage()
 
         val data = 100000
-        val fid = TestEnv.createContent(
+        val fid = createContent(
             storage, "test.bin", OCTET_MIME_TYPE,
             randomBytes(data)
         )

@@ -22,7 +22,7 @@ class CloseTest {
         val client = newIdun()
 
         client.reachable(
-            server.peerId(), TestEnv.loopbackAddress(server.localPort())
+            server.peerId(), loopbackAddress(server.localPort())
         )
 
         val data = client.fetchRaw(server.peerId(), node.cid)

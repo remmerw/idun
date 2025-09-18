@@ -18,15 +18,15 @@ class StreamTest {
         val maxData = UShort.MAX_VALUE.toInt()
 
         // prepare data
-        val fid = TestEnv.createContent(
+        val fid = createContent(
             storage, "test.bin", OCTET_MIME_TYPE,
-            TestEnv.randomBytes(maxData * packetSize)
+            randomBytes(maxData * packetSize)
         )
 
         val client = newIdun()
 
         client.reachable(
-            server.peerId(), TestEnv.loopbackAddress(server.localPort())
+            server.peerId(), loopbackAddress(server.localPort())
         )
         val request = pnsUri(server.peerId(), fid)
 

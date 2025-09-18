@@ -18,7 +18,7 @@ class FetchServerTest {
 
         var fid: Node? = null
         var timestamp = measureTime {
-            fid = TestEnv.createContent(storage, 100) // 100 * SPLITTER_SIZE
+            fid = createContent(storage, 100) // 100 * SPLITTER_SIZE
 
         }
         assertNotNull(fid)
@@ -34,7 +34,7 @@ class FetchServerTest {
 
 
             client.reachable(
-                server.peerId(), TestEnv.loopbackAddress(server.localPort())
+                server.peerId(), loopbackAddress(server.localPort())
             )
 
 

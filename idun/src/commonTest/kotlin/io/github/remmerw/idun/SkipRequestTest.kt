@@ -16,7 +16,7 @@ class SkipRequestTest {
         val server = newIdun()
         server.startup(storage = storage)
 
-        val fid = TestEnv.createContent(storage, 10)
+        val fid = createContent(storage, 10)
 
         val skip = fid.size / 2 - 100
         val rest = fid.size - skip
@@ -26,7 +26,7 @@ class SkipRequestTest {
         val client = newIdun()
 
         client.reachable(
-            server.peerId(), TestEnv.loopbackAddress(server.localPort())
+            server.peerId(), loopbackAddress(server.localPort())
         )
 
         val request = pnsUri(server.peerId(), fid)

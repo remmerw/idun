@@ -18,14 +18,14 @@ class ParallelTest {
         val server = newIdun()
         server.startup(storage = storage)
 
-        val fid1 = TestEnv.createContent(storage, 10)
-        val fid2 = TestEnv.createContent(storage, 10)
-        val fid3 = TestEnv.createContent(storage, 10)
+        val fid1 = createContent(storage, 10)
+        val fid2 = createContent(storage, 10)
+        val fid3 = createContent(storage, 10)
 
         val client = newIdun()
 
         client.reachable(
-            server.peerId(), TestEnv.loopbackAddress(server.localPort())
+            server.peerId(), loopbackAddress(server.localPort())
         )
 
         val tasks = listOf(

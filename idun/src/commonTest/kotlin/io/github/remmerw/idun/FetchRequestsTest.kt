@@ -16,19 +16,19 @@ class FetchRequestsTest {
         server.startup(storage = storage)
 
         val content = "Moin Moin"
-        val bytes = TestEnv.randomBytes(5000)
+        val bytes = randomBytes(5000)
 
-        val fid = TestEnv.createContent(storage, "index.txt", content.encodeToByteArray())
+        val fid = createContent(storage, "index.txt", content.encodeToByteArray())
         assertNotNull(fid)
 
-        val bin = TestEnv.createContent(storage, "payload.bin", bytes)
+        val bin = createContent(storage, "payload.bin", bytes)
         assertNotNull(bin)
 
 
         val client = newIdun()
 
         client.reachable(
-            server.peerId(), TestEnv.loopbackAddress(server.localPort())
+            server.peerId(), loopbackAddress(server.localPort())
         )
 
         val sink = Buffer()

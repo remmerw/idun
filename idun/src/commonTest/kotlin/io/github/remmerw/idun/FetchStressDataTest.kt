@@ -18,12 +18,12 @@ class FetchStressDataTest {
         val client = newIdun()
 
         client.reachable(
-            server.peerId(), TestEnv.loopbackAddress(server.localPort())
+            server.peerId(), loopbackAddress(server.localPort())
         )
 
         try {
             repeat(iterations) { iter ->
-                val data = TestEnv.randomBytes(UShort.MAX_VALUE.toInt())
+                val data = randomBytes(UShort.MAX_VALUE.toInt())
                 val raw = storage.storeData(data)
 
 

@@ -24,15 +24,15 @@ class ServerTest {
         server.startup(storage = storage)
 
 
-        val input = TestEnv.randomBytes(10000000) // 10 MB
+        val input = randomBytes(10000000) // 10 MB
 
-        val fid = TestEnv.createContent(storage, "random.bin", input)
+        val fid = createContent(storage, "random.bin", input)
         assertNotNull(fid)
 
         val client = newIdun()
 
         client.reachable(
-            server.peerId(), TestEnv.loopbackAddress(server.localPort())
+            server.peerId(), loopbackAddress(server.localPort())
         )
 
         val sink = Buffer()
@@ -63,7 +63,7 @@ class ServerTest {
         val client = newIdun()
 
         client.reachable(
-            server.peerId(), TestEnv.loopbackAddress(server.localPort())
+            server.peerId(), loopbackAddress(server.localPort())
         )
 
         val data = client.fetchRaw(server.peerId(), raw.cid)
@@ -83,7 +83,7 @@ class ServerTest {
         val server = newIdun()
         server.startup(storage = storage)
 
-        val input = TestEnv.randomBytes(UShort.MAX_VALUE.toInt())
+        val input = randomBytes(UShort.MAX_VALUE.toInt())
 
         val raw = storage.storeData(input)
         assertNotNull(raw)
@@ -97,7 +97,7 @@ class ServerTest {
                 val client = newIdun()
 
                 client.reachable(
-                    server.peerId(), TestEnv.loopbackAddress(server.localPort())
+                    server.peerId(), loopbackAddress(server.localPort())
                 )
 
                 val output = client.fetchRaw(server.peerId(), raw.cid)
@@ -136,7 +136,7 @@ class ServerTest {
                     try {
                         client.reachable(
                             server.peerId(),
-                            TestEnv.loopbackAddress(server.localPort())
+                            loopbackAddress(server.localPort())
                         )
                         finished.incrementAndFetch()
                     } catch (throwable: Throwable) {

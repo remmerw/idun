@@ -21,9 +21,9 @@ class FetchStressTest {
         var now = measureTime {
 
             val split = UShort.MAX_VALUE.toInt()
-            fid = TestEnv.createContent(
+            fid = createContent(
                 storage, "text.bin",
-                TestEnv.randomBytes(split)
+                randomBytes(split)
             )
         }
         assertNotNull(fid)
@@ -41,7 +41,7 @@ class FetchStressTest {
 
 
                 client.reachable(
-                    server.peerId(), TestEnv.loopbackAddress(server.localPort())
+                    server.peerId(), loopbackAddress(server.localPort())
                 )
 
                 val sink = Buffer()

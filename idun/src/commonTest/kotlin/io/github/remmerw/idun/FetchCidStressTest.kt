@@ -23,11 +23,11 @@ class FetchCidStressTest {
 
 
         client.reachable(
-            server.peerId(), TestEnv.loopbackAddress(server.localPort())
+            server.peerId(), loopbackAddress(server.localPort())
         )
 
 
-        repeat(TestEnv.ITERATIONS) {
+        repeat(ITERATIONS) {
             val value = client.fetchRaw(server.peerId(), node.cid)
             assertContentEquals(value, data)
         }

@@ -19,9 +19,9 @@ class StressTest {
 
         client.reachable(
             server.peerId(),
-            TestEnv.loopbackAddress(server.localPort())
+            loopbackAddress(server.localPort())
         )
-        val cmp = TestEnv.randomBytes(UShort.MAX_VALUE.toInt())
+        val cmp = randomBytes(UShort.MAX_VALUE.toInt())
         val node = storage.storeData(cmp)
 
 
