@@ -43,7 +43,7 @@ class FetchServerTest {
 
             SystemFileSystem.sink(out).buffered().use { sink ->
                 client.transferTo(sink, request) { progress ->
-                    {
+                    run {
                         println("Progress $progress")
                     }
                 }

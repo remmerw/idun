@@ -12,8 +12,6 @@ class FetchCidStressTest {
         val storage = newStorage()
         val server = newIdun()
         server.startup(storage = storage)
-
-        checkNotNull(server)
         checkNotNull(server.keys())
 
         val data = "aaa".encodeToByteArray()

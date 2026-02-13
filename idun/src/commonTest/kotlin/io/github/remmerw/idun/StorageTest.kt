@@ -26,10 +26,10 @@ class StorageTest {
         val storage = newStorage()
         val node = storage.storeData("aaa".encodeToByteArray())
         val data = storage.fetchData(node)
-        checkNotNull(data)
+        assertTrue(data.isNotEmpty())
         assertTrue(storage.currentCid() > 0)
         storage.reset()
-        assertTrue(storage.currentCid() == 0L)
+        assertEquals(storage.currentCid(), 0L)
         storage.delete()
 
     }

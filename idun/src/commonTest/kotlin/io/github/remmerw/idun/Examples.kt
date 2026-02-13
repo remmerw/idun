@@ -18,7 +18,6 @@ class Examples {
 
 
         val addresses = server.publishedAddresses()
-        checkNotNull(addresses)
         println("Publish addresses ${addresses.size}")
 
 

@@ -13,11 +13,6 @@ A client-server implementation which supports pns URIs.
 The connection is done via a TCP connection (but with **no** TLS encryption) between client and
 server.
 
-Finding peers via its pns-URI (which is basically just a peer ID) are described in detail in
-the [Asen](https://github.com/remmerw/asen/) library.
-
-
-
 ## Integration
 
 ```
@@ -26,7 +21,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             ...
-            implementation("io.github.remmerw:idun:0.6.4")
+            implementation("io.github.remmerw:idun:0.6.5")
         }
         ...
     }

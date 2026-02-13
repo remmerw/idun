@@ -3,6 +3,7 @@ package io.github.remmerw.idun
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlinx.io.Buffer
 import kotlinx.io.readByteArray
 import kotlin.concurrent.atomics.AtomicInt
@@ -128,7 +129,7 @@ class ServerTest {
         val finished = AtomicInt(0)
         val instances = 10
 
-        runBlocking(Dispatchers.IO) {
+        withContext(Dispatchers.IO) {
 
             repeat(instances) {
                 launch {

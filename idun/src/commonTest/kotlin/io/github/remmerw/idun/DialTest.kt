@@ -16,7 +16,6 @@ class DialTest {
         server.startup(storage = storage)
 
         val peeraddrs = server.publishedAddresses()
-        checkNotNull(peeraddrs)
         println("Observed addresses ${peeraddrs.size}")
 
         server.publishAddresses(peeraddrs, 25, 60)

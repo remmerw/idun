@@ -77,7 +77,7 @@ class Idun internal constructor(
     private val reachable: MutableMap<PeerId, InetSocketAddress> = ConcurrentHashMap()
 
     fun reachable(peerId: PeerId, address: InetSocketAddress) {
-        reachable.put(peerId, address)
+        reachable[peerId] = address
     }
 
     @OptIn(ExperimentalAtomicApi::class)
@@ -93,7 +93,7 @@ class Idun internal constructor(
                     try {
                         val connection = connectDagr(address, TIMEOUT)
                         if (connection != null) {
-                            reachable.put(target, address)
+                            reachable[target] = address
                             // done
                             done.store(connection)
                             coroutineContext.cancelChildren()
@@ -455,7 +455,7 @@ internal fun pnsUri(peerId: PeerId, cid: Long, attributes: Map<String, String>):
         return uri
     }
     val builder = Uri.parse(uri).buildUpon()
-    attributes.forEach { p0, p1 ->
+    attributes.forEach { (p0, p1) ->
         builder.appendQueryParameter(p0, p1)
     }
     return builder.toString()
