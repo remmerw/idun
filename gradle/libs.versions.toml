@@ -1,14 +1,14 @@
 [versions]
-agp = "9.0.0"
+agp = "9.1.0"
 kotlin = "2.3.10"
 
 [libraries]
-nott = { module = "io.github.remmerw:nott", version = "0.1.8" }
+nott = { module = "io.github.remmerw:nott", version = "0.1.9" }
 borr = { module = "io.github.remmerw:borr", version = "0.0.7" }
 dagr = { module = "io.github.remmerw:dagr", version = "0.4.2" }
 buri = { module = "io.github.remmerw:buri", version = "0.0.6" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
-kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version = "0.8.2" }
+kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version = "0.9.0" }
 kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlin" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version = "1.10.2" }
 uri-kmp = { module = "com.eygraber:uri-kmp", version = "0.0.21" }
