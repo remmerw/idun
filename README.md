@@ -21,7 +21,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             ...
-            implementation("io.github.remmerw:idun:0.6.5")
+            implementation("io.github.remmerw:idun:0.6.6")
         }
         ...
     }

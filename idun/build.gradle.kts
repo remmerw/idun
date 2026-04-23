@@ -7,13 +7,13 @@ plugins {
 }
 
 group = "io.github.remmerw"
-version = "0.6.5"
+version = "0.6.6"
 
 kotlin {
 
     android {
         namespace = "io.github.remmerw.idun"
-        compileSdk = 36
+        compileSdk = 37
         minSdk = 27
 
 

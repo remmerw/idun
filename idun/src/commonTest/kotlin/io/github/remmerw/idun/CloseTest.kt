@@ -6,6 +6,7 @@ import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.time.Duration.Companion.seconds
 
 class CloseTest {
     @Test
@@ -28,7 +29,7 @@ class CloseTest {
         val data = client.fetchRaw(server.peerId(), node.cid)
         assertContentEquals(data, cmp)
 
-        delay(5000 + 1000) // timeout 5 sec + 1 sec extra
+        delay(6.seconds) // timeout 5 sec + 1 sec extra
         assertEquals(server.numIncomingConnections(), 0)
 
         client.shutdown()

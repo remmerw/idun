@@ -47,6 +47,7 @@ import kotlin.concurrent.atomics.AtomicReference
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.concurrent.atomics.incrementAndFetch
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 
 internal const val RESOLVE_TIMEOUT: Int = 60
@@ -178,7 +179,7 @@ class Idun internal constructor(
         val done = AtomicBoolean(false)
         val result: AtomicReference<List<InetSocketAddress>?> = AtomicReference(null)
 
-        withTimeoutOrNull(timeout.toLong() * 1000) {
+        withTimeoutOrNull(timeout.seconds) {
             val nott = newNott(nodeId = nodeId(), port = 0, bootstrap = bootstrap)
             try {
                 val channel = requestGet(nott, target) {
@@ -304,7 +305,7 @@ class Idun internal constructor(
         val target = sha1(k)
 
 
-        withTimeoutOrNull(timeout.toLong() * 1000) {
+        withTimeoutOrNull(timeout.seconds) {
             val nott = newNott(nodeId = nodeId(), port = 0, bootstrap = bootstrap)
             try {
                 val channel = requestPut(
