@@ -1,6 +1,6 @@
 [versions]
-agp = "9.2.0"
-kotlin = "2.3.20"
+agp = "9.2.1"
+kotlin = "2.3.21"
 
 [libraries]
 nott = { module = "io.github.remmerw:nott", version = "0.2.0" }
