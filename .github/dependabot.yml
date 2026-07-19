@@ -1,7 +1,6 @@
 version: 2
 updates:
-  # Example for Node.js (npm) packages
-  - package-ecosystem: "npm"
+  - package-ecosystem: "gradle"
     directory: "/"
     schedule:
       interval: "weekly" # Options: daily, weekly, monthly
