@@ -6,7 +6,7 @@ kotlin = "2.4.10"
 nott = { module = "io.github.remmerw:nott", version = "0.2.0" }
 borr = { module = "io.github.remmerw:borr", version = "0.0.8" }
 dagr = { module = "io.github.remmerw:dagr", version = "0.4.3" }
-buri = { module = "io.github.remmerw:buri", version = "0.0.7" }
+buri = { module = "io.github.remmerw:buri", version = "0.0.8" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version = "0.9.1" }
 kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlin" }
